@@ -1,0 +1,88 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>NexCore — Backoffice</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="css/style.css" />
+</head>
+<body>
+
+  <!-- ============================================================
+       SIDEBAR TOGGLE (mobile)
+       ============================================================ -->
+  <button class="sidebar-toggle" id="sidebarToggle" aria-label="Toggle sidebar">
+    ☰
+  </button>
+
+  <!-- ============================================================
+       SIDEBAR OVERLAY (mobile)
+       ============================================================ -->
+  <div class="sidebar-overlay" id="sidebarOverlay"></div>
+
+  <!-- ============================================================
+       SIDEBAR
+       ============================================================ -->
+  <aside class="sidebar" id="sidebar">
+    <div class="sidebar-logo">
+      <div class="sidebar-logo-icon">N</div>
+      <div>
+        NexCore
+        <span class="sidebar-logo-sub">Administración</span>
+      </div>
+    </div>
+
+    <nav class="sidebar-nav">
+      <a class="sidebar-link" href="#/dashboard">
+        <span class="sidebar-link-icon">📊</span>
+        Dashboard
+      </a>
+      <a class="sidebar-link" href="#/products">
+        <span class="sidebar-link-icon">📦</span>
+        Productos
+      </a>
+      <a class="sidebar-link" href="#/leads">
+        <span class="sidebar-link-icon">👤</span>
+        Leads
+      </a>
+      <a class="sidebar-link" href="#/quotes">
+        <span class="sidebar-link-icon">📋</span>
+        Cotizaciones
+      </a>
+    </nav>
+
+    <div class="sidebar-footer">
+      <button class="sidebar-link" id="logoutBtn">
+        <span class="sidebar-link-icon">🚪</span>
+        Cerrar sesión
+      </button>
+    </div>
+  </aside>
+
+  <!-- ============================================================
+       MAIN CONTENT
+       ============================================================ -->
+  <main class="main" id="main-content">
+    <!-- Vue renderizado por app.js -->
+    <div class="loading">
+      <div class="spinner"></div>
+      Cargando…
+    </div>
+  </main>
+
+  <!-- ============================================================
+       TOAST CONTAINER
+       ============================================================ -->
+  <div class="toast-container" id="toastContainer"></div>
+
+  <!-- ============================================================
+       SCRIPTS
+       ============================================================ -->
+  <script src="js/config.js"></script>
+  <script src="js/api.js"></script>
+  <script src="js/auth.js"></script>
+  <script src="js/app.js"></script>
+</body>
+</html>
