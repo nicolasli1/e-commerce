@@ -4,3 +4,4 @@ requests>=2.31
 boto3>=1.28
 moto>=4.2
 cfn-lint>=0.80
+playwright>=1.44

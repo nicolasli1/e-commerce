@@ -45,6 +45,10 @@ jobs:
         run: |
           pip install -r tests/requirements-test.txt
 
+      - name: Install Playwright browser
+        run: |
+          python -m playwright install --with-deps chromium
+
       - name: Run E2E tests
         env:
           NEXCORE_BASE_URL: "https://d1ag0uf6e1dp20.cloudfront.net"
