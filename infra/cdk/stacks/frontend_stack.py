@@ -83,10 +83,11 @@ class FrontendStack(Stack):
                         content_security_policy=(
                             "default-src 'self'; "
                             "img-src 'self' data: https:; "
-                            "script-src 'self' 'unsafe-inline'; "
+                            "script-src 'self' 'unsafe-inline' https://checkout.wompi.co; "
                             "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; "
                             "font-src 'self' https://fonts.gstatic.com; "
-                            "connect-src 'self' https:;"
+                            "connect-src 'self' https:; "
+                            "frame-src https://checkout.wompi.co;"
                         ),
                         override=True,
                     ),
@@ -292,6 +293,9 @@ class FrontendStack(Stack):
                     target_origin_id="APIOrigin",
                     viewer_protocol_policy="redirect-to-https",
                     compress=True,
+                    default_ttl=0,
+                    max_ttl=0,
+                    min_ttl=0,
                     allowed_methods=[
                         "GET", "HEAD", "OPTIONS", "PUT", "POST", "PATCH", "DELETE"
                     ],
@@ -299,7 +303,7 @@ class FrontendStack(Stack):
                     response_headers_policy_id=security_headers.ref,
                     forwarded_values=cloudfront.CfnDistribution.ForwardedValuesProperty(
                         query_string=True,
-                        headers=["Authorization", "Content-Type"],
+                        headers=["Authorization", "Content-Type", "Origin", "X-Event-Checksum"],
                         cookies=cloudfront.CfnDistribution.CookiesProperty(
                             forward="all"
                         ),

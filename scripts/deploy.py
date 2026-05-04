@@ -104,6 +104,21 @@ SSM_SECRETS = {
         "generate": lambda: py_secrets.token_hex(32),  # 64 hex chars
         "type": "SecureString",
     },
+    "wompi-public-key": {
+        "description": "Wompi public key (pub_test_... or pub_prod_...)",
+        "default": "",
+        "type": "String",
+    },
+    "wompi-integrity-secret": {
+        "description": "Wompi integrity secret for widget/web checkout signature",
+        "default": "",
+        "type": "SecureString",
+    },
+    "wompi-events-secret": {
+        "description": "Wompi events secret used to verify webhook signatures",
+        "default": "",
+        "type": "SecureString",
+    },
 }
 
 
