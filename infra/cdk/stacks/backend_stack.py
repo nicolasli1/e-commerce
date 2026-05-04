@@ -426,6 +426,9 @@ _SECRET_CACHE_TTL = 900  # 15 seconds → 15 * 60 = 900
 
 def _get_secret(param_name, default=None):
     \"\"\"Get a secret from SSM Parameter Store with caching.\"\"\"
+    # Dev: skip SSM, always use hardcoded defaults
+    if ENVIRONMENT in ("dev",) and default is not None:
+        return default
     global _secret_cache, _secret_cache_ts
     now = time.time()
     if now - _secret_cache_ts > _SECRET_CACHE_TTL:
