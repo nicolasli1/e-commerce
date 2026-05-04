@@ -3,8 +3,8 @@
 CDK application for the sales website on AWS.
 
 Stacks:
-  - FrontendStack  : S3 + CloudFront + WAF + Monitoring
-  - BackendStack   : API Gateway + Lambda + DynamoDB + Monitoring (optional)
+  - FrontendStack  : S3 + CloudFront + WAF
+  - BackendStack   : API Gateway + Lambda + DynamoDB (optional)
 
 Deployment instructions:
   cd infra/cdk
@@ -15,13 +15,6 @@ Deployment instructions:
 Or deploy individually:
   cdk deploy SalesWebsiteBackend       # backend first
   cdk deploy SalesWebsiteFrontend      # then frontend
-
-Parameters (via --context):
-  project_name      : str   = "sales-website"
-  environment       : str   = "dev"
-  enable_backend    : str   = "true"
-  price_class       : str   = "PriceClass_100"
-  alarm_email       : str?  = None  (SNS email for critical alarms)
 
 Custom domain + ACM certificate? See docs/cdk-architecture.md.
 """
@@ -34,13 +27,12 @@ from stacks.backend_stack import BackendStack
 app = cdk.App()
 
 # ------------------------------------------------------------------
-# Config (from CDK context or defaults)
+# Config (from cdk context or defaults)
 # ------------------------------------------------------------------
 project_name = app.node.try_get_context("project_name") or "sales-website"
 environment = app.node.try_get_context("environment") or "dev"
 enable_backend = app.node.try_get_context("enable_backend") or "true"
 price_class = app.node.try_get_context("price_class") or "PriceClass_100"
-alarm_email = app.node.try_get_context("alarm_email") or None
 
 enable_backend_bool = enable_backend.lower() in ("true", "1", "yes")
 
@@ -53,7 +45,6 @@ backend = BackendStack(
     project_name=project_name,
     environment=environment,
     enable_backend=enable_backend_bool,
-    alarm_email=alarm_email,
     description=f"Sales website backend – {project_name} {environment}",
     env=cdk.Environment(
         account=os.environ.get("CDK_DEFAULT_ACCOUNT"),
@@ -63,7 +54,7 @@ backend = BackendStack(
 
 # ------------------------------------------------------------------
 # Frontend stack (always deployed)
-# CloudFront + WAF must be in us-east-1.
+# CloudFront + WAF need to be in us-east-1.
 # ------------------------------------------------------------------
 api_endpoint = backend.api_endpoint if enable_backend_bool else None
 

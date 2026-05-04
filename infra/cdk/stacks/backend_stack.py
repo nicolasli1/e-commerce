@@ -1,16 +1,10 @@
 from typing import Optional
-from pathlib import Path
 
 from aws_cdk import (
     aws_dynamodb as dynamodb,
     aws_lambda as lambda_,
     aws_apigatewayv2 as apigwv2,
     aws_apigatewayv2_integrations as integrations,
-    aws_cloudwatch as cloudwatch,
-    aws_cloudwatch_actions as cw_actions,
-    aws_sns as sns,
-    aws_sns_subscriptions as subscriptions,
-    aws_kms as kms,
     CfnOutput,
     Stack,
     RemovalPolicy,
@@ -21,11 +15,10 @@ from constructs import Construct
 
 class BackendStack(Stack):
     """
-    Backend stack: API Gateway HTTP API + Lambda + DynamoDB + Monitoring.
+    Backend stack: API Gateway HTTP API + Lambda + DynamoDB.
 
-    Provides serverless endpoints for lead capture, admin CRUD, health checks, and quotes.
-    Secrets are stored in AWS Systems Manager Parameter Store (SecureString).
-    CloudWatch dashboards and alarms provide observability.
+    Provides lightweight serverless endpoints for lead capture, contact forms,
+    admin/backoffice CRUD, and health checks. Enabled via the `enable_backend` parameter.
     """
 
     @property
@@ -41,7 +34,6 @@ class BackendStack(Stack):
         project_name: str = "sales-website",
         environment: str = "dev",
         enable_backend: bool = True,
-        alarm_email: Optional[str] = None,
         **kwargs,
     ) -> None:
         super().__init__(scope, id, **kwargs)
@@ -52,13 +44,9 @@ class BackendStack(Stack):
             return
 
         # ------------------------------------------------------------------
-        # 0. SSM Parameter Store path (parameters created manually or via CI/CD)
-        # ------------------------------------------------------------------
-        ssm_secret_path = f"/{project_name}/{environment}/"
-
-        # ------------------------------------------------------------------
         # 1. DynamoDB tables
         # ------------------------------------------------------------------
+        # Leads table (existing)
         leads_table = dynamodb.Table(
             self,
             "LeadsTable",
@@ -69,12 +57,9 @@ class BackendStack(Stack):
             ),
             billing_mode=dynamodb.BillingMode.PAY_PER_REQUEST,
             removal_policy=RemovalPolicy.DESTROY,
-            point_in_time_recovery_specification=dynamodb.PointInTimeRecoverySpecification(
-                point_in_time_recovery_enabled=True,
-            ),
-            encryption=dynamodb.TableEncryption.AWS_MANAGED,
         )
 
+        # Products table (new — for backoffice CRUD)
         products_table = dynamodb.Table(
             self,
             "ProductsTable",
@@ -85,12 +70,11 @@ class BackendStack(Stack):
             ),
             billing_mode=dynamodb.BillingMode.PAY_PER_REQUEST,
             removal_policy=RemovalPolicy.DESTROY,
-            point_in_time_recovery_specification=dynamodb.PointInTimeRecoverySpecification(
-                point_in_time_recovery_enabled=True,
-            ),
+            point_in_time_recovery=True,
             encryption=dynamodb.TableEncryption.AWS_MANAGED,
         )
 
+        # Quotes table (new — for backoffice quotes management)
         quotes_table = dynamodb.Table(
             self,
             "QuotesTable",
@@ -101,21 +85,12 @@ class BackendStack(Stack):
             ),
             billing_mode=dynamodb.BillingMode.PAY_PER_REQUEST,
             removal_policy=RemovalPolicy.DESTROY,
-            point_in_time_recovery_specification=dynamodb.PointInTimeRecoverySpecification(
-                point_in_time_recovery_enabled=True,
-            ),
+            point_in_time_recovery=True,
             encryption=dynamodb.TableEncryption.AWS_MANAGED,
         )
 
         # ------------------------------------------------------------------
-        # 2. KMS key for Lambda environment variables encryption (optional)
-        # ------------------------------------------------------------------
-        # Using AWS managed keys by default; a CMK can be added for prod.
-
-        # ------------------------------------------------------------------
-        # 3. Lambda function – API handler
-        #    Secrets are referenced dynamically at runtime via SSM Parameter Store.
-        #    The Lambda has IAM permissions to read the parameters.
+        # 2. Lambda function – API handler (leads + admin CRUD)
         # ------------------------------------------------------------------
         api_lambda = lambda_.Function(
             self,
@@ -127,7 +102,6 @@ class BackendStack(Stack):
                 leads_table.table_name,
                 products_table.table_name,
                 quotes_table.table_name,
-                ssm_secret_path=ssm_secret_path,
             ),
             timeout=Duration.seconds(30),
             memory_size=256,
@@ -136,20 +110,17 @@ class BackendStack(Stack):
                 "PRODUCTS_TABLE": products_table.table_name,
                 "QUOTES_TABLE": quotes_table.table_name,
                 "ENVIRONMENT": environment,
-                "SSM_SECRET_PATH": ssm_secret_path,
+                "ADMIN_SESSION_SECRET": "hardcoded-in-code",  # Hardcodeado en Lambda (ver SESSION_SECRET)
             },
         )
 
-        # Grant Lambda read access to SSM parameters (secrets)
-        # SSM permissions granted via Lambda execution role inline policy above
-
-        # Grant Lambda access to DynamoDB tables
+        # Grant Lambda access to all DynamoDB tables
         leads_table.grant_read_write_data(api_lambda)
         products_table.grant_read_write_data(api_lambda)
         quotes_table.grant_read_write_data(api_lambda)
 
         # ------------------------------------------------------------------
-        # 4. HTTP API (API Gateway v2)
+        # 3. HTTP API (API Gateway v2)
         # ------------------------------------------------------------------
         http_api = apigwv2.HttpApi(
             self,
@@ -164,11 +135,12 @@ class BackendStack(Stack):
                     apigwv2.CorsHttpMethod.DELETE,
                     apigwv2.CorsHttpMethod.OPTIONS,
                 ],
-                allow_headers=["Content-Type", "Authorization", "X-Api-Key"],
+                allow_headers=["Content-Type", "Authorization"],
                 max_age=Duration.days(1),
             ),
         )
 
+        # Integration: Lambda proxy
         lambda_integration = integrations.HttpLambdaIntegration(
             "ApiLambdaIntegration",
             handler=api_lambda,
@@ -182,11 +154,6 @@ class BackendStack(Stack):
         )
         http_api.add_routes(
             path="/api/leads",
-            methods=[apigwv2.HttpMethod.POST],
-            integration=lambda_integration,
-        )
-        http_api.add_routes(
-            path="/api/quotes",
             methods=[apigwv2.HttpMethod.POST],
             integration=lambda_integration,
         )
@@ -233,113 +200,8 @@ class BackendStack(Stack):
             integration=lambda_integration,
         )
 
+        # Store for cross-stack reference
         self._api_endpoint = http_api.api_endpoint
-
-        # ------------------------------------------------------------------
-        # 5. CloudWatch monitoring
-        # ------------------------------------------------------------------
-        # --- Lambda metrics ---
-        lambda_errors = api_lambda.metric_errors(
-            statistic="Sum",
-            period=Duration.minutes(5),
-            label="Lambda Errors",
-        )
-        lambda_duration = api_lambda.metric_duration(
-            statistic="p95",
-            period=Duration.minutes(5),
-            label="Lambda Duration P95",
-        )
-        lambda_invocations = api_lambda.metric_invocations(
-            statistic="Sum",
-            period=Duration.minutes(5),
-            label="Lambda Invocations",
-        )
-        lambda_throttles = api_lambda.metric_throttles(
-            statistic="Sum",
-            period=Duration.minutes(5),
-            label="Lambda Throttles",
-        )
-
-        # --- DynamoDB metrics ---
-        leads_consumed_read = leads_table.metric_consumed_read_capacity_units(
-            statistic="Sum",
-            period=Duration.minutes(5),
-            label="Leads Table Read Capacity",
-        )
-        leads_consumed_write = leads_table.metric_consumed_write_capacity_units(
-            statistic="Sum",
-            period=Duration.minutes(5),
-            label="Leads Table Write Capacity",
-        )
-        # Products table throttled - using system errors metric instead
-        products_errors = products_table.metric(
-            "SystemErrors",
-            statistic="Sum",
-            period=Duration.minutes(5),
-            label="Products Table Errors",
-        )
-
-        # --- API Gateway metrics ---
-        api_4xx = http_api.metric(
-            "4xx",
-            statistic="Sum",
-            period=Duration.minutes(5),
-            label="API 4xx Errors",
-        )
-        api_5xx = http_api.metric(
-            "5xx",
-            statistic="Sum",
-            period=Duration.minutes(5),
-            label="API 5xx Errors",
-        )
-
-        # --- Dashboard ---
-        dashboard = cloudwatch.Dashboard(
-            self,
-            "ApiDashboard",
-            dashboard_name=f"{project_name}-{environment}-api-dashboard",
-        )
-
-        dashboard.add_widgets(
-            cloudwatch.Row(
-                cloudwatch.GraphWidget(
-                    title="Lambda – Errors & Invocations",
-                    left=[lambda_errors, lambda_invocations],
-                    right=[lambda_throttles],
-                    view=cloudwatch.GraphWidgetView.TIME_SERIES,
-                ),
-                cloudwatch.GraphWidget(
-                    title="Lambda – Duration",
-                    left=[lambda_duration],
-                    view=cloudwatch.GraphWidgetView.TIME_SERIES,
-                ),
-            ),
-            cloudwatch.Row(
-                cloudwatch.GraphWidget(
-                    title="DynamoDB – Leads Table",
-                    left=[leads_consumed_read, leads_consumed_write],
-                    view=cloudwatch.GraphWidgetView.TIME_SERIES,
-                ),
-                cloudwatch.GraphWidget(
-                    title="DynamoDB – Products Throttled",
-                    left=[products_errors],
-                    view=cloudwatch.GraphWidgetView.TIME_SERIES,
-                ),
-            ),
-            cloudwatch.Row(
-                cloudwatch.GraphWidget(
-                    title="API Gateway – Errors",
-                    left=[api_4xx, api_5xx],
-                    view=cloudwatch.GraphWidgetView.TIME_SERIES,
-                ),
-                cloudwatch.AlarmWidget(
-                    title="Lambda Error Alarm",
-                    alarm=self._create_lambda_error_alarm(
-                        api_lambda, project_name, environment, alarm_email
-                    ),
-                ),
-            ),
-        )
 
         # ------------------------------------------------------------------
         # Outputs
@@ -349,51 +211,16 @@ class BackendStack(Stack):
         CfnOutput(self, "ProductsTableName", value=products_table.table_name)
         CfnOutput(self, "QuotesTableName", value=quotes_table.table_name)
         CfnOutput(self, "LambdaFunctionName", value=api_lambda.function_name)
-        CfnOutput(self, "DashboardName", value=dashboard.dashboard_name)
         CfnOutput(self, "BackendEnabled", value="true")
-
-    def _create_lambda_error_alarm(
-        self,
-        api_lambda: lambda_.Function,
-        project_name: str,
-        environment: str,
-        alarm_email: Optional[str] = None,
-    ) -> cloudwatch.Alarm:
-        """Create CloudWatch alarm for Lambda errors with optional SNS notification."""
-        alarm = cloudwatch.Alarm(
-            self,
-            "LambdaErrorAlarm",
-            alarm_name=f"{project_name}-{environment}-lambda-errors",
-            alarm_description=f"Lambda errors in {project_name} {environment} backend",
-            metric=api_lambda.metric_errors(statistic="Sum", period=Duration.minutes(5)),
-            threshold=5,
-            evaluation_periods=2,
-            comparison_operator=cloudwatch.ComparisonOperator.GREATER_THAN_OR_EQUAL_TO_THRESHOLD,
-            treat_missing_data=cloudwatch.TreatMissingData.NOT_BREACHING,
-        )
-
-        if alarm_email:
-            topic = sns.Topic(
-                self,
-                "AlarmTopic",
-                topic_name=f"{project_name}-{environment}-alarms",
-                display_name=f"{project_name} {environment} Alarms",
-            )
-            topic.add_subscription(subscriptions.EmailSubscription(alarm_email))
-            alarm.add_alarm_action(cw_actions.SnsAction(topic))
-
-        return alarm
 
     @staticmethod
     def _lambda_code(
         leads_table_name: str,
         products_table_name: str,
         quotes_table_name: str,
-        ssm_secret_path: str = "/sales-website/dev/",
     ) -> lambda_.InlineCode:
         """
         Returns the inline Lambda handler code with full admin CRUD support.
-        Secrets are read from SSM Parameter Store at cold start and cached.
         """
         return lambda_.InlineCode(
             f"""
@@ -403,73 +230,22 @@ import uuid
 import hashlib
 import hmac
 import base64
-import time
 from datetime import datetime, timezone
 
 import boto3
 
 dynamodb = boto3.resource("dynamodb")
-ssm = boto3.client("ssm")
-
 leads_table = dynamodb.Table("{leads_table_name}")
 products_table = dynamodb.Table("{products_table_name}")
 quotes_table = dynamodb.Table("{quotes_table_name}")
 
-SSM_SECRET_PATH = os.environ.get("SSM_SECRET_PATH", "{ssm_secret_path}")
-ENVIRONMENT = os.environ.get("ENVIRONMENT", "dev")
+ADMIN_USER = os.environ.get("ADMIN_USER", "admin")
+ADMIN_PASS_HASH = hashlib.sha256((os.environ.get("ADMIN_PASS", "admin123")).encode()).hexdigest()
 
-# Cache for secrets (refreshed every 15 minutes)
-_secret_cache = {{}}
-_secret_cache_ts = 0
-_SECRET_CACHE_TTL = 900  # 15 seconds → 15 * 60 = 900
+# Session secret: hardcodeado para consistencia.
+# En producción, mover a Parameter Store.
+SESSION_SECRET = "nexcore-session-secret-v1-2026"
 
-
-def _get_secret(param_name, default=None):
-    \"\"\"Get a secret from SSM Parameter Store with caching.\"\"\"
-    # Dev: skip SSM, always use hardcoded defaults
-    if ENVIRONMENT in ("dev",) and default is not None:
-        return default
-    global _secret_cache, _secret_cache_ts
-    now = time.time()
-    if now - _secret_cache_ts > _SECRET_CACHE_TTL:
-        _secret_cache = {{}}
-        _secret_cache_ts = now
-    if param_name not in _secret_cache:
-        try:
-            response = ssm.get_parameter(
-                Name=param_name,
-                WithDecryption=True
-            )
-            _secret_cache[param_name] = response["Parameter"]["Value"]
-        except Exception as e:
-            print(f"ERROR: Failed to get secret {{param_name}}: {{e}}")
-            # Fallback for dev/testing
-            if default is not None:
-                _secret_cache[param_name] = default
-            elif ENVIRONMENT in ("dev",):
-                _secret_cache[param_name] = f"dev-fallback-{{param_name}}"
-            else:
-                raise
-    return _secret_cache[param_name]
-
-
-def _get_admin_credentials():
-    \"\"\"Load admin credentials from SSM Parameter Store.
-    Falls back to admin/admin123 when SSM is unavailable (dev only).
-    \"\"\"
-    admin_user = _get_secret(f"{{SSM_SECRET_PATH}}admin-user", default="admin")
-    admin_pass = _get_secret(f"{{SSM_SECRET_PATH}}admin-password", default="admin123")
-    return admin_user, admin_pass
-
-
-def _get_session_secret():
-    \"\"\"Load session signing secret from SSM Parameter Store.
-    Falls back to a dev default when SSM is unavailable (dev only).
-    \"\"\"
-    return _get_secret(f"{{SSM_SECRET_PATH}}admin-session-secret", default="nexcore-session-secret-dev")
-
-
-# ─── RESPONSE HELPERS ───────────────────────────────────
 
 def response(status_code, body, extra_headers=None):
     headers = {{"Content-Type": "application/json"}}
@@ -482,6 +258,40 @@ def response(status_code, body, extra_headers=None):
     }}
 
 
+def generate_token(username):
+    payload = base64.b64encode(json.dumps({{
+        "user": username,
+        "iat": datetime.now(timezone.utc).isoformat()
+    }}).encode()).decode()
+    sig = hmac.new(
+        SESSION_SECRET.encode(),
+        payload.encode(),
+        hashlib.sha256
+    ).hexdigest()
+    return f"{{payload}}.{{sig}}"
+
+
+def verify_token(token):
+    try:
+        parts = token.split(".")
+        if len(parts) != 2:
+            return None
+        payload, sig = parts
+        expected = hmac.new(
+            SESSION_SECRET.encode(),
+            payload.encode(),
+            hashlib.sha256
+        ).hexdigest()
+        if not hmac.compare_digest(sig, expected):
+            return None
+        decoded = json.loads(base64.b64decode(payload).decode())
+        return decoded.get("user")
+    except Exception:
+        return None
+
+
+# ─── HELPERS ────────────────────────────────────────────
+
 def get_json_body(event):
     try:
         return json.loads(event.get("body") or "{{}}")
@@ -491,62 +301,16 @@ def get_json_body(event):
 
 # ─── AUTH ───────────────────────────────────────────────
 
-def generate_token(username, session_secret):
-    payload = base64.b64encode(json.dumps({{
-        "user": username,
-        "iat": datetime.now(timezone.utc).isoformat()
-    }}).encode()).decode()
-    sig = hmac.new(
-        session_secret.encode(),
-        payload.encode(),
-        hashlib.sha256
-    ).hexdigest()
-    return f"{{payload}}.{{sig}}"
-
-
-def verify_token(token, session_secret):
-    try:
-        parts = token.split(".")
-        if len(parts) != 2:
-            return None
-        payload, sig = parts
-        expected = hmac.new(
-            session_secret.encode(),
-            payload.encode(),
-            hashlib.sha256
-        ).hexdigest()
-        if not hmac.compare_digest(sig, expected):
-            return None
-        decoded = json.loads(base64.b64decode(payload).decode())
-        return decoded.get("user")
-    except Exception as e:
-        print(f"Token verification error: {{e}}")
-        return None
-
-
 def handle_login(event):
     body = get_json_body(event)
     if not body:
         return response(400, {{"error": "invalid_json"}})
     user = (body.get("username") or "").strip()
     pwd = (body.get("password") or "").strip()
-    admin_user, admin_pass = _get_admin_credentials()
-    admin_pass_hash = hashlib.sha256(pwd.encode()).hexdigest()
-    if user == admin_user and admin_pass_hash == hashlib.sha256(admin_pass.encode()).hexdigest():
-        session_secret = _get_session_secret()
-        token = generate_token(user, session_secret)
+    if user == ADMIN_USER and hashlib.sha256(pwd.encode()).hexdigest() == ADMIN_PASS_HASH:
+        token = generate_token(user)
         return response(200, {{"ok": True, "token": token}})
     return response(401, {{"error": "invalid_credentials"}})
-
-
-def admin_auth_required(event):
-    auth = event.get("headers", {{}}).get("authorization", "") or \\
-           event.get("headers", {{}}).get("Authorization", "")
-    if auth.startswith("Bearer "):
-        token = auth[7:]
-        session_secret = _get_session_secret()
-        return verify_token(token, session_secret)
-    return None
 
 
 # ─── PRODUCTS ───────────────────────────────────────────
@@ -643,7 +407,7 @@ def update_lead(lead_id, body):
     if "contacted" in body:
         updates["contacted"] = body["contacted"]
     if "notes" in body:
-        updates["notes"] = str(body["notes"])
+        updates["notes"] = body["notes"]
     if not updates:
         return response(400, {{"error": "no_fields_to_update"}})
     update_expr = "SET " + ", ".join(f"#{{k}}=:v{{k}}" for k in updates)
@@ -676,12 +440,9 @@ def update_quote(quote_id, body):
         return response(404, {{"error": "not_found"}})
     updates = {{}}
     if "status" in body:
-        valid_statuses = ["pending", "contacted", "closed", "approved"]
-        if body["status"] not in valid_statuses:
-            return response(400, {{"error": f"invalid_status. Must be one of: {{valid_statuses}}"}})
         updates["status"] = body["status"]
     if "notes" in body:
-        updates["notes"] = str(body["notes"])
+        updates["notes"] = body["notes"]
     if not updates:
         return response(400, {{"error": "no_fields_to_update"}})
     update_expr = "SET " + ", ".join(f"#{{k}}=:v{{k}}" for k in updates)
@@ -698,9 +459,12 @@ def update_quote(quote_id, body):
     return response(200, {{"ok": True, "quote": updated}})
 
 
-# ─── DASHBOARD ──────────────────────────────────────────
+# ─── MAIN HANDLER ───────────────────────────────────────
+
+# ── Admin: Dashboard ──
 
 def handle_dashboard():
+    # Returns aggregated stats for the backoffice dashboard.
     products = products_table.scan().get("Items", [])
     leads = leads_table.scan().get("Items", [])
     quotes = quotes_table.scan().get("Items", [])
@@ -723,116 +487,114 @@ def handle_dashboard():
     }})
 
 
-# ─── MAIN HANDLER ───────────────────────────────────────
+def admin_auth_required(event):
+    auth = event.get("headers", {{}}).get("authorization", "") or \\
+           event.get("headers", {{}}).get("Authorization", "")
+    if auth.startswith("Bearer "):
+        token = auth[7:]
+        return verify_token(token)
+    return None
+
 
 def handler(event, context):
     method = event.get("requestContext", {{}}).get("http", {{}}).get("method", "")
     path = event.get("rawPath", "").rstrip("/")
     body = event.get("body")
 
-    try:
-        # ── Public endpoints ──
-        if method == "GET" and path == "/api/health":
-            return response(200, {{"ok": True, "service": "sales-api", "env": ENVIRONMENT}})
+    # ── Public endpoints ──
+    if method == "GET" and path == "/api/health":
+        return response(200, {{"ok": True, "service": "sales-api"}})
 
-        if method == "POST" and path == "/api/leads":
+    if method == "POST" and path == "/api/leads":
+        try:
+            data = json.loads(body or "{{}}")
+        except json.JSONDecodeError:
+            return response(400, {{"error": "invalid_json"}})
+        name = (data.get("name") or "").strip()
+        email = (data.get("email") or "").strip().lower()
+        message = (data.get("message") or "").strip()
+        if not name or not email:
+            return response(400, {{"error": "name_and_email_required"}})
+        item = {{
+            "id": str(uuid.uuid4()),
+            "name": name,
+            "email": email,
+            "message": message,
+            "contacted": False,
+            "createdAt": datetime.now(timezone.utc).isoformat()
+        }}
+        leads_table.put_item(Item=item)
+        return response(201, {{"ok": True, "leadId": item["id"]}})
+
+    # ── Admin auth ──
+    if path.startswith("/api/admin"):
+        if method == "POST" and path == "/api/admin/login":
+            return handle_login(event)
+        user = admin_auth_required(event)
+        if not user:
+            return response(401, {{"error": "unauthorized"}})
+
+    # ── Admin: Products ──
+    if path == "/api/admin/products":
+        if method == "GET":
+            return list_products()
+        if method == "POST":
             try:
                 data = json.loads(body or "{{}}")
             except json.JSONDecodeError:
                 return response(400, {{"error": "invalid_json"}})
-            name = (data.get("name") or "").strip()
-            email = (data.get("email") or "").strip().lower()
-            phone = (data.get("phone") or "").strip()
-            message = (data.get("message") or "").strip()
-            if not name or not email:
-                return response(400, {{"error": "name_and_email_required"}})
-            item = {{
-                "id": str(uuid.uuid4()),
-                "name": name,
-                "email": email,
-                "phone": phone,
-                "message": message,
-                "contacted": False,
-                "notes": "",
-                "source": data.get("source", "website"),
-                "createdAt": datetime.now(timezone.utc).isoformat()
-            }}
-            leads_table.put_item(Item=item)
-            return response(201, {{"ok": True, "leadId": item["id"]}})
+            return create_product(data)
 
-        # ── Admin auth ──
-        if path.startswith("/api/admin"):
-            if method == "POST" and path == "/api/admin/login":
-                return handle_login(event)
-            user = admin_auth_required(event)
-            if not user:
-                return response(401, {{"error": "unauthorized"}})
+    if path.startswith("/api/admin/products/"):
+        product_id = path.replace("/api/admin/products/", "").split("/")[0]
+        if not product_id:
+            return response(400, {{"error": "missing_product_id"}})
+        if method == "PUT":
+            try:
+                data = json.loads(body or "{{}}")
+            except json.JSONDecodeError:
+                return response(400, {{"error": "invalid_json"}})
+            return update_product(product_id, data)
+        if method == "DELETE":
+            return delete_product(product_id)
 
-        # ── Admin: Products ──
-        if path == "/api/admin/products":
-            if method == "GET":
-                return list_products()
-            if method == "POST":
-                try:
-                    data = json.loads(body or "{{}}")
-                except json.JSONDecodeError:
-                    return response(400, {{"error": "invalid_json"}})
-                return create_product(data)
+    # ── Admin: Dashboard ──
+    if path == "/api/admin/dashboard":
+        if method == "GET":
+            return handle_dashboard()
 
-        if path.startswith("/api/admin/products/"):
-            product_id = path.replace("/api/admin/products/", "").split("/")[0]
-            if not product_id:
-                return response(400, {{"error": "missing_product_id"}})
-            if method == "PUT":
-                try:
-                    data = json.loads(body or "{{}}")
-                except json.JSONDecodeError:
-                    return response(400, {{"error": "invalid_json"}})
-                return update_product(product_id, data)
-            if method == "DELETE":
-                return delete_product(product_id)
+    # ── Admin: Leads ──
+    if path == "/api/admin/leads":
+        if method == "GET":
+            return list_leads()
 
-        # ── Admin: Dashboard ──
-        if path == "/api/admin/dashboard":
-            if method == "GET":
-                return handle_dashboard()
+    if path.startswith("/api/admin/leads/"):
+        lead_id = path.replace("/api/admin/leads/", "").split("/")[0]
+        if not lead_id:
+            return response(400, {{"error": "missing_lead_id"}})
+        if method == "PUT":
+            try:
+                data = json.loads(body or "{{}}")
+            except json.JSONDecodeError:
+                return response(400, {{"error": "invalid_json"}})
+            return update_lead(lead_id, data)
 
-        # ── Admin: Leads ──
-        if path == "/api/admin/leads":
-            if method == "GET":
-                return list_leads()
+    # ── Admin: Quotes ──
+    if path == "/api/admin/quotes":
+        if method == "GET":
+            return list_quotes()
 
-        if path.startswith("/api/admin/leads/"):
-            lead_id = path.replace("/api/admin/leads/", "").split("/")[0]
-            if not lead_id:
-                return response(400, {{"error": "missing_lead_id"}})
-            if method == "PUT":
-                try:
-                    data = json.loads(body or "{{}}")
-                except json.JSONDecodeError:
-                    return response(400, {{"error": "invalid_json"}})
-                return update_lead(lead_id, data)
+    if path.startswith("/api/admin/quotes/"):
+        quote_id = path.replace("/api/admin/quotes/", "").split("/")[0]
+        if not quote_id:
+            return response(400, {{"error": "missing_quote_id"}})
+        if method == "PUT":
+            try:
+                data = json.loads(body or "{{}}")
+            except json.JSONDecodeError:
+                return response(400, {{"error": "invalid_json"}})
+            return update_quote(quote_id, data)
 
-        # ── Admin: Quotes ──
-        if path == "/api/admin/quotes":
-            if method == "GET":
-                return list_quotes()
-
-        if path.startswith("/api/admin/quotes/"):
-            quote_id = path.replace("/api/admin/quotes/", "").split("/")[0]
-            if not quote_id:
-                return response(400, {{"error": "missing_quote_id"}})
-            if method == "PUT":
-                try:
-                    data = json.loads(body or "{{}}")
-                except json.JSONDecodeError:
-                    return response(400, {{"error": "invalid_json"}})
-                return update_quote(quote_id, data)
-
-        return response(404, {{"error": "not_found"}})
-
-    except Exception as e:
-        print(f"ERROR: {{type(e).__name__}}: {{e}}")
-        return response(500, {{"error": "internal_error"}})
+    return response(404, {{"error": "not_found"}})
 """
         )
