@@ -167,6 +167,16 @@ jobs:
             --context environment=${{ env.ENVIRONMENT }} \
             --context price_class=PriceClass_100 \
             --require-approval never
+          echo "FRONTEND_DEPLOY_EXIT_CODE=$?" >> $GITHUB_ENV
+
+      # --- Debug: check CloudFormation status if failed ---
+      - name: Debug Frontend Failure
+        if: failure()
+        run: |
+          echo "=== Stack Status ==="
+          aws cloudformation describe-stacks --stack-name ${{ env.PROJECT_NAME }}-${{ env.ENVIRONMENT }}-frontend --query 'Stacks[0].StackStatus' --output text || echo 'Stack not found'
+          echo "=== Failed Events ==="
+          aws cloudformation describe-stack-events --stack-name ${{ env.PROJECT_NAME }}-${{ env.ENVIRONMENT }}-frontend --query 'StackEvents[?contains(ResourceStatus,"FAILED")].[ResourceType,ResourceStatusReason]' --max-items 5 --output text || echo 'No failed events'
 
       # --- Get Stack Outputs ---
       - name: Get Stack Outputs
