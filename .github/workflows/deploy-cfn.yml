@@ -1,10 +1,7 @@
 name: Deploy Sales Website (CloudFormation)
 
 on:
-  push:
-    branches: [main, master]
-  pull_request:
-    branches: [main, master]
+  # Usar deploy.yml (CDK) en vez de este template YAML plano
   workflow_dispatch:
     inputs:
       environment:
