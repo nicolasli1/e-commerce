@@ -116,9 +116,10 @@ class FrontendStack(Stack):
 
         # ------------------------------------------------------------------
         # 4. CloudFront Function — /admin/ routes
-        # For MVP: passes all requests through.
+        # For MVP: passes all requests through + SPA routing.
         # Real auth is at API level (API Key + JWT Bearer token in Lambda).
         # The backoffice SPA uses localStorage + Bearer token, not cookies.
+        # SPA fallback: rewrites /admin/* paths without file extensions to /admin/index.html.
         # ------------------------------------------------------------------
         admin_auth_func = cloudfront.CfnFunction(
             self,
@@ -126,8 +127,20 @@ class FrontendStack(Stack):
             name=f"{project_name}-{environment}-admin-auth",
             auto_publish=True,
             function_code=cf_function_path.read_text() if cf_function_path.exists() else (
+                "// SPA routing for /admin/\n"
+                'var FILE_EXTENSIONS = [".js", ".css", ".png", ".jpg", ".svg", ".ico", ".woff", ".woff2", ".json"];\n'
                 "function handler(event) {\n"
-                "    return event.request;\n"
+                "    var request = event.request;\n"
+                "    var uri = request.uri;\n"
+                "    for (var i = 0; i < FILE_EXTENSIONS.length; i++) {\n"
+                "        if (uri.indexOf(FILE_EXTENSIONS[i]) === uri.length - FILE_EXTENSIONS[i].length) {\n"
+                "            return request;\n"
+                "        }\n"
+                "    }\n"
+                "    if (uri !== '/admin/index.html') {\n"
+                "        request.uri = '/admin/index.html';\n"
+                "    }\n"
+                "    return request;\n"
                 "}"
             ),
             function_config=cloudfront.CfnFunction.FunctionConfigProperty(
