@@ -10,14 +10,21 @@
 - **Auth**: HMAC-based JWT-like tokens (custom, no librerías externas)
 - **Secrets**: SSM Parameter Store (SecureString) — no secrets hardcodeados
 
-## Project Status (2026-05-04)
+### 🔥 Backoffice completado (subagentes 2026-05-03)
 
-### ✅ Done (v1 code-complete, improvements applied)
+El backoffice fue desarrollado mediante subagentes orquestados:
+- **DevOps**: Infraestructura CloudFormation + CDK — tablas DynamoDB (`products`, `quotes`), rutas API Gateway `/api/admin/*` (9 endpoints), CloudFront Function `AdminAuthFunction` (cookie de sesión), IAM expandido, parámetro `AdminSessionSecret`.
+- **Developer (backend)**: `backend/admin/index.js` (538 líneas, Node.js + AWS SDK v3) con router interno, login HMAC, CRUD productos (soft-delete), leads, quotes, dashboard.
+- **Developer (frontend)**: SPA en `backoffice/` (6 archivos, 1789 líneas vanilla JS) — dashboard, CRUD productos, leads, cotizaciones.
+- **Protección**: Cookie de sesión en CloudFront Function (viewer-request) + Bearer token HMAC en Lambda.
+
+### ✅ Done (v1 + backoffice)
 
 #### Frontend
 - Landing page (`/frontend/index.html`) — dark theme, glassmorphism, Inter font
 - Backoffice SPA (`/backoffice/`) — vanilla JS, hash router, CRUD admin
 - CloudFront Function for SPA routing (`/admin/*` → `/admin/index.html`)
+- CloudFront Function for admin auth (cookie `session` validation)
 - Security headers (CSP, HSTS, XSS, frame-options, etc.)
 
 #### Backend
@@ -103,7 +110,7 @@ Usuario ──► CloudFront ──┬──► S3 (static: frontend + backoffic
 
 | Fase | Estado | Qué incluye |
 |------|--------|-------------|
-| v1 | ✅ Code complete, mejoras aplicadas, ⬜ sin deploy exitoso | S3 + CloudFront + WAF + API + DynamoDB + CI/CD + Secrets SSM + Dashboards |
+| v1 | ✅ Code complete + backoffice, ⬜ sin deploy exitoso | S3 + CloudFront + WAF + API + DynamoDB + CI/CD + Secrets SSM + Dashboards + Backoffice SPA + Admin Lambda |
 | v2 | ⬜ | Dominio personalizado + ACM + SES notificaciones + CloudFront functions mejoradas |
 | v3 | ⬜ | Lambdas separadas por dominio + SQS + analytics + API keys |
 | v4 | ⬜ | Autenticación avanzada (Cognito) + panel admin mejorado + webhooks |
@@ -111,7 +118,7 @@ Usuario ──► CloudFront ──┬──► S3 (static: frontend + backoffic
 ## Strategic Decisions
 
 1. **Secrets**: SSM Parameter Store (SecureString) con caché en Lambda. Rotación via `deploy.py secrets rotate`.
-2. **Auth**: CloudFront Function solo SPA routing. Auth real via Bearer token HMAC en Lambda.
+2. **Auth**: CloudFront Function valida cookie de sesión para `/admin/*` (redirige a login si no hay). Auth real via Bearer token HMAC en Lambda.
 3. **Sin framework**: Backoffice en vanilla JS para zero dependencies.
 4. **Lambda única**: Todos los endpoints en una sola función. Separar si hay crecimiento.
 5. **Soft-delete**: Productos usan status="deleted"
