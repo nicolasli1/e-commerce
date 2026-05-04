@@ -337,9 +337,14 @@ class FrontendStack(Stack):
                         "GET", "HEAD", "OPTIONS", "PUT", "POST", "PATCH", "DELETE"
                     ],
                     cached_methods=["GET", "HEAD"],
-                    cache_policy_id="4135ea2d-6df8-44a3-9df3-4b5a84be39ad",  # CachingDisabled
-                    origin_request_policy_id="b689b0a8-53d0-40ab-baf2-68738e2966ac",  # AllViewerExceptHostHeader
                     response_headers_policy_id=security_headers.ref,
+                    forwarded_values=cloudfront.CfnDistribution.ForwardedValuesProperty(
+                        query_string=True,
+                        headers=["Authorization"],
+                        cookies=cloudfront.CfnDistribution.CookiesProperty(
+                            forward="all"
+                        ),
+                    ),
                 )
             )
 
