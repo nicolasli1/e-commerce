@@ -26,7 +26,11 @@ const Api = (() => {
    * @returns {Promise<object>} parsed JSON response
    */
   async function request(method, path, body) {
-    const url = BASE_URL + path;
+    // Add cache-buster to GET requests to avoid CloudFront cache
+    const cacheBuster = method === 'GET' 
+      ? (path.includes('?') ? '&' : '?') + '_t=' + Date.now()
+      : '';
+    const url = BASE_URL + path + cacheBuster;
     const headers = {
       'Content-Type': 'application/json',
       'x-api-key': CONFIG.API_KEY,
