@@ -12,6 +12,8 @@ from aws_cdk import (
 )
 from constructs import Construct
 
+import pathlib
+
 
 class FrontendStack(Stack):
     """
@@ -33,6 +35,11 @@ class FrontendStack(Stack):
         **kwargs,
     ) -> None:
         super().__init__(scope, id, **kwargs)
+
+        # ------------------------------------------------------------------
+        # 0. CloudFront function path (relative to this file)
+        # ------------------------------------------------------------------
+        cf_function_path = pathlib.Path(__file__).parent.parent / "cloudfront-functions" / "admin-auth.js"
 
         # ------------------------------------------------------------------
         # 1. S3 bucket – private, encrypted, versioned
@@ -108,7 +115,53 @@ class FrontendStack(Stack):
         )
 
         # ------------------------------------------------------------------
-        # 4. WAF WebACL – managed rules + rate limiting
+        # 4. CloudFront Function — admin session auth
+        # ------------------------------------------------------------------
+        admin_auth_func = cloudfront.CfnFunction(
+            self,
+            "AdminAuthFunction",
+            name=f"{project_name}-{environment}-admin-auth",
+            auto_publish=True,
+            function_code=cf_function_path.read_text() if cf_function_path.exists() else (
+                """// Admin auth CloudFront function\n"
+                'var COOKIE_NAME = "session";\n'"""
+                'var PUBLIC_ADMIN_PATHS = ["/admin/login", "/admin/assets/"];\n'"""\n"
+                "function handler(event) {\n"
+                "    var request = event.request;\n"
+                "    var uri = request.uri;\n"
+                "    var cookies = request.cookies;\n"
+                "    for (var i = 0; i < PUBLIC_ADMIN_PATHS.length; i++) {\n"
+                "        if (uri.startsWith(PUBLIC_ADMIN_PATHS[i])) {\n"
+                "            return request;\n"
+                "        }\n"
+                "    }\n"
+                "    var hasSession = false;\n"
+                "    if (cookies && cookies[COOKIE_NAME]) {\n"
+                "        var val = cookies[COOKIE_NAME].value;\n"
+                "        if (val && val.length > 0) {\n"
+                "            hasSession = true;\n"
+                "        }\n"
+                "    }\n"
+                "    if (!hasSession) {\n"
+                "        return {\n"
+                "            statusCode: 302,\n"
+                "            statusDescription: 'Found',\n"
+                "            headers: {\n"
+                "                location: { value: '/admin/login' }\n"
+                "            }\n"
+                "        };\n"
+                "    }\n"
+                "    return request;\n"
+                "}"
+            ),
+            function_config=cloudfront.CfnFunction.FunctionConfigProperty(
+                comment="Validates admin session cookie for /admin/ routes",
+                runtime="cloudfront-js-2.0",
+            ),
+        )
+
+        # ------------------------------------------------------------------
+        # 5. WAF WebACL – managed rules + rate limiting
         # ------------------------------------------------------------------
         waf_acl = wafv2.CfnWebACL(
             self,
@@ -257,6 +310,31 @@ class FrontendStack(Stack):
                 )
             )
 
+            # Admin/backoffice route — S3 origin with CloudFront Function auth
+            cache_behaviors.append(
+                cloudfront.CfnDistribution.CacheBehaviorProperty(
+                    path_pattern="admin/*",
+                    target_origin_id="S3Origin",
+                    viewer_protocol_policy="redirect-to-https",
+                    compress=True,
+                    allowed_methods=["GET", "HEAD", "OPTIONS"],
+                    cached_methods=["GET", "HEAD"],
+                    response_headers_policy_id=security_headers.ref,
+                    function_associations=[
+                        cloudfront.CfnDistribution.FunctionAssociationProperty(
+                            event_type="viewer-request",
+                            function_arn=admin_auth_func.attr_function_arn,
+                        )
+                    ],
+                    forwarded_values=cloudfront.CfnDistribution.ForwardedValuesProperty(
+                        query_string=True,
+                        cookies=cloudfront.CfnDistribution.CookiesProperty(
+                            forward="all"
+                        ),
+                    ),
+                )
+            )
+
         distribution = cloudfront.CfnDistribution(
             self,
             "WebsiteDistribution",
@@ -324,4 +402,9 @@ class FrontendStack(Stack):
             self,
             "WebsiteUrl",
             value=f"https://{distribution.attr_domain_name}",
+        )
+        CfnOutput(
+            self,
+            "AdminAuthFunctionArn",
+            value=admin_auth_func.attr_function_arn,
         )
