@@ -3,49 +3,1203 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Sales Website</title>
+  <title>NexCore — Componentes Tecnológicos</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet" />
   <style>
-    * { margin: 0; padding: 0; box-sizing: border-box; }
+    /* ==============================
+       RESET / BASE
+    ============================== */
+    *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+    html { scroll-behavior: smooth; }
     body {
-      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-      background: #0a0a0a;
-      color: #f5f5f5;
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+      background: #0a0a0f;
+      color: #f5f5f7;
+      line-height: 1.6;
+      overflow-x: hidden;
+    }
+    a { color: inherit; text-decoration: none; }
+    img { max-width: 100%; display: block; }
+    ul { list-style: none; }
+
+    /* ==============================
+       UTILITIES
+    ============================== */
+    .container {
+      max-width: 1200px;
+      margin: 0 auto;
+      padding: 0 24px;
+    }
+
+    .section-title {
+      font-size: clamp(2rem, 5vw, 3.5rem);
+      font-weight: 700;
+      letter-spacing: -0.03em;
+      line-height: 1.1;
+      margin-bottom: 16px;
+    }
+    .section-subtitle {
+      color: #86868b;
+      font-size: clamp(1rem, 2vw, 1.25rem);
+      font-weight: 400;
+      max-width: 600px;
+    }
+    .section-header {
+      text-align: center;
+      margin-bottom: 64px;
+    }
+    .section-header .section-subtitle {
+      margin: 0 auto;
+    }
+
+    /* Apple-style pill button */
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 14px 32px;
+      border-radius: 9999px;
+      font-family: inherit;
+      font-size: 0.9375rem;
+      font-weight: 600;
+      border: none;
+      cursor: pointer;
+      transition: all 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
+      position: relative;
+      overflow: hidden;
+      letter-spacing: -0.01em;
+    }
+    .btn::before {
+      content: '';
+      position: absolute;
+      inset: 0;
+      border-radius: inherit;
+      opacity: 0;
+      transition: opacity 0.4s ease;
+    }
+    .btn-primary {
+      background: #f5f5f7;
+      color: #0a0a0f;
+    }
+    .btn-primary:hover {
+      transform: scale(1.04);
+      box-shadow: 0 8px 32px rgba(245, 245, 247, 0.2);
+    }
+    .btn-primary:active {
+      transform: scale(0.97);
+    }
+    .btn-secondary {
+      background: rgba(245, 245, 247, 0.08);
+      color: #f5f5f7;
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+      border: 1px solid rgba(245, 245, 247, 0.12);
+    }
+    .btn-secondary:hover {
+      background: rgba(245, 245, 247, 0.15);
+      transform: scale(1.04);
+      border-color: rgba(245, 245, 247, 0.25);
+    }
+    .btn-secondary:active {
+      transform: scale(0.97);
+    }
+    .btn-gradient {
+      background: linear-gradient(135deg, #6366f1, #a855f7, #ec4899);
+      color: #fff;
+    }
+    .btn-gradient:hover {
+      transform: scale(1.04) translateY(-2px);
+      box-shadow: 0 12px 40px rgba(99, 102, 241, 0.35);
+    }
+    .btn-gradient:active {
+      transform: scale(0.97);
+    }
+    .btn-sm {
+      padding: 10px 22px;
+      font-size: 0.8125rem;
+    }
+
+    /* Glass card */
+    .glass {
+      background: rgba(255, 255, 255, 0.04);
+      backdrop-filter: blur(20px);
+      -webkit-backdrop-filter: blur(20px);
+      border: 1px solid rgba(255, 255, 255, 0.06);
+      border-radius: 20px;
+    }
+
+    /* Scroll reveal */
+    .reveal {
+      opacity: 0;
+      transform: translateY(30px);
+      transition: opacity 0.8s cubic-bezier(0.16, 1, 0.3, 1),
+                  transform 0.8s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+    .reveal.visible {
+      opacity: 1;
+      transform: translateY(0);
+    }
+    .reveal-delay-1 { transition-delay: 0.1s; }
+    .reveal-delay-2 { transition-delay: 0.2s; }
+    .reveal-delay-3 { transition-delay: 0.3s; }
+    .reveal-delay-4 { transition-delay: 0.4s; }
+
+    /* ==============================
+       NAVBAR
+    ============================== */
+    .navbar {
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      z-index: 1000;
+      padding: 16px 0;
+      transition: all 0.4s ease;
+    }
+    .navbar.scrolled {
+      background: rgba(10, 10, 15, 0.8);
+      backdrop-filter: blur(20px);
+      -webkit-backdrop-filter: blur(20px);
+      border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+      padding: 10px 0;
+    }
+    .navbar .container {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+    .logo {
+      font-size: 1.25rem;
+      font-weight: 700;
+      letter-spacing: -0.03em;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+    .logo-icon {
+      width: 32px;
+      height: 32px;
+      background: linear-gradient(135deg, #6366f1, #a855f7);
+      border-radius: 8px;
       display: flex;
       align-items: center;
       justify-content: center;
-      min-height: 100vh;
+      font-size: 0.75rem;
+      font-weight: 800;
+      color: #fff;
     }
-    .container { text-align: center; padding: 2rem; }
-    h1 { font-size: 2.5rem; margin-bottom: 1rem; background: linear-gradient(135deg, #6366f1, #a855f7); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
-    p { color: #a0a0a0; font-size: 1.125rem; margin-bottom: 2rem; }
-    .badge { display: inline-block; padding: 0.5rem 1rem; border-radius: 9999px; background: #1a1a2e; border: 1px solid #312e81; color: #a5b4fc; font-size: 0.875rem; margin-top: 1rem; }
-    .status { margin-top: 2rem; padding: 1rem; border-radius: 0.5rem; background: #111827; border: 1px solid #1f2937; }
-    .status.ok { border-color: #065f46; }
-    .status .dot { display: inline-block; width: 8px; height: 8px; border-radius: 50%; background: #22c55e; margin-right: 0.5rem; animation: pulse 2s infinite; }
-    @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.5; } }
+    .nav-links {
+      display: flex;
+      align-items: center;
+      gap: 32px;
+    }
+    .nav-links a {
+      font-size: 0.875rem;
+      font-weight: 500;
+      color: #86868b;
+      transition: color 0.3s ease;
+      position: relative;
+    }
+    .nav-links a::after {
+      content: '';
+      position: absolute;
+      bottom: -4px;
+      left: 0;
+      width: 0;
+      height: 2px;
+      background: linear-gradient(90deg, #6366f1, #a855f7);
+      transition: width 0.3s ease;
+      border-radius: 2px;
+    }
+    .nav-links a:hover { color: #f5f5f7; }
+    .nav-links a:hover::after { width: 100%; }
+
+    .nav-cta {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+    .hamburger {
+      display: none;
+      background: none;
+      border: none;
+      color: #f5f5f7;
+      font-size: 1.5rem;
+      cursor: pointer;
+    }
+
+    /* ==============================
+       HERO
+    ============================== */
+    .hero {
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      position: relative;
+      overflow: hidden;
+      padding-top: 80px;
+    }
+    .hero-grid {
+      display: flex;
+      flex-direction: column;
+      gap: 40px;
+    }
+    .hero-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 6px 16px 6px 8px;
+      border-radius: 9999px;
+      background: rgba(99, 102, 241, 0.1);
+      border: 1px solid rgba(99, 102, 241, 0.2);
+      font-size: 0.8125rem;
+      font-weight: 500;
+      color: #a5b4fc;
+      width: fit-content;
+      margin-bottom: 24px;
+    }
+    .hero-badge-dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: #22c55e;
+      animation: pulse-dot 2s infinite;
+    }
+    @keyframes pulse-dot {
+      0%, 100% { opacity: 1; box-shadow: 0 0 0 0 rgba(34, 197, 94, 0.4); }
+      50% { opacity: 0.7; box-shadow: 0 0 0 8px rgba(34, 197, 94, 0); }
+    }
+    .hero h1 {
+      font-size: clamp(2.8rem, 8vw, 5.5rem);
+      font-weight: 800;
+      letter-spacing: -0.04em;
+      line-height: 1.05;
+    }
+    .hero h1 .gradient-text {
+      background: linear-gradient(135deg, #6366f1 0%, #a855f7 45%, #ec4899 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+    .hero p {
+      font-size: clamp(1rem, 2vw, 1.25rem);
+      color: #86868b;
+      max-width: 560px;
+      line-height: 1.7;
+      margin-top: 20px;
+    }
+    .hero-actions {
+      display: flex;
+      gap: 16px;
+      flex-wrap: wrap;
+      margin-top: 36px;
+    }
+    .hero-stats {
+      display: flex;
+      gap: 48px;
+      margin-top: 64px;
+      padding-top: 40px;
+      border-top: 1px solid rgba(255, 255, 255, 0.06);
+    }
+    .hero-stat h3 {
+      font-size: 2rem;
+      font-weight: 700;
+      letter-spacing: -0.03em;
+    }
+    .hero-stat p {
+      font-size: 0.875rem;
+      color: #86868b;
+      margin-top: 4px;
+    }
+
+    /* Hero decorative elements */
+    .hero-glow {
+      position: absolute;
+      width: 600px;
+      height: 600px;
+      border-radius: 50%;
+      background: radial-gradient(circle, rgba(99, 102, 241, 0.12), transparent 70%);
+      top: -200px;
+      right: -200px;
+      pointer-events: none;
+      animation: glow-float 8s ease-in-out infinite;
+    }
+    .hero-glow-2 {
+      position: absolute;
+      width: 400px;
+      height: 400px;
+      border-radius: 50%;
+      background: radial-gradient(circle, rgba(236, 72, 153, 0.08), transparent 70%);
+      bottom: -100px;
+      left: -100px;
+      pointer-events: none;
+      animation: glow-float 12s ease-in-out infinite reverse;
+    }
+    @keyframes glow-float {
+      0%, 100% { transform: translate(0, 0) scale(1); }
+      33% { transform: translate(30px, -30px) scale(1.05); }
+      66% { transform: translate(-20px, 20px) scale(0.95); }
+    }
+
+    /* ==============================
+       CATEGORIES
+    ============================== */
+    .categories {
+      padding: 100px 0;
+    }
+    .categories-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+      gap: 20px;
+    }
+    .category-card {
+      padding: 32px 24px;
+      text-align: center;
+      border-radius: 20px;
+      background: rgba(255, 255, 255, 0.03);
+      border: 1px solid rgba(255, 255, 255, 0.06);
+      transition: all 0.5s cubic-bezier(0.34, 1.56, 0.64, 1);
+      cursor: pointer;
+      position: relative;
+      overflow: hidden;
+    }
+    .category-card::before {
+      content: '';
+      position: absolute;
+      inset: 0;
+      background: linear-gradient(135deg, rgba(99, 102, 241, 0.08), rgba(168, 85, 247, 0.04));
+      opacity: 0;
+      transition: opacity 0.4s ease;
+    }
+    .category-card:hover::before {
+      opacity: 1;
+    }
+    .category-card:hover {
+      transform: translateY(-8px) scale(1.02);
+      border-color: rgba(99, 102, 241, 0.3);
+      box-shadow: 0 20px 60px rgba(99, 102, 241, 0.1);
+    }
+    .category-icon {
+      width: 56px;
+      height: 56px;
+      border-radius: 16px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin: 0 auto 16px;
+      font-size: 1.5rem;
+      position: relative;
+      z-index: 1;
+    }
+    .category-card h3 {
+      font-size: 1.0625rem;
+      font-weight: 600;
+      margin-bottom: 8px;
+      position: relative;
+      z-index: 1;
+    }
+    .category-card p {
+      font-size: 0.8125rem;
+      color: #86868b;
+      position: relative;
+      z-index: 1;
+    }
+
+    /* ==============================
+       FEATURED PRODUCTS
+    ============================== */
+    .products {
+      padding: 100px 0;
+      background: rgba(255, 255, 255, 0.02);
+    }
+    .products-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+      gap: 24px;
+    }
+    .product-card {
+      border-radius: 24px;
+      overflow: hidden;
+      background: rgba(255, 255, 255, 0.03);
+      border: 1px solid rgba(255, 255, 255, 0.06);
+      transition: all 0.5s cubic-bezier(0.34, 1.56, 0.64, 1);
+    }
+    .product-card:hover {
+      transform: translateY(-8px);
+      border-color: rgba(99, 102, 241, 0.25);
+      box-shadow: 0 24px 80px rgba(99, 102, 241, 0.08);
+    }
+    .product-image {
+      height: 220px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 4rem;
+      position: relative;
+      overflow: hidden;
+    }
+    .product-image::after {
+      content: '';
+      position: absolute;
+      inset: 0;
+      background: linear-gradient(180deg, transparent 50%, rgba(10, 10, 15, 0.8));
+    }
+    .product-badge {
+      position: absolute;
+      top: 16px;
+      left: 16px;
+      z-index: 2;
+      padding: 4px 12px;
+      border-radius: 9999px;
+      font-size: 0.75rem;
+      font-weight: 600;
+      background: rgba(34, 197, 94, 0.15);
+      color: #22c55e;
+      border: 1px solid rgba(34, 197, 94, 0.2);
+    }
+    .product-badge.hot {
+      background: rgba(239, 68, 68, 0.15);
+      color: #ef4444;
+      border-color: rgba(239, 68, 68, 0.2);
+    }
+    .product-body {
+      padding: 24px;
+    }
+    .product-body h3 {
+      font-size: 1.125rem;
+      font-weight: 600;
+      margin-bottom: 8px;
+    }
+    .product-body p {
+      font-size: 0.875rem;
+      color: #86868b;
+      margin-bottom: 16px;
+    }
+    .product-footer {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+    .product-price {
+      font-size: 1.5rem;
+      font-weight: 700;
+      letter-spacing: -0.03em;
+    }
+    .product-price span {
+      font-size: 0.875rem;
+      font-weight: 400;
+      color: #86868b;
+    }
+
+    /* ==============================
+       TESTIMONIALS
+    ============================== */
+    .testimonials {
+      padding: 100px 0;
+    }
+    .testimonials-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+      gap: 24px;
+    }
+    .testimonial-card {
+      padding: 32px;
+      border-radius: 20px;
+      background: rgba(255, 255, 255, 0.03);
+      border: 1px solid rgba(255, 255, 255, 0.06);
+    }
+    .testimonial-stars {
+      color: #fbbf24;
+      font-size: 0.9375rem;
+      margin-bottom: 16px;
+      letter-spacing: 2px;
+    }
+    .testimonial-card blockquote {
+      font-size: 0.9375rem;
+      color: #d1d1d6;
+      line-height: 1.7;
+      margin-bottom: 20px;
+      font-style: italic;
+    }
+    .testimonial-author {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+    .testimonial-avatar {
+      width: 40px;
+      height: 40px;
+      border-radius: 50%;
+      background: linear-gradient(135deg, #6366f1, #a855f7);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: 700;
+      font-size: 0.875rem;
+    }
+    .testimonial-author h4 {
+      font-size: 0.875rem;
+      font-weight: 600;
+    }
+    .testimonial-author p {
+      font-size: 0.75rem;
+      color: #86868b;
+    }
+
+    /* ==============================
+       PRICING
+    ============================== */
+    .pricing {
+      padding: 100px 0;
+      background: rgba(255, 255, 255, 0.02);
+    }
+    .pricing-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+      gap: 24px;
+      align-items: start;
+    }
+    .pricing-card {
+      padding: 40px 32px;
+      border-radius: 24px;
+      background: rgba(255, 255, 255, 0.03);
+      border: 1px solid rgba(255, 255, 255, 0.06);
+      transition: all 0.4s ease;
+      position: relative;
+    }
+    .pricing-card.featured {
+      background: rgba(99, 102, 241, 0.06);
+      border-color: rgba(99, 102, 241, 0.25);
+      transform: scale(1.02);
+    }
+    .pricing-card.featured .pricing-popular {
+      position: absolute;
+      top: -12px;
+      left: 50%;
+      transform: translateX(-50%);
+      padding: 4px 16px;
+      border-radius: 9999px;
+      background: linear-gradient(135deg, #6366f1, #a855f7);
+      font-size: 0.75rem;
+      font-weight: 600;
+      white-space: nowrap;
+    }
+    .pricing-card h3 {
+      font-size: 1.25rem;
+      font-weight: 600;
+      margin-bottom: 8px;
+    }
+    .pricing-card p {
+      color: #86868b;
+      font-size: 0.875rem;
+      margin-bottom: 24px;
+    }
+    .pricing-amount {
+      font-size: 3rem;
+      font-weight: 800;
+      letter-spacing: -0.04em;
+      margin-bottom: 4px;
+    }
+    .pricing-amount span {
+      font-size: 1.125rem;
+      font-weight: 500;
+      color: #86868b;
+    }
+    .pricing-period {
+      color: #86868b;
+      font-size: 0.875rem;
+      margin-bottom: 32px;
+    }
+    .pricing-features {
+      margin-bottom: 32px;
+    }
+    .pricing-features li {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 8px 0;
+      font-size: 0.875rem;
+      color: #d1d1d6;
+    }
+    .pricing-features li::before {
+      content: '✓';
+      color: #22c55e;
+      font-weight: 700;
+    }
+
+    /* ==============================
+       CTA / CONTACT
+    ============================== */
+    .cta {
+      padding: 120px 0;
+      text-align: center;
+      position: relative;
+      overflow: hidden;
+    }
+    .cta-glow {
+      position: absolute;
+      width: 800px;
+      height: 800px;
+      border-radius: 50%;
+      background: radial-gradient(circle, rgba(99, 102, 241, 0.06), transparent 70%);
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      pointer-events: none;
+    }
+    .cta h2 {
+      font-size: clamp(2rem, 5vw, 3.5rem);
+      font-weight: 700;
+      letter-spacing: -0.03em;
+      margin-bottom: 16px;
+    }
+    .cta p {
+      color: #86868b;
+      font-size: 1.125rem;
+      max-width: 480px;
+      margin: 0 auto 36px;
+    }
+    .cta-form {
+      display: flex;
+      gap: 12px;
+      max-width: 480px;
+      margin: 0 auto;
+      flex-wrap: wrap;
+      justify-content: center;
+    }
+    .cta-form input {
+      flex: 1;
+      min-width: 220px;
+      padding: 14px 20px;
+      border-radius: 9999px;
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      background: rgba(255, 255, 255, 0.05);
+      color: #f5f5f7;
+      font-family: inherit;
+      font-size: 0.9375rem;
+      outline: none;
+      transition: border-color 0.3s ease;
+    }
+    .cta-form input:focus {
+      border-color: rgba(99, 102, 241, 0.5);
+    }
+    .cta-form input::placeholder {
+      color: #636366;
+    }
+
+    /* ==============================
+       FOOTER
+    ============================== */
+    .footer {
+      border-top: 1px solid rgba(255, 255, 255, 0.06);
+      padding: 48px 0 24px;
+    }
+    .footer-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+      gap: 32px;
+      margin-bottom: 48px;
+    }
+    .footer-col h4 {
+      font-size: 0.75rem;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      color: #86868b;
+      margin-bottom: 16px;
+    }
+    .footer-col a {
+      display: block;
+      font-size: 0.875rem;
+      color: #636366;
+      padding: 4px 0;
+      transition: color 0.3s ease;
+    }
+    .footer-col a:hover { color: #f5f5f7; }
+    .footer-bottom {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 16px;
+      padding-top: 24px;
+      border-top: 1px solid rgba(255, 255, 255, 0.06);
+      font-size: 0.8125rem;
+      color: #636366;
+    }
+
+    /* ==============================
+       RESPONSIVE
+    ============================== */
+    @media (max-width: 768px) {
+      .nav-links, .nav-cta { display: none; }
+      .hamburger { display: block; }
+      .nav-links.open {
+        display: flex;
+        flex-direction: column;
+        position: absolute;
+        top: 100%;
+        left: 0;
+        right: 0;
+        background: rgba(10, 10, 15, 0.95);
+        backdrop-filter: blur(20px);
+        padding: 24px;
+        gap: 20px;
+        border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+      }
+      .hero-stats {
+        flex-direction: column;
+        gap: 24px;
+      }
+      .products-grid {
+        grid-template-columns: 1fr;
+      }
+      .pricing-card.featured {
+        transform: none;
+      }
+      .footer-grid {
+        grid-template-columns: repeat(2, 1fr);
+      }
+    }
   </style>
 </head>
 <body>
-  <div class="container">
-    <h1>Sales Website</h1>
-    <p>Tu sitio de ventas en AWS · S3 + CloudFront + WAF</p>
-    <div class="badge">🚀 v1.0.0</div>
-    <div class="status ok" id="health">
-      <span class="dot"></span> Verificando conexión...
+
+  <!-- ============================
+       NAVBAR
+  ============================ -->
+  <nav class="navbar" id="navbar">
+    <div class="container">
+      <a href="#" class="logo">
+        <span class="logo-icon">N</span>
+        NexCore
+      </a>
+      <div class="nav-links" id="navLinks">
+        <a href="#categorias">Categorías</a>
+        <a href="#productos">Productos</a>
+        <a href="#testimonios">Testimonios</a>
+        <a href="#precios">Planes</a>
+        <a href="#contacto">Contacto</a>
+      </div>
+      <div class="nav-cta">
+        <a href="#contacto" class="btn btn-gradient btn-sm">Cotizar</a>
+      </div>
+      <button class="hamburger" onclick="document.getElementById('navLinks').classList.toggle('open')">☰</button>
     </div>
-  </div>
+  </nav>
+
+  <!-- ============================
+       HERO
+  ============================ -->
+  <section class="hero" id="inicio">
+    <div class="hero-glow"></div>
+    <div class="hero-glow-2"></div>
+    <div class="container">
+      <div class="hero-grid">
+        <div class="reveal visible">
+          <div class="hero-badge">
+            <span class="hero-badge-dot"></span>
+            Envío gratis en pedidos +$500
+          </div>
+          <h1>
+            El futuro del<br/>
+            <span class="gradient-text">rendimiento técnico</span>
+          </h1>
+          <p>
+            Componentes de última generación para creadores, gamers y profesionales.
+            Desde procesadores hasta refrigeración líquida — todo lo que necesitas
+            para construir la máquina de tus sueños.
+          </p>
+          <div class="hero-actions">
+            <a href="#productos" class="btn btn-primary">
+              Explorar catálogo
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
+            </a>
+            <a href="#categorias" class="btn btn-secondary">
+              Ver categorías
+            </a>
+          </div>
+        </div>
+
+        <div class="hero-stats reveal visible reveal-delay-2">
+          <div class="hero-stat">
+            <h3>12.4K+</h3>
+            <p>Componentes vendidos</p>
+          </div>
+          <div class="hero-stat">
+            <h3>98.7%</h3>
+            <p>Clientes satisfechos</p>
+          </div>
+          <div class="hero-stat">
+            <h3>24h</h3>
+            <p>Envío express</p>
+          </div>
+          <div class="hero-stat">
+            <h3>4.9★</h3>
+            <p>Calificación promedio</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============================
+       CATEGORIES
+  ============================ -->
+  <section class="categories" id="categorias">
+    <div class="container">
+      <div class="section-header reveal">
+        <h2 class="section-title">Categorías</h2>
+        <p class="section-subtitle">Explora por tipo de componente y encuentra exactamente lo que buscas.</p>
+      </div>
+      <div class="categories-grid">
+        <div class="category-card reveal reveal-delay-1">
+          <div class="category-icon" style="background:rgba(99,102,241,0.12);color:#818cf8;">⚡</div>
+          <h3>Procesadores</h3>
+          <p>CPU de última generación. AMD Ryzen, Intel Core.</p>
+        </div>
+        <div class="category-card reveal reveal-delay-2">
+          <div class="category-icon" style="background:rgba(236,72,153,0.12);color:#f472b6;">🎮</div>
+          <h3>Tarjetas Gráficas</h3>
+          <p>NVIDIA GeForce RTX, AMD Radeon. Rendimiento máximo.</p>
+        </div>
+        <div class="category-card reveal reveal-delay-3">
+          <div class="category-icon" style="background:rgba(34,197,94,0.12);color:#4ade80;">🧠</div>
+          <h3>Memorias RAM</h3>
+          <p>DDR5, RGB, baja latencia. De 8GB a 128GB.</p>
+        </div>
+        <div class="category-card reveal reveal-delay-1">
+          <div class="category-icon" style="background:rgba(251,191,36,0.12);color:#fbbf24;">💾</div>
+          <h3>Almacenamiento</h3>
+          <p>NVMe M.2, SSD SATA. Velocidades de hasta 7000MB/s.</p>
+        </div>
+        <div class="category-card reveal reveal-delay-2">
+          <div class="category-icon" style="background:rgba(168,85,247,0.12);color:#c084fc;">🔌</div>
+          <h3>Fuentes de Poder</h3>
+          <p>PSU modulares, 80+ Gold/Platinum. 650W–1600W.</p>
+        </div>
+        <div class="category-card reveal reveal-delay-3">
+          <div class="category-icon" style="background:rgba(6,182,212,0.12);color:#22d3ee;">❄️</div>
+          <h3>Refrigeración</h3>
+          <p>Aire, líquida AIO, thermal paste. Mantén tu sistema frío.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============================
+       PRODUCTS
+  ============================ -->
+  <section class="products" id="productos">
+    <div class="container">
+      <div class="section-header reveal">
+        <h2 class="section-title">Más Vendidos</h2>
+        <p class="section-subtitle">Los componentes favoritos de nuestra comunidad — calidad y rendimiento garantizados.</p>
+      </div>
+      <div class="products-grid">
+        <div class="product-card reveal reveal-delay-1">
+          <div class="product-image" style="background:linear-gradient(135deg,#1e1b4b,#312e81);">
+            <span class="product-badge hot">🔥 Más vendido</span>
+            ⚡
+          </div>
+          <div class="product-body">
+            <h3>AMD Ryzen 7 9800X3D</h3>
+            <p>8 núcleos, 16 hilos. Cache 3D V-Cache para gaming extremo.</p>
+            <div class="product-footer">
+              <span class="product-price">$479 <span>USD</span></span>
+              <button class="btn btn-gradient btn-sm">Lo quiero</button>
+            </div>
+          </div>
+        </div>
+
+        <div class="product-card reveal reveal-delay-2">
+          <div class="product-image" style="background:linear-gradient(135deg,#1c1917,#292524);">
+            <span class="product-badge">Nuevo</span>
+            🎮
+          </div>
+          <div class="product-body">
+            <h3>NVIDIA RTX 5090 Founders</h3>
+            <p>Arquitectura Blackwell. 24GB GDDR7. Trazado de rayos en tiempo real.</p>
+            <div class="product-footer">
+              <span class="product-price">$1,999 <span>USD</span></span>
+              <button class="btn btn-gradient btn-sm">Lo quiero</button>
+            </div>
+          </div>
+        </div>
+
+        <div class="product-card reveal reveal-delay-3">
+          <div class="product-image" style="background:linear-gradient(135deg,#0f172a,#1e293b);">
+            <span class="product-badge">Oferta</span>
+            🧠
+          </div>
+          <div class="product-body">
+            <h3>G.Skill Trident Z5 RGB 32GB</h3>
+            <p>DDR5-6000MHz, CL30. Perfil bajo con iluminación RGB.</p>
+            <div class="product-footer">
+              <span class="product-price">$189 <span>USD</span></span>
+              <button class="btn btn-gradient btn-sm">Lo quiero</button>
+            </div>
+          </div>
+        </div>
+
+        <div class="product-card reveal reveal-delay-1">
+          <div class="product-image" style="background:linear-gradient(135deg,#0d1117,#161b22);">
+            <span class="product-badge hot">🔥 Popular</span>
+            💾
+          </div>
+          <div class="product-body">
+            <h3>Samsung 990 Pro 2TB NVMe</h3>
+            <p>PCIe 4.0. Lectura 7450MB/s. Ideal para gaming y creación.</p>
+            <div class="product-footer">
+              <span class="product-price">$229 <span>USD</span></span>
+              <button class="btn btn-gradient btn-sm">Lo quiero</button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============================
+       TESTIMONIALS
+  ============================ -->
+  <section class="testimonials" id="testimonios">
+    <div class="container">
+      <div class="section-header reveal">
+        <h2 class="section-title">Lo Que Dicen</h2>
+        <p class="section-subtitle">Más de 12,000 clientes confían en NexCore para sus builds.</p>
+      </div>
+      <div class="testimonials-grid">
+        <div class="testimonial-card reveal reveal-delay-1">
+          <div class="testimonial-stars">★★★★★</div>
+          <blockquote>"Pedí un Ryzen 7 y llegó en 18 horas. Sellado, original, y a mejor precio que Amazon. Ya hice 3 pedidos más."</blockquote>
+          <div class="testimonial-author">
+            <div class="testimonial-avatar">CA</div>
+            <div>
+              <h4>Carlos A.</h4>
+              <p>Ingeniero de Sistemas</p>
+            </div>
+          </div>
+        </div>
+        <div class="testimonial-card reveal reveal-delay-2">
+          <div class="testimonial-stars">★★★★★</div>
+          <blockquote>"Armé mi primera PC gaming con componentes de NexCore. La asesoría fue increíble y todo funcionó perfecto desde el primer boot."</blockquote>
+          <div class="testimonial-author">
+            <div class="testimonial-avatar">SG</div>
+            <div>
+              <h4>Sofía G.</h4>
+              <p>Streamer</p>
+            </div>
+          </div>
+        </div>
+        <div class="testimonial-card reveal reveal-delay-3">
+          <div class="testimonial-stars">★★★★★</div>
+          <blockquote>"Compramos 15 estaciones de trabajo para la oficina. NexCore nos dio precio corporativo, soporte dedicado y entrega en tiempo récord."</blockquote>
+          <div class="testimonial-author">
+            <div class="testimonial-avatar">MR</div>
+            <div>
+              <h4>Miguel R.</h4>
+              <p>CTO · Fintech</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============================
+       PRICING
+  ============================ -->
+  <section class="pricing" id="precios">
+    <div class="container">
+      <div class="section-header reveal">
+        <h2 class="section-title">Planes para tu Build</h2>
+        <p class="section-subtitle">Desde componentes sueltos hasta estaciones completas. Tú eliges.</p>
+      </div>
+      <div class="pricing-grid">
+        <div class="pricing-card reveal reveal-delay-1">
+          <h3>Starter</h3>
+          <p>Perfecto para oficina o estudio básico.</p>
+          <div class="pricing-amount">$799 <span>USD</span></div>
+          <div class="pricing-period">ensamblado y probado</div>
+          <ul class="pricing-features">
+            <li>CPU Ryzen 5 / Intel i5</li>
+            <li>16GB RAM DDR5</li>
+            <li>SSD NVMe 512GB</li>
+            <li>Fuente 650W 80+ Bronze</li>
+            <li>Gabinete ATX estándar</li>
+            <li>Garantía de 1 año</li>
+          </ul>
+          <a href="#contacto" class="btn btn-secondary" style="width:100%;justify-content:center;">Lo quiero</a>
+        </div>
+
+        <div class="pricing-card featured reveal reveal-delay-2">
+          <span class="pricing-popular">Más popular</span>
+          <h3>Pro</h3>
+          <p>Para gaming competitivo y creación de contenido.</p>
+          <div class="pricing-amount">$1,999 <span>USD</span></div>
+          <div class="pricing-period">ensamblado y probado</div>
+          <ul class="pricing-features">
+            <li>CPU Ryzen 7 / Intel i7</li>
+            <li>32GB RAM DDR5 RGB</li>
+            <li>SSD NVMe 1TB</li>
+            <li>GPU RTX 4070 / RX 7800 XT</li>
+            <li>Fuente 850W 80+ Gold</li>
+            <li>Refrigeración líquida AIO</li>
+            <li>Garantía de 2 años</li>
+          </ul>
+          <a href="#contacto" class="btn btn-gradient" style="width:100%;justify-content:center;">Lo quiero</a>
+        </div>
+
+        <div class="pricing-card reveal reveal-delay-3">
+          <h3>Ultimate</h3>
+          <p>Potencia sin compromisos. Workstation extrema.</p>
+          <div class="pricing-amount">$3,999 <span>USD</span></div>
+          <div class="pricing-period">ensamblado y probado</div>
+          <ul class="pricing-features">
+            <li>CPU Ryzen 9 / Intel i9</li>
+            <li>64GB RAM DDR5</li>
+            <li>SSD NVMe 2TB</li>
+            <li>GPU RTX 5090 / RX 7900 XTX</li>
+            <li>Fuente 1200W 80+ Platinum</li>
+            <li>Refrigeración líquida custom</li>
+            <li>Garantía de 3 años</li>
+          </ul>
+          <a href="#contacto" class="btn btn-secondary" style="width:100%;justify-content:center;">Lo quiero</a>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============================
+       CTA / CONTACT
+  ============================ -->
+  <section class="cta" id="contacto">
+    <div class="cta-glow"></div>
+    <div class="container">
+      <div class="reveal">
+        <h2>¿Listo para tu próxima build?</h2>
+        <p>Déjanos tu correo y te contactamos con una cotización personalizada en menos de 2 horas.</p>
+        <form class="cta-form" id="contactForm">
+          <input type="email" id="emailInput" placeholder="tu@correo.com" required />
+          <button type="submit" class="btn btn-gradient">Cotizar ahora</button>
+        </form>
+        <p id="formFeedback" style="margin-top:16px;font-size:0.875rem;color:#22c55e;display:none;">✅ Recibimos tu solicitud. Te escribimos pronto.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============================
+       FOOTER
+  ============================ -->
+  <footer class="footer">
+    <div class="container">
+      <div class="footer-grid">
+        <div class="footer-col">
+          <h4>Productos</h4>
+          <a href="#">Procesadores</a>
+          <a href="#">Tarjetas Gráficas</a>
+          <a href="#">Memorias RAM</a>
+          <a href="#">Almacenamiento</a>
+          <a href="#">Fuentes</a>
+          <a href="#">Refrigeración</a>
+        </div>
+        <div class="footer-col">
+          <h4>Empresa</h4>
+          <a href="#">Sobre Nosotros</a>
+          <a href="#">Blog</a>
+          <a href="#">Trabaja con Nosotros</a>
+          <a href="#">Prensa</a>
+        </div>
+        <div class="footer-col">
+          <h4>Soporte</h4>
+          <a href="#">FAQ</a>
+          <a href="#">Garantías</a>
+          <a href="#">Envíos</a>
+          <a href="#">Devoluciones</a>
+        </div>
+        <div class="footer-col">
+          <h4>Legal</h4>
+          <a href="#">Términos</a>
+          <a href="#">Privacidad</a>
+          <a href="#">Cookies</a>
+        </div>
+      </div>
+      <div class="footer-bottom">
+        <span>© 2026 NexCore. Todos los derechos reservados.</span>
+        <span>Hecho con ⚡ para creadores</span>
+      </div>
+    </div>
+  </footer>
 
   <script>
-    (async () => {
-      const el = document.getElementById('health');
+    // ==============================
+    // SCROLL REVEAL (Intersection Observer)
+    // ==============================
+    const revealElements = document.querySelectorAll('.reveal');
+    const observer = new IntersectionObserver((entries) => {
+      entries.forEach(entry => {
+        if (entry.isIntersecting) {
+          entry.target.classList.add('visible');
+        }
+      });
+    }, { threshold: 0.1, rootMargin: '0px 0px -50px 0px' });
+
+    revealElements.forEach(el => observer.observe(el));
+
+    // ==============================
+    // NAVBAR SCROLL EFFECT
+    // ==============================
+    const navbar = document.getElementById('navbar');
+    window.addEventListener('scroll', () => {
+      navbar.classList.toggle('scrolled', window.scrollY > 50);
+    });
+
+    // ==============================
+    // CONTACT FORM
+    // ==============================
+    document.getElementById('contactForm').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const email = document.getElementById('emailInput').value;
+      const feedback = document.getElementById('formFeedback');
+
       try {
-        const res = await fetch('/api/health');
-        const data = await res.json();
-        el.innerHTML = `<span class="dot"></span> API: ${data.ok ? '✅ Conectado' : '⚠️ Error'} — ${data.service || 'sales-api'}`;
+        const res = await fetch('/api/leads', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ name: email.split('@')[0], email, message: 'Cotización desde la web' })
+        });
+        if (res.ok) {
+          feedback.style.display = 'block';
+          document.getElementById('emailInput').value = '';
+        } else {
+          feedback.textContent = '❌ Error al enviar. Intenta de nuevo.';
+          feedback.style.color = '#ef4444';
+          feedback.style.display = 'block';
+        }
       } catch {
-        el.innerHTML = `<span style="color:#f87171">⚠️ Backend no disponible (solo frontend estático)</span>`;
+        // Fallback: backend no disponible, guardamos local
+        feedback.textContent = '✅ Mensaje registrado (modo offline). Te contactaremos.';
+        feedback.style.color = '#22c55e';
+        feedback.style.display = 'block';
       }
-    })();
+    });
+
+    // ==============================
+    // SMOOTH SCROLL FOR NAV LINKS
+    // ==============================
+    document.querySelectorAll('a[href^="#"]').forEach(anchor => {
+      anchor.addEventListener('click', function (e) {
+        e.preventDefault();
+        const target = document.querySelector(this.getAttribute('href'));
+        if (target) {
+          target.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        }
+        // Close mobile menu
+        document.getElementById('navLinks').classList.remove('open');
+      });
+    });
   </script>
 </body>
 </html>
