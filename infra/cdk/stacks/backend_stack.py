@@ -248,6 +248,15 @@ ADMIN_PASS_HASH = hashlib.sha256((os.environ.get("ADMIN_PASS", "admin123")).enco
 SESSION_SECRET = "nexcore-session-secret-v1-2026"
 
 
+# Custom JSON encoder for Decimal -> float
+class DecimalEncoder(json.JSONEncoder):
+    def default(self, obj):
+        from decimal import Decimal as _Decimal
+        if isinstance(obj, _Decimal):
+            return float(obj)
+        return super().default(obj)
+
+
 def response(status_code, body, extra_headers=None):
     headers = {{"Content-Type": "application/json"}}
     if extra_headers:
@@ -255,7 +264,7 @@ def response(status_code, body, extra_headers=None):
     return {{
         "statusCode": status_code,
         "headers": headers,
-        "body": json.dumps(body)
+        "body": json.dumps(body, cls=DecimalEncoder)
     }}
 
 
