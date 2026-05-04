@@ -94,3 +94,39 @@ def test_cart_button_is_visible_and_opens_modal(
     finally:
         with contextlib.suppress(Exception):
             context.close()
+
+
+@pytest.mark.parametrize("mobile", [False, True], ids=["desktop", "mobile"])
+def test_checkout_button_opens_checkout_modal(
+    playwright_browser, local_frontend_url, mobile
+):
+    options = {}
+    if mobile:
+        options.update(viewport={"width": 390, "height": 844}, is_mobile=True)
+    else:
+        options.update(viewport={"width": 1440, "height": 1200})
+
+    context = playwright_browser.new_context(**options)
+    context.add_init_script(
+        """
+        localStorage.setItem('nexcore_cart', JSON.stringify([
+          { productId: 'prod-1', name: 'Pantalla iPhone 13', price: 180000, quantity: 2 }
+        ]));
+        """
+    )
+    page = context.new_page()
+    page.goto(local_frontend_url, wait_until="load")
+
+    try:
+        page.locator("#cartNavBtn").click()
+        page.locator("#checkoutBtn").click()
+
+        checkout_modal = page.locator("#checkoutModal")
+        checkout_panel = page.locator("#checkoutModal .modal")
+        assert checkout_modal.is_visible()
+        assert checkout_panel.is_visible()
+        assert page.locator("#checkoutPayBtn").is_visible()
+        assert "Finaliza tu pedido" in checkout_panel.inner_text()
+    finally:
+        with contextlib.suppress(Exception):
+            context.close()
