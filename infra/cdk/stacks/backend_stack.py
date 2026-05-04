@@ -242,6 +242,13 @@ quotes_table = dynamodb.Table("{quotes_table_name}")
 ADMIN_USER = os.environ.get("ADMIN_USER", "admin")
 ADMIN_PASS_HASH = hashlib.sha256((os.environ.get("ADMIN_PASS", "admin123")).encode()).hexdigest()
 
+# Session secret: usar valor de env var o generar uno propio al cold start
+SESSION_SECRET = os.environ.get("ADMIN_SESSION_SECRET")
+if not SESSION_SECRET:
+    SESSION_SECRET = hashlib.sha256(
+        (str(uuid.uuid4()) + datetime.now(timezone.utc).isoformat()).encode()
+    ).hexdigest()
+
 
 def response(status_code, body, extra_headers=None):
     headers = {{"Content-Type": "application/json"}}
@@ -260,7 +267,7 @@ def generate_token(username):
         "iat": datetime.now(timezone.utc).isoformat()
     }}).encode()).decode()
     sig = hmac.new(
-        os.environ["ADMIN_SESSION_SECRET"].encode(),
+        SESSION_SECRET.encode(),
         payload.encode(),
         hashlib.sha256
     ).hexdigest()
@@ -274,7 +281,7 @@ def verify_token(token):
             return None
         payload, sig = parts
         expected = hmac.new(
-            os.environ["ADMIN_SESSION_SECRET"].encode(),
+            SESSION_SECRET.encode(),
             payload.encode(),
             hashlib.sha256
         ).hexdigest()
