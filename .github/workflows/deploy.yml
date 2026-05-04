@@ -1,10 +1,7 @@
 name: Deploy Sales Website
 
 on:
-  push:
-    branches: [main, master]
-  pull_request:
-    branches: [main, master]
+  # Deshabilitado: usar deploy-cfn.yml en su lugar (incluye SSM secrets)
   workflow_dispatch:
     inputs:
       environment:
