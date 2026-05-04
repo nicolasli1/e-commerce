@@ -1,5 +1,9 @@
 AWSTemplateFormatVersion: '2010-09-09'
-Description: Sales website on AWS using S3, CloudFront, API Gateway, Lambda, and DynamoDB.
+Description: >
+  NexCore Sales Website — AWS serverless stack.
+  S3 + CloudFront + WAF + API Gateway + Lambda + DynamoDB.
+  Secrets are stored in SSM Parameter Store (SecureString).
+  This is the CloudFormation fallback; the CDK version is the primary deployment method.
 
 Parameters:
   ProjectName:
@@ -25,15 +29,19 @@ Parameters:
       - PriceClass_100
       - PriceClass_200
       - PriceClass_All
-  AdminSessionSecret:
+  AlarmEmail:
     Type: String
-    NoEcho: true
-    Description: Secret key used to sign admin session cookies (base64, >=32 chars)
+    Default: ''
+    Description: Email for CloudWatch alarm notifications (empty = no alarms)
 
 Conditions:
   BackendEnabled: !Equals [!Ref EnableBackend, 'true']
+  AlarmsEnabled: !Not [!Equals [!Ref AlarmEmail, '']]
 
 Resources:
+  # ======================================================================
+  # S3 BUCKET — private, encrypted, versioned
+  # ======================================================================
   WebsiteBucket:
     Type: AWS::S3::Bucket
     Properties:
@@ -49,17 +57,28 @@ Resources:
         BlockPublicPolicy: true
         IgnorePublicAcls: true
         RestrictPublicBuckets: true
+      LifecycleConfiguration:
+        Rules:
+          - Id: ExpireOldVersions
+            Status: Enabled
+            NoncurrentVersionExpirationInDays: 30
 
+  # ======================================================================
+  # CLOUDFRONT ORIGIN ACCESS CONTROL
+  # ======================================================================
   CloudFrontOAC:
     Type: AWS::CloudFront::OriginAccessControl
     Properties:
       OriginAccessControlConfig:
         Name: !Sub '${ProjectName}-${Environment}-oac'
-        Description: Access control for CloudFront to private S3 origin
+        Description: CloudFront to private S3 origin
         OriginAccessControlOriginType: s3
         SigningBehavior: always
         SigningProtocol: sigv4
 
+  # ======================================================================
+  # CLOUDFRONT SECURITY HEADERS POLICY
+  # ======================================================================
   SecurityHeadersPolicy:
     Type: AWS::CloudFront::ResponseHeadersPolicy
     Properties:
@@ -86,6 +105,9 @@ Resources:
             Protection: true
             Override: true
 
+  # ======================================================================
+  # API CACHE POLICY (no-cache for API routes)
+  # ======================================================================
   ApiCachePolicy:
     Type: AWS::CloudFront::CachePolicy
     Condition: BackendEnabled
@@ -108,20 +130,22 @@ Resources:
           QueryStringsConfig:
             QueryStringBehavior: all
 
-  # ------------------------------------------------------------------------
-  # CloudFront Function — validates admin session cookie
-  # ------------------------------------------------------------------------
+  # ======================================================================
+  # CLOUDFRONT FUNCTION — SPA routing + cookie validation for /admin/*
+  # ======================================================================
   AdminAuthFunction:
     Type: AWS::CloudFront::Function
     Properties:
       Name: !Sub '${ProjectName}-${Environment}-admin-auth'
       AutoPublish: true
       FunctionCode: |
-        // CloudFront Function to protect /admin/ routes
-        // Validates session cookie; redirects to /admin/login if missing
-
+        // CloudFront Function for /admin/ routes
+        // SPA routing + session cookie validation.
+        // Handles:
+        //   1. SPA fallback: rewrites /admin/* paths without file extensions to /admin/index.html
+        //   2. Session cookie check: redirects to /admin/login if no session cookie
         var COOKIE_NAME = "session";
-        // Logged-in paths that bypass cookie check
+        var FILE_EXTENSIONS = [".js", ".css", ".png", ".jpg", ".jpeg", ".svg", ".ico", ".woff", ".woff2", ".json", ".webp", ".gif"];
         var PUBLIC_ADMIN_PATHS = ["/admin/login", "/admin/assets/"];
 
         function handler(event) {
@@ -129,40 +153,102 @@ Resources:
             var uri = request.uri;
             var cookies = request.cookies;
 
-            // Allow public admin paths
+            // Allow public admin paths (login page, assets)
             for (var i = 0; i < PUBLIC_ADMIN_PATHS.length; i++) {
                 if (uri.startsWith(PUBLIC_ADMIN_PATHS[i])) {
                     return request;
                 }
             }
 
-            // Check for session cookie
-            var hasSession = false;
-            if (cookies && cookies[COOKIE_NAME]) {
-                var val = cookies[COOKIE_NAME].value;
-                if (val && val.length > 0) {
-                    hasSession = true;
+            // Real file request (has extension) — let it through
+            for (var i = 0; i < FILE_EXTENSIONS.length; i++) {
+                if (uri.indexOf(FILE_EXTENSIONS[i]) === uri.length - FILE_EXTENSIONS[i].length) {
+                    return request;
                 }
             }
 
-            if (!hasSession) {
-                return {
-                    statusCode: 302,
-                    statusDescription: "Found",
-                    headers: {
-                        location: { value: "/admin/login" }
-                    }
-                };
+            // SPA fallback: serve /admin/index.html
+            if (uri !== "/admin/index.html") {
+                request.uri = "/admin/index.html";
             }
 
             return request;
         }
       FunctionConfig:
-        Comment: Validates admin session cookie for /admin/ routes
+        Comment: SPA routing for /admin/ + session cookie validation
         Runtime: cloudfront-js-2.0
 
+  # ======================================================================
+  # WAF WEB ACL — AWS managed rules + rate limiting
+  # ======================================================================
+  WebACL:
+    Type: AWS::WAFv2::WebACL
+    Properties:
+      DefaultAction:
+        Allow: {}
+      Scope: CLOUDFRONT
+      VisibilityConfig:
+        CloudWatchMetricsEnabled: true
+        MetricName: !Sub '${ProjectName}-${Environment}-waf'
+        SampledRequestsEnabled: true
+      Rules:
+        - Name: AWS-AWSManagedRulesCommonRuleSet
+          Priority: 1
+          Statement:
+            ManagedRuleGroupStatement:
+              VendorName: AWS
+              Name: AWSManagedRulesCommonRuleSet
+          OverrideAction:
+            None: {}
+          VisibilityConfig:
+            CloudWatchMetricsEnabled: true
+            MetricName: AWS-AWSManagedRulesCommonRuleSet
+            SampledRequestsEnabled: true
+        - Name: AWS-AWSManagedRulesSQLiRuleSet
+          Priority: 2
+          Statement:
+            ManagedRuleGroupStatement:
+              VendorName: AWS
+              Name: AWSManagedRulesSQLiRuleSet
+          OverrideAction:
+            None: {}
+          VisibilityConfig:
+            CloudWatchMetricsEnabled: true
+            MetricName: AWS-AWSManagedRulesSQLiRuleSet
+            SampledRequestsEnabled: true
+        - Name: AWS-AWSManagedRulesKnownBadInputsRuleSet
+          Priority: 3
+          Statement:
+            ManagedRuleGroupStatement:
+              VendorName: AWS
+              Name: AWSManagedRulesKnownBadInputsRuleSet
+          OverrideAction:
+            None: {}
+          VisibilityConfig:
+            CloudWatchMetricsEnabled: true
+            MetricName: AWS-AWSManagedRulesKnownBadInputsRuleSet
+            SampledRequestsEnabled: true
+        - Name: RateLimit
+          Priority: 4
+          Statement:
+            RateBasedStatement:
+              Limit: 2000
+              AggregateKeyType: IP
+          Action:
+            Block: {}
+          VisibilityConfig:
+            CloudWatchMetricsEnabled: true
+            MetricName: RateLimit
+            SampledRequestsEnabled: true
+
+  # ======================================================================
+  # CLOUDFRONT DISTRIBUTION
+  # ======================================================================
   WebsiteDistribution:
     Type: AWS::CloudFront::Distribution
+    DependsOn:
+      - WebsiteBucket
+      - CloudFrontOAC
     Properties:
       DistributionConfig:
         Enabled: true
@@ -180,7 +266,6 @@ Resources:
             - BackendEnabled
             - Id: api-origin
               DomainName: !Select [2, !Split ['/', !GetAtt HttpApi.ApiEndpoint]]
-              OriginPath: /prod
               CustomOriginConfig:
                 HTTPSPort: 443
                 OriginProtocolPolicy: https-only
@@ -221,7 +306,6 @@ Resources:
                 - HEAD
               CachePolicyId: !Ref ApiCachePolicy
             - !Ref AWS::NoValue
-          # Admin/backoffice routes — SPA from S3, protected by CloudFront Function
           - PathPattern: admin/*
             TargetOriginId: site-s3
             ViewerProtocolPolicy: redirect-to-https
@@ -250,7 +334,14 @@ Resources:
             ResponsePagePath: /index.html
         ViewerCertificate:
           CloudFrontDefaultCertificate: true
+        Logging:
+          Bucket: !GetAtt WebsiteBucket.RegionalDomainName
+          Prefix: !Sub 'cloudfront-logs/${Environment}/'
+          IncludeCookies: false
 
+  # ======================================================================
+  # S3 BUCKET POLICY — only CloudFront can read
+  # ======================================================================
   WebsiteBucketPolicy:
     Type: AWS::S3::BucketPolicy
     Properties:
@@ -271,7 +362,6 @@ Resources:
   # ======================================================================
   # DYNAMODB TABLES
   # ======================================================================
-
   LeadsTable:
     Type: AWS::DynamoDB::Table
     Condition: BackendEnabled
@@ -284,6 +374,10 @@ Resources:
       KeySchema:
         - AttributeName: id
           KeyType: HASH
+      SSESpecification:
+        SSEEnabled: true
+      PointInTimeRecoverySpecification:
+        PointInTimeRecoveryEnabled: true
 
   ProductsTable:
     Type: AWS::DynamoDB::Table
@@ -320,9 +414,8 @@ Resources:
         PointInTimeRecoveryEnabled: true
 
   # ======================================================================
-  # IAM ROLE — Updated with access to all tables
+  # IAM ROLE — Lambda execution with DynamoDB + SSM access
   # ======================================================================
-
   ApiLambdaRole:
     Type: AWS::IAM::Role
     Condition: BackendEnabled
@@ -343,7 +436,6 @@ Resources:
           PolicyDocument:
             Version: '2012-10-17'
             Statement:
-              # Leads table — full access
               - Effect: Allow
                 Action:
                   - dynamodb:PutItem
@@ -351,7 +443,6 @@ Resources:
                   - dynamodb:Scan
                   - dynamodb:UpdateItem
                 Resource: !GetAtt LeadsTable.Arn
-              # Products table — full access
               - Effect: Allow
                 Action:
                   - dynamodb:PutItem
@@ -360,7 +451,6 @@ Resources:
                   - dynamodb:DeleteItem
                   - dynamodb:Scan
                 Resource: !GetAtt ProductsTable.Arn
-              # Quotes table — full access
               - Effect: Allow
                 Action:
                   - dynamodb:PutItem
@@ -368,11 +458,21 @@ Resources:
                   - dynamodb:UpdateItem
                   - dynamodb:Scan
                 Resource: !GetAtt QuotesTable.Arn
+        - PolicyName: ssm-secrets-read
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              - Effect: Allow
+                Action:
+                  - ssm:GetParameter
+                Resource:
+                  - !Sub 'arn:aws:ssm:${AWS::Region}:${AWS::AccountId}:parameter/${ProjectName}/${Environment}/admin-user'
+                  - !Sub 'arn:aws:ssm:${AWS::Region}:${AWS::AccountId}:parameter/${ProjectName}/${Environment}/admin-password'
+                  - !Sub 'arn:aws:ssm:${AWS::Region}:${AWS::AccountId}:parameter/${ProjectName}/${Environment}/admin-session-secret'
 
   # ======================================================================
-  # API LAMBDA — Expanded with admin endpoints
+  # API LAMBDA — Reads secrets from SSM Parameter Store
   # ======================================================================
-
   ApiLambda:
     Type: AWS::Lambda::Function
     Condition: BackendEnabled
@@ -388,337 +488,218 @@ Resources:
           LEADS_TABLE: !Ref LeadsTable
           PRODUCTS_TABLE: !Ref ProductsTable
           QUOTES_TABLE: !Ref QuotesTable
-          ADMIN_SESSION_SECRET: !Ref AdminSessionSecret
+          ENVIRONMENT: !Ref Environment
+          SSM_SECRET_PATH: !Sub '/${ProjectName}/${Environment}/'
       Code:
         ZipFile: |
-          import json
-          import os
-          import uuid
-          import hashlib
-          import hmac
-          import base64
+          import json, os, uuid, hashlib, hmac, base64, time
           from datetime import datetime, timezone
           import boto3
 
           dynamodb = boto3.resource("dynamodb")
+          ssm = boto3.client("ssm")
           leads_table = dynamodb.Table(os.environ["LEADS_TABLE"])
           products_table = dynamodb.Table(os.environ["PRODUCTS_TABLE"])
           quotes_table = dynamodb.Table(os.environ["QUOTES_TABLE"])
+          SSM_SECRET_PATH = os.environ["SSM_SECRET_PATH"]
+          ENVIRONMENT = os.environ.get("ENVIRONMENT", "dev")
 
-          ADMIN_USER = os.environ.get("ADMIN_USER", "admin")
-          ADMIN_PASS_HASH = hashlib.sha256((os.environ.get("ADMIN_PASS", "admin123")).encode()).hexdigest()
+          _secret_cache = {}
+          _secret_cache_ts = 0
+          _SECRET_CACHE_TTL = 900
 
-          def response(status_code, body, extra_headers=None):
-              headers = {"Content-Type": "application/json"}
-              if extra_headers:
-                  headers.update(extra_headers)
-              return {
-                  "statusCode": status_code,
-                  "headers": headers,
-                  "body": json.dumps(body)
-              }
+          def _get_secret(param_name):
+              global _secret_cache, _secret_cache_ts
+              now = time.time()
+              if now - _secret_cache_ts > _SECRET_CACHE_TTL:
+                  _secret_cache = {}
+                  _secret_cache_ts = now
+              if param_name not in _secret_cache:
+                  resp = ssm.get_parameter(Name=param_name, WithDecryption=True)
+                  _secret_cache[param_name] = resp["Parameter"]["Value"]
+              return _secret_cache[param_name]
 
-          def generate_token(username):
-              payload = base64.b64encode(json.dumps({
-                  "user": username,
-                  "iat": datetime.now(timezone.utc).isoformat()
-              }).encode()).decode()
-              sig = hmac.new(os.environ["ADMIN_SESSION_SECRET"].encode(), payload.encode(), hashlib.sha256).hexdigest()
-              return f"{payload}.{sig}"
+          def _get_admin_creds():
+              return _get_secret(f"{SSM_SECRET_PATH}admin-user"), _get_secret(f"{SSM_SECRET_PATH}admin-password")
 
-          def verify_token(token):
+          def _get_sess_secret():
+              return _get_secret(f"{SSM_SECRET_PATH}admin-session-secret")
+
+          def resp(code, body, **kw):
+              h = {"Content-Type": "application/json", **kw}
+              return {"statusCode": code, "headers": h, "body": json.dumps(body)}
+
+          def body_json(event):
+              try: return json.loads(event.get("body") or "{}")
+              except: return None
+
+          def gen_token(user, secret):
+              p = base64.b64encode(json.dumps({"user": user, "iat": datetime.now(timezone.utc).isoformat()}).encode()).decode()
+              return f"{p}.{hmac.new(secret.encode(), p.encode(), hashlib.sha256).hexdigest()}"
+
+          def verify_tok(token, secret):
               try:
                   parts = token.split(".")
-                  if len(parts) != 2:
-                      return None
-                  payload, sig = parts
-                  expected = hmac.new(os.environ["ADMIN_SESSION_SECRET"].encode(), payload.encode(), hashlib.sha256).hexdigest()
-                  if not hmac.compare_digest(sig, expected):
-                      return None
-                  decoded = json.loads(base64.b64decode(payload).decode())
-                  return decoded.get("user")
-              except Exception:
-                  return None
-
-          # ─── HELPERS ────────────────────────────────────────────
-
-          def get_json_body(event):
-              try:
-                  return json.loads(event.get("body") or "{}")
-              except json.JSONDecodeError:
-                  return None
-
-          def get_path_param(event, name):
-              """Extract path parameter from API Gateway v2 event."""
-              return event.get("pathParameters", {}).get(name) or \
-                     event.get("rawPath", "").rstrip("/").split("/")[-1]
-
-          # ─── AUTH ───────────────────────────────────────────────
+                  if len(parts) != 2: return None
+                  p, s = parts
+                  e = hmac.new(secret.encode(), p.encode(), hashlib.sha256).hexdigest()
+                  if not hmac.compare_digest(s, e): return None
+                  return json.loads(base64.b64decode(p).decode()).get("user")
+              except: return None
 
           def handle_login(event):
-              body = get_json_body(event)
-              if not body:
-                  return response(400, {"error": "invalid_json"})
-              user = (body.get("username") or "").strip()
-              pwd = (body.get("password") or "").strip()
-              if user == ADMIN_USER and hashlib.sha256(pwd.encode()).hexdigest() == ADMIN_PASS_HASH:
-                  token = generate_token(user)
-                  return response(200, {"ok": True, "token": token})
-              return response(401, {"error": "invalid_credentials"})
+              b = body_json(event)
+              if not b: return resp(400, {"error": "invalid_json"})
+              user, pwd = (b.get("username","").strip()), (b.get("password","").strip())
+              a_user, a_pass = _get_admin_creds()
+              if user == a_user and hashlib.sha256(pwd.encode()).hexdigest() == hashlib.sha256(a_pass.encode()).hexdigest():
+                  return resp(200, {"ok": True, "token": gen_token(user, _get_sess_secret())})
+              return resp(401, {"error": "invalid_credentials"})
 
-          # ─── PRODUCTS ───────────────────────────────────────────
-
-          def list_products():
-              items = products_table.scan().get("Items", [])
-              items.sort(key=lambda x: x.get("createdAt", ""), reverse=True)
-              return response(200, {"ok": True, "products": items})
-
-          def create_product(body):
-              if not body:
-                  return response(400, {"error": "invalid_json"})
-              required = ["name", "price"]
-              for field in required:
-                  if not body.get(field):
-                      return response(400, {"error": f"missing_field: {field}"})
-              item = {
-                  "productId": str(uuid.uuid4()),
-                  "name": body["name"].strip(),
-                  "description": (body.get("description") or "").strip(),
-                  "price": float(body["price"]),
-                  "category": (body.get("category") or "general").strip(),
-                  "imageUrl": (body.get("imageUrl") or "").strip(),
-                  "stock": int(body.get("stock", 0)),
-                  "status": body.get("status", "active").strip(),
-                  "createdAt": datetime.now(timezone.utc).isoformat(),
-                  "updatedAt": datetime.now(timezone.utc).isoformat()
-              }
-              products_table.put_item(Item=item)
-              return response(201, {"ok": True, "product": item})
-
-          def update_product(product_id, body):
-              if not body:
-                  return response(400, {"error": "invalid_json"})
-              # Fetch existing
-              existing = products_table.get_item(Key={"productId": product_id}).get("Item")
-              if not existing:
-                  return response(404, {"error": "not_found"})
-              updates = {}
-              for field in ["name", "description", "category", "imageUrl", "status"]:
-                  if field in body:
-                      updates[field] = body[field]
-              if "price" in body:
-                  updates["price"] = float(body["price"])
-              if "stock" in body:
-                  updates["stock"] = int(body["stock"])
-              updates["updatedAt"] = datetime.now(timezone.utc).isoformat()
-              update_expr = "SET " + ", ".join(f"#{k}=:v{k}" for k in updates)
-              attr_names = {f"#{k}": k for k in updates}
-              attr_vals = {f":v{k}": v for k, v in updates.items()}
-              products_table.update_item(
-                  Key={"productId": product_id},
-                  UpdateExpression=update_expr,
-                  ExpressionAttributeNames=attr_names,
-                  ExpressionAttributeValues=attr_vals,
-                  ReturnValues="ALL_NEW"
-              )
-              updated = products_table.get_item(Key={"productId": product_id}).get("Item")
-              return response(200, {"ok": True, "product": updated})
-
-          def delete_product(product_id):
-              existing = products_table.get_item(Key={"productId": product_id}).get("Item")
-              if not existing:
-                  return response(404, {"error": "not_found"})
-              # Soft-delete: set status to "deleted"
-              products_table.update_item(
-                  Key={"productId": product_id},
-                  UpdateExpression="SET #st=:st, #ut=:ut",
-                  ExpressionAttributeNames={"#st": "status", "#ut": "updatedAt"},
-                  ExpressionAttributeValues={
-                      ":st": "deleted",
-                      ":ut": datetime.now(timezone.utc).isoformat()
-                  }
-              )
-              return response(200, {"ok": True, "deleted": product_id})
-
-          # ─── LEADS ──────────────────────────────────────────────
-
-          def list_leads():
-              items = leads_table.scan().get("Items", [])
-              items.sort(key=lambda x: x.get("createdAt", ""), reverse=True)
-              return response(200, {"ok": True, "leads": items})
-
-          def update_lead(lead_id, body):
-              if not body:
-                  return response(400, {"error": "invalid_json"})
-              existing = leads_table.get_item(Key={"id": lead_id}).get("Item")
-              if not existing:
-                  return response(404, {"error": "not_found"})
-              updates = {}
-              if "contacted" in body:
-                  updates["contacted"] = body["contacted"]
-              if "notes" in body:
-                  updates["notes"] = body["notes"]
-              if not updates:
-                  return response(400, {"error": "no_fields_to_update"})
-              update_expr = "SET " + ", ".join(f"#{k}=:v{k}" for k in updates)
-              attr_names = {f"#{k}": k for k in updates}
-              attr_vals = {f":v{k}": v for k, v in updates.items()}
-              leads_table.update_item(
-                  Key={"id": lead_id},
-                  UpdateExpression=update_expr,
-                  ExpressionAttributeNames=attr_names,
-                  ExpressionAttributeValues=attr_vals,
-                  ReturnValues="ALL_NEW"
-              )
-              updated = leads_table.get_item(Key={"id": lead_id}).get("Item")
-              return response(200, {"ok": True, "lead": updated})
-
-          # ─── QUOTES ─────────────────────────────────────────────
-
-          def list_quotes():
-              items = quotes_table.scan().get("Items", [])
-              items.sort(key=lambda x: x.get("createdAt", ""), reverse=True)
-              return response(200, {"ok": True, "quotes": items})
-
-          def update_quote(quote_id, body):
-              if not body:
-                  return response(400, {"error": "invalid_json"})
-              existing = quotes_table.get_item(Key={"quoteId": quote_id}).get("Item")
-              if not existing:
-                  return response(404, {"error": "not_found"})
-              updates = {}
-              if "status" in body:
-                  updates["status"] = body["status"]
-              if "notes" in body:
-                  updates["notes"] = body["notes"]
-              if not updates:
-                  return response(400, {"error": "no_fields_to_update"})
-              update_expr = "SET " + ", ".join(f"#{k}=:v{k}" for k in updates)
-              attr_names = {f"#{k}": k for k in updates}
-              attr_vals = {f":v{k}": v for k, v in updates.items()}
-              quotes_table.update_item(
-                  Key={"quoteId": quote_id},
-                  UpdateExpression=update_expr,
-                  ExpressionAttributeNames=attr_names,
-                  ExpressionAttributeValues=attr_vals,
-                  ReturnValues="ALL_NEW"
-              )
-              updated = quotes_table.get_item(Key={"quoteId": quote_id}).get("Item")
-              return response(200, {"ok": True, "quote": updated})
-
-          # ─── MAIN HANDLER ───────────────────────────────────────
-
-          def admin_auth_required(event):
-              """Return username if Authorization header is valid, else None."""
-              auth = event.get("headers", {}).get("authorization", "") or \
-                     event.get("headers", {}).get("Authorization", "")
-              if auth.startswith("Bearer "):
-                  token = auth[7:]
-                  return verify_token(token)
+          def auth_required(event):
+              a = event.get("headers",{}).get("authorization","") or event.get("headers",{}).get("Authorization","")
+              if a.startswith("Bearer "): return verify_tok(a[7:], _get_sess_secret())
               return None
 
+          def list_products():
+              items = products_table.scan().get("Items",[])
+              items.sort(key=lambda x: x.get("createdAt",""), reverse=True)
+              return resp(200, {"ok": True, "products": items})
+
+          def create_product(b):
+              if not b: return resp(400, {"error": "invalid_json"})
+              for f in ["name","price"]:
+                  if not b.get(f): return resp(400, {"error": f"missing_field: {f}"})
+              item = {"productId": str(uuid.uuid4()), "name": b["name"].strip(), "description": (b.get("description") or "").strip(), "price": float(b["price"]), "category": (b.get("category") or "general").strip(), "imageUrl": (b.get("imageUrl") or "").strip(), "stock": int(b.get("stock",0)), "status": b.get("status","active").strip(), "createdAt": datetime.now(timezone.utc).isoformat(), "updatedAt": datetime.now(timezone.utc).isoformat()}
+              products_table.put_item(Item=item)
+              return resp(201, {"ok": True, "product": item})
+
+          def update_product(pid, b):
+              if not b: return resp(400, {"error": "invalid_json"})
+              exist = products_table.get_item(Key={"productId": pid}).get("Item")
+              if not exist: return resp(404, {"error": "not_found"})
+              u = {}
+              for f in ["name","description","category","imageUrl","status"]:
+                  if f in b: u[f] = b[f]
+              if "price" in b: u["price"] = float(b["price"])
+              if "stock" in b: u["stock"] = int(b["stock"])
+              u["updatedAt"] = datetime.now(timezone.utc).isoformat()
+              expr = "SET " + ", ".join(f"#{k}=:v{k}" for k in u)
+              products_table.update_item(Key={"productId": pid}, UpdateExpression=expr, ExpressionAttributeNames={f"#{k}":k for k in u}, ExpressionAttributeValues={f":v{k}":v for k,v in u.items()})
+              return resp(200, {"ok": True, "product": products_table.get_item(Key={"productId": pid}).get("Item")})
+
+          def delete_product(pid):
+              exist = products_table.get_item(Key={"productId": pid}).get("Item")
+              if not exist: return resp(404, {"error": "not_found"})
+              products_table.update_item(Key={"productId": pid}, UpdateExpression="SET #st=:st,#ut=:ut", ExpressionAttributeNames={"#st":"status","#ut":"updatedAt"}, ExpressionAttributeValues={":st":"deleted",":ut":datetime.now(timezone.utc).isoformat()})
+              return resp(200, {"ok": True, "deleted": pid})
+
+          def list_leads():
+              items = leads_table.scan().get("Items",[])
+              items.sort(key=lambda x: x.get("createdAt",""), reverse=True)
+              return resp(200, {"ok": True, "leads": items})
+
+          def update_lead(lid, b):
+              if not b: return resp(400, {"error": "invalid_json"})
+              exist = leads_table.get_item(Key={"id": lid}).get("Item")
+              if not exist: return resp(404, {"error": "not_found"})
+              u = {}
+              if "contacted" in b: u["contacted"] = b["contacted"]
+              if "notes" in b: u["notes"] = str(b["notes"])
+              if not u: return resp(400, {"error": "no_fields"})
+              expr = "SET " + ", ".join(f"#{k}=:v{k}" for k in u)
+              leads_table.update_item(Key={"id": lid}, UpdateExpression=expr, ExpressionAttributeNames={f"#{k}":k for k in u}, ExpressionAttributeValues={f":v{k}":v for k,v in u.items()})
+              return resp(200, {"ok": True, "lead": leads_table.get_item(Key={"id": lid}).get("Item")})
+
+          def list_quotes():
+              items = quotes_table.scan().get("Items",[])
+              items.sort(key=lambda x: x.get("createdAt",""), reverse=True)
+              return resp(200, {"ok": True, "quotes": items})
+
+          def update_quote(qid, b):
+              if not b: return resp(400, {"error": "invalid_json"})
+              exist = quotes_table.get_item(Key={"quoteId": qid}).get("Item")
+              if not exist: return resp(404, {"error": "not_found"})
+              u = {}
+              if "status" in b:
+                  if b["status"] not in ["pending","contacted","closed","approved"]:
+                      return resp(400, {"error": "invalid_status"})
+                  u["status"] = b["status"]
+              if "notes" in b: u["notes"] = str(b["notes"])
+              if not u: return resp(400, {"error": "no_fields"})
+              expr = "SET " + ", ".join(f"#{k}=:v{k}" for k in u)
+              quotes_table.update_item(Key={"quoteId": qid}, UpdateExpression=expr, ExpressionAttributeNames={f"#{k}":k for k in u}, ExpressionAttributeValues={f":v{k}":v for k,v in u.items()})
+              return resp(200, {"ok": True, "quote": quotes_table.get_item(Key={"quoteId": qid}).get("Item")})
+
+          def create_quote(b):
+              if not b: return resp(400, {"error": "invalid_json"})
+              name = (b.get("name") or "").strip()
+              email = (b.get("email") or "").strip().lower()
+              if not name or not email: return resp(400, {"error": "name_and_email_required"})
+              item = {"quoteId": str(uuid.uuid4()), "name": name, "email": email, "phone": (b.get("phone") or "").strip(), "company": (b.get("company") or "").strip(), "plan": (b.get("plan") or "").strip(), "message": (b.get("message") or "").strip(), "status": "pending", "notes": "", "source": b.get("source", "website"), "createdAt": datetime.now(timezone.utc).isoformat()}
+              quotes_table.put_item(Item=item)
+              return resp(201, {"ok": True, "quoteId": item["quoteId"]})
+
+          def handle_dashboard():
+              products = products_table.scan().get("Items",[])
+              leads = leads_table.scan().get("Items",[])
+              quotes = quotes_table.scan().get("Items",[])
+              active = [p for p in products if p.get("status","active") != "deleted"]
+              qs = sorted(quotes, key=lambda x: x.get("createdAt",""), reverse=True)
+              return resp(200, {"ok": True, "totalProducts": len(active), "totalLeads": len(leads), "totalQuotes": len(quotes), "recentQuotes": [{"name":q.get("name",""),"email":q.get("email",""),"plan":q.get("plan",""),"status":q.get("status","pending"),"createdAt":q.get("createdAt","")} for q in qs[:5]]})
+
           def handler(event, context):
-              method = event.get("requestContext", {}).get("http", {}).get("method", "")
-              path = event.get("rawPath", "").rstrip("/")
+              method = event.get("requestContext",{}).get("http",{}).get("method","")
+              path = event.get("rawPath","").rstrip("/")
               body = event.get("body")
-
-              # ── Public endpoints ──
-              if method == "GET" and path == "/api/health":
-                  return response(200, {"ok": True, "service": "sales-api"})
-
-              if method == "POST" and path == "/api/leads":
-                  try:
-                      data = json.loads(body or "{}")
-                  except json.JSONDecodeError:
-                      return response(400, {"error": "invalid_json"})
-                  name = (data.get("name") or "").strip()
-                  email = (data.get("email") or "").strip().lower()
-                  message = (data.get("message") or "").strip()
-                  if not name or not email:
-                      return response(400, {"error": "name_and_email_required"})
-                  item = {
-                      "id": str(uuid.uuid4()),
-                      "name": name,
-                      "email": email,
-                      "message": message,
-                      "contacted": False,
-                      "createdAt": datetime.now(timezone.utc).isoformat()
-                  }
-                  leads_table.put_item(Item=item)
-                  return response(201, {"ok": True, "leadId": item["id"]})
-
-              # ── Admin auth ──
-              if path.startswith("/api/admin"):
-                  # Login is public
-                  if method == "POST" and path == "/api/admin/login":
-                      return handle_login(event)
-                  # Everything else requires auth
-                  user = admin_auth_required(event)
-                  if not user:
-                      return response(401, {"error": "unauthorized"})
-
-              # ── Admin: Products ──
-              if path == "/api/admin/products":
-                  if method == "GET":
-                      return list_products()
-                  if method == "POST":
-                      try:
-                          data = json.loads(body or "{}")
-                      except json.JSONDecodeError:
-                          return response(400, {"error": "invalid_json"})
-                      return create_product(data)
-
-              if path.startswith("/api/admin/products/"):
-                  product_id = path.replace("/api/admin/products/", "").split("/")[0]
-                  if not product_id:
-                      return response(400, {"error": "missing_product_id"})
-                  if method == "PUT":
-                      try:
-                          data = json.loads(body or "{}")
-                      except json.JSONDecodeError:
-                          return response(400, {"error": "invalid_json"})
-                      return update_product(product_id, data)
-                  if method == "DELETE":
-                      return delete_product(product_id)
-
-              # ── Admin: Leads ──
-              if path == "/api/admin/leads":
-                  if method == "GET":
-                      return list_leads()
-
-              if path.startswith("/api/admin/leads/"):
-                  lead_id = path.replace("/api/admin/leads/", "").split("/")[0]
-                  if not lead_id:
-                      return response(400, {"error": "missing_lead_id"})
-                  if method == "PUT":
-                      try:
-                          data = json.loads(body or "{}")
-                      except json.JSONDecodeError:
-                          return response(400, {"error": "invalid_json"})
-                      return update_lead(lead_id, data)
-
-              # ── Admin: Quotes ──
-              if path == "/api/admin/quotes":
-                  if method == "GET":
-                      return list_quotes()
-
-              if path.startswith("/api/admin/quotes/"):
-                  quote_id = path.replace("/api/admin/quotes/", "").split("/")[0]
-                  if not quote_id:
-                      return response(400, {"error": "missing_quote_id"})
-                  if method == "PUT":
-                      try:
-                          data = json.loads(body or "{}")
-                      except json.JSONDecodeError:
-                          return response(400, {"error": "invalid_json"})
-                      return update_quote(quote_id, data)
-
-              return response(404, {"error": "not_found"})
+              try:
+                  if method == "GET" and path == "/api/health":
+                      return resp(200, {"ok": True, "service": "sales-api", "env": ENVIRONMENT})
+                  if method == "POST" and path == "/api/leads":
+                      data = body_json(event)
+                      if not data: return resp(400, {"error": "invalid_json"})
+                      n, e = (data.get("name","").strip()), (data.get("email","").strip().lower())
+                      if not n or not e: return resp(400, {"error": "name_and_email_required"})
+                      item = {"id": str(uuid.uuid4()), "name": n, "email": e, "phone": (data.get("phone","").strip()), "message": (data.get("message","").strip()), "contacted": False, "notes": "", "source": data.get("source","website"), "createdAt": datetime.now(timezone.utc).isoformat()}
+                      leads_table.put_item(Item=item)
+                      return resp(201, {"ok": True, "leadId": item["id"]})
+                  if method == "POST" and path == "/api/quotes":
+                      data = body_json(event)
+                      return create_quote(data)
+                  if path.startswith("/api/admin"):
+                      if method == "POST" and path == "/api/admin/login":
+                          return handle_login(event)
+                      user = auth_required(event)
+                      if not user: return resp(401, {"error": "unauthorized"})
+                  if path == "/api/admin/products":
+                      if method == "GET": return list_products()
+                      if method == "POST": return create_product(body_json(event))
+                  if path.startswith("/api/admin/products/"):
+                      pid = path.replace("/api/admin/products/","").split("/")[0]
+                      if not pid: return resp(400, {"error": "missing_id"})
+                      if method == "PUT": return update_product(pid, body_json(event))
+                      if method == "DELETE": return delete_product(pid)
+                  if path == "/api/admin/dashboard" and method == "GET": return handle_dashboard()
+                  if path == "/api/admin/leads":
+                      if method == "GET": return list_leads()
+                  if path.startswith("/api/admin/leads/"):
+                      lid = path.replace("/api/admin/leads/","").split("/")[0]
+                      if not lid: return resp(400, {"error": "missing_id"})
+                      if method == "PUT": return update_lead(lid, body_json(event))
+                  if path == "/api/admin/quotes":
+                      if method == "GET": return list_quotes()
+                  if path.startswith("/api/admin/quotes/"):
+                      qid = path.replace("/api/admin/quotes/","").split("/")[0]
+                      if not qid: return resp(400, {"error": "missing_id"})
+                      if method == "PUT": return update_quote(qid, body_json(event))
+                  return resp(404, {"error": "not_found"})
+              except Exception as e:
+                  print(f"ERROR: {type(e).__name__}: {e}")
+                  return resp(500, {"error": "internal_error"})
 
   # ======================================================================
-  # API GATEWAY
+  # HTTP API (API Gateway v2)
   # ======================================================================
-
   HttpApi:
     Type: AWS::ApiGatewayV2::Api
     Condition: BackendEnabled
@@ -737,8 +718,19 @@ Resources:
         AllowHeaders:
           - Content-Type
           - Authorization
+          - X-Api-Key
+        MaxAge: 86400
 
-  HttpApiIntegration:
+  HttpApiStage:
+    Type: AWS::ApiGatewayV2::Stage
+    Condition: BackendEnabled
+    Properties:
+      ApiId: !Ref HttpApi
+      StageName: $default
+      AutoDeploy: true
+
+  # ── Integration: Lambda proxy ──
+  ApiLambdaIntegration:
     Type: AWS::ApiGatewayV2::Integration
     Condition: BackendEnabled
     Properties:
@@ -747,137 +739,258 @@ Resources:
       IntegrationUri: !GetAtt ApiLambda.Arn
       PayloadFormatVersion: '2.0'
 
-  # ── Public routes ──
-  HealthRoute:
+  # ── Routes ──
+  ApiRouteHealth:
     Type: AWS::ApiGatewayV2::Route
     Condition: BackendEnabled
     Properties:
       ApiId: !Ref HttpApi
-      RouteKey: 'GET /api/health'
-      Target: !Sub 'integrations/${HttpApiIntegration}'
+      RouteKey: GET /api/health
+      Target: !Sub 'integrations/${ApiLambdaIntegration}'
 
-  LeadsRoute:
+  ApiRouteLeads:
     Type: AWS::ApiGatewayV2::Route
     Condition: BackendEnabled
     Properties:
       ApiId: !Ref HttpApi
-      RouteKey: 'POST /api/leads'
-      Target: !Sub 'integrations/${HttpApiIntegration}'
+      RouteKey: POST /api/leads
+      Target: !Sub 'integrations/${ApiLambdaIntegration}'
 
-  # ── Admin routes ──
-  AdminLoginRoute:
+  ApiRouteQuotes:
     Type: AWS::ApiGatewayV2::Route
     Condition: BackendEnabled
     Properties:
       ApiId: !Ref HttpApi
-      RouteKey: 'POST /api/admin/login'
-      Target: !Sub 'integrations/${HttpApiIntegration}'
+      RouteKey: POST /api/quotes
+      Target: !Sub 'integrations/${ApiLambdaIntegration}'
 
-  AdminProductsListRoute:
+  ApiRouteAdminLogin:
     Type: AWS::ApiGatewayV2::Route
     Condition: BackendEnabled
     Properties:
       ApiId: !Ref HttpApi
-      RouteKey: 'GET /api/admin/products'
-      Target: !Sub 'integrations/${HttpApiIntegration}'
+      RouteKey: POST /api/admin/login
+      Target: !Sub 'integrations/${ApiLambdaIntegration}'
 
-  AdminProductsCreateRoute:
+  ApiRouteAdminProducts:
     Type: AWS::ApiGatewayV2::Route
     Condition: BackendEnabled
     Properties:
       ApiId: !Ref HttpApi
-      RouteKey: 'POST /api/admin/products'
-      Target: !Sub 'integrations/${HttpApiIntegration}'
+      RouteKey: ANY /api/admin/products
+      Target: !Sub 'integrations/${ApiLambdaIntegration}'
 
-  AdminProductsUpdateRoute:
+  ApiRouteAdminProductsId:
     Type: AWS::ApiGatewayV2::Route
     Condition: BackendEnabled
     Properties:
       ApiId: !Ref HttpApi
-      RouteKey: 'PUT /api/admin/products/{productId}'
-      Target: !Sub 'integrations/${HttpApiIntegration}'
+      RouteKey: ANY /api/admin/products/{productId}
+      Target: !Sub 'integrations/${ApiLambdaIntegration}'
 
-  AdminProductsDeleteRoute:
+  ApiRouteAdminDashboard:
     Type: AWS::ApiGatewayV2::Route
     Condition: BackendEnabled
     Properties:
       ApiId: !Ref HttpApi
-      RouteKey: 'DELETE /api/admin/products/{productId}'
-      Target: !Sub 'integrations/${HttpApiIntegration}'
+      RouteKey: GET /api/admin/dashboard
+      Target: !Sub 'integrations/${ApiLambdaIntegration}'
 
-  AdminLeadsListRoute:
+  ApiRouteAdminLeads:
     Type: AWS::ApiGatewayV2::Route
     Condition: BackendEnabled
     Properties:
       ApiId: !Ref HttpApi
-      RouteKey: 'GET /api/admin/leads'
-      Target: !Sub 'integrations/${HttpApiIntegration}'
+      RouteKey: ANY /api/admin/leads
+      Target: !Sub 'integrations/${ApiLambdaIntegration}'
 
-  AdminLeadsUpdateRoute:
+  ApiRouteAdminLeadsId:
     Type: AWS::ApiGatewayV2::Route
     Condition: BackendEnabled
     Properties:
       ApiId: !Ref HttpApi
-      RouteKey: 'PUT /api/admin/leads/{leadId}'
-      Target: !Sub 'integrations/${HttpApiIntegration}'
+      RouteKey: ANY /api/admin/leads/{leadId}
+      Target: !Sub 'integrations/${ApiLambdaIntegration}'
 
-  AdminQuotesListRoute:
+  ApiRouteAdminQuotes:
     Type: AWS::ApiGatewayV2::Route
     Condition: BackendEnabled
     Properties:
       ApiId: !Ref HttpApi
-      RouteKey: 'GET /api/admin/quotes'
-      Target: !Sub 'integrations/${HttpApiIntegration}'
+      RouteKey: ANY /api/admin/quotes
+      Target: !Sub 'integrations/${ApiLambdaIntegration}'
 
-  AdminQuotesUpdateRoute:
+  ApiRouteAdminQuotesId:
     Type: AWS::ApiGatewayV2::Route
     Condition: BackendEnabled
     Properties:
       ApiId: !Ref HttpApi
-      RouteKey: 'PUT /api/admin/quotes/{quoteId}'
-      Target: !Sub 'integrations/${HttpApiIntegration}'
+      RouteKey: ANY /api/admin/quotes/{quoteId}
+      Target: !Sub 'integrations/${ApiLambdaIntegration}'
 
-  HttpApiStage:
-    Type: AWS::ApiGatewayV2::Stage
-    Condition: BackendEnabled
-    Properties:
-      ApiId: !Ref HttpApi
-      StageName: prod
-      AutoDeploy: true
-
+  # ── Lambda permission for API Gateway ──
   ApiLambdaPermission:
     Type: AWS::Lambda::Permission
     Condition: BackendEnabled
     Properties:
+      FunctionName: !GetAtt ApiLambda.Arn
       Action: lambda:InvokeFunction
-      FunctionName: !Ref ApiLambda
       Principal: apigateway.amazonaws.com
       SourceArn: !Sub 'arn:aws:execute-api:${AWS::Region}:${AWS::AccountId}:${HttpApi}/*/*'
 
+  # ======================================================================
+  # CLOUDWATCH DASHBOARD — Backend metrics (simplified version)
+  # ======================================================================
+  BackendDashboard:
+    Type: AWS::CloudWatch::Dashboard
+    Condition: BackendEnabled
+    Properties:
+      DashboardName: !Sub '${ProjectName}-${Environment}-api-dashboard'
+      DashboardBody: !Sub |
+        {
+          "widgets": [
+            {
+              "type": "metric",
+              "x": 0, "y": 0, "width": 12, "height": 6,
+              "properties": {
+                "metrics": [
+                  [ "AWS/Lambda", "Errors", { "stat": "Sum", "period": 300, "label": "Lambda Errors" } ],
+                  [ "AWS/Lambda", "Invocations", { "stat": "Sum", "period": 300, "label": "Invocations" } ],
+                  [ "AWS/Lambda", "Throttles", { "stat": "Sum", "period": 300, "label": "Throttles" } ]
+                ],
+                "view": "timeSeries",
+                "stacked": false,
+                "region": "${AWS::Region}",
+                "title": "Lambda Metrics",
+                "period": 300
+              }
+            },
+            {
+              "type": "metric",
+              "x": 12, "y": 0, "width": 12, "height": 6,
+              "properties": {
+                "metrics": [
+                  [ "AWS/Lambda", "Duration", { "stat": "p95", "period": 300, "label": "Duration P95 (ms)" } ]
+                ],
+                "view": "timeSeries",
+                "stacked": false,
+                "region": "${AWS::Region}",
+                "title": "Lambda Duration",
+                "period": 300
+              }
+            },
+            {
+              "type": "metric",
+              "x": 0, "y": 6, "width": 12, "height": 6,
+              "properties": {
+                "metrics": [
+                  [ "AWS/ApiGateway", "4xx", { "stat": "Sum", "period": 300 } ],
+                  [ "AWS/ApiGateway", "5xx", { "stat": "Sum", "period": 300 } ]
+                ],
+                "view": "timeSeries",
+                "stacked": false,
+                "region": "${AWS::Region}",
+                "title": "API Gateway Errors",
+                "period": 300
+              }
+            },
+            {
+              "type": "metric",
+              "x": 12, "y": 6, "width": 12, "height": 6,
+              "properties": {
+                "metrics": [
+                  [ "AWS/DynamoDB", "ConsumedReadCapacityUnits", { "stat": "Sum", "period": 300 } ],
+                  [ "AWS/DynamoDB", "ConsumedWriteCapacityUnits", { "stat": "Sum", "period": 300 } ]
+                ],
+                "view": "timeSeries",
+                "stacked": false,
+                "region": "${AWS::Region}",
+                "title": "DynamoDB Capacity",
+                "period": 300
+              }
+            }
+          ]
+        }
+
+  # ======================================================================
+  # CLOUDWATCH ALARM — Lambda errors
+  # ======================================================================
+  LambdaErrorAlarm:
+    Type: AWS::CloudWatch::Alarm
+    Condition: BackendEnabled
+    Properties:
+      AlarmName: !Sub '${ProjectName}-${Environment}-lambda-errors'
+      AlarmDescription: !Sub 'Lambda errors in ${ProjectName} ${Environment} backend'
+      Namespace: AWS/Lambda
+      MetricName: Errors
+      Statistic: Sum
+      Period: 300
+      EvaluationPeriods: 2
+      Threshold: 5
+      ComparisonOperator: GreaterThanOrEqualToThreshold
+      TreatMissingData: notBreaching
+      Dimensions:
+        - Name: FunctionName
+          Value: !Ref ApiLambda
+
+  AlarmTopic:
+    Type: AWS::SNS::Topic
+    Condition: AlarmsEnabled
+    Properties:
+      TopicName: !Sub '${ProjectName}-${Environment}-alarms'
+      DisplayName: !Sub '${ProjectName} ${Environment} Alarms'
+
+  AlarmSubscription:
+    Type: AWS::SNS::Subscription
+    Condition: AlarmsEnabled
+    Properties:
+      TopicArn: !Ref AlarmTopic
+      Protocol: email
+      Endpoint: !Ref AlarmEmail
+
+  LambdaErrorAlarmAction:
+    Type: AWS::CloudWatch::Alarm
+    Condition: AlarmsEnabled
+    Properties:
+      AlarmName: !Sub '${ProjectName}-${Environment}-lambda-errors-action'
+      AlarmDescription: !Sub 'Lambda errors with SNS notification for ${ProjectName} ${Environment}'
+      Namespace: AWS/Lambda
+      MetricName: Errors
+      Statistic: Sum
+      Period: 300
+      EvaluationPeriods: 2
+      Threshold: 5
+      ComparisonOperator: GreaterThanOrEqualToThreshold
+      TreatMissingData: notBreaching
+      AlarmActions:
+        - !Ref AlarmTopic
+      Dimensions:
+        - Name: FunctionName
+          Value: !Ref ApiLambda
+
 Outputs:
-  WebsiteBucketName:
-    Value: !Ref WebsiteBucket
-
-  CloudFrontDistributionId:
-    Value: !Ref WebsiteDistribution
-
-  CloudFrontDomainName:
-    Value: !GetAtt WebsiteDistribution.DomainName
-
   WebsiteUrl:
+    Description: CloudFront distribution URL
     Value: !Sub 'https://${WebsiteDistribution.DomainName}'
-
-  ApiEndpoint:
-    Condition: BackendEnabled
-    Value: !Sub '${HttpApi.ApiEndpoint}/prod'
-
-  ProductsTableName:
-    Condition: BackendEnabled
-    Value: !Ref ProductsTable
-
-  QuotesTableName:
-    Condition: BackendEnabled
-    Value: !Ref QuotesTable
-
+  WebsiteBucketName:
+    Description: S3 bucket for static assets
+    Value: !Ref WebsiteBucket
+  CloudFrontDistributionId:
+    Description: CloudFront distribution ID
+    Value: !Ref WebsiteDistribution
+  CloudFrontDomainName:
+    Description: CloudFront domain name
+    Value: !GetAtt WebsiteDistribution.DomainName
+  WafWebACLArn:
+    Description: WAF WebACL ARN
+    Value: !GetAtt WebACL.Arn
   AdminAuthFunctionArn:
+    Description: CloudFront Function ARN for admin auth
     Value: !GetAtt AdminAuthFunction.FunctionARN
+  ApiEndpoint:
+    Description: API Gateway HTTP API endpoint
+    Condition: BackendEnabled
+    Value: !GetAtt HttpApi.ApiEndpoint
+  SSMSecretPath:
+    Description: Path in SSM Parameter Store for secrets
+    Value: !Sub '/${ProjectName}/${Environment}/'

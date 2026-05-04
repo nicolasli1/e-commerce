@@ -5,10 +5,12 @@ from aws_cdk import (
     aws_cloudfront as cloudfront,
     aws_wafv2 as wafv2,
     aws_iam as iam,
+    aws_cloudwatch as cloudwatch,
     CfnOutput,
     Fn,
     Stack,
     RemovalPolicy,
+    Duration,
 )
 from constructs import Construct
 
@@ -17,10 +19,10 @@ import pathlib
 
 class FrontendStack(Stack):
     """
-    Frontend stack: S3 bucket + CloudFront distribution + WAF.
+    Frontend stack: S3 bucket + CloudFront distribution + WAF + Monitoring.
 
     Hosts static website assets behind a CDN with security headers,
-    Origin Access Control (OAC), and a WAF WebACL (AWS managed rules + rate limit).
+    Origin Access Control (OAC), WAF WebACL, and CloudFront Function for SPA routing.
     """
 
     def __init__(
@@ -40,6 +42,36 @@ class FrontendStack(Stack):
         # 0. CloudFront function path (relative to this file)
         # ------------------------------------------------------------------
         cf_function_path = pathlib.Path(__file__).parent.parent / "cloudfront-functions" / "admin-auth.js"
+        cf_function_code = cf_function_path.read_text() if cf_function_path.exists() else (
+            "// CloudFront Function for SPA routing + session cookie validation\n"
+            'var COOKIE_NAME = "session";\n'
+            'var FILE_EXTENSIONS = [".js", ".css", ".png", ".jpg", ".jpeg", ".svg", ".ico", ".woff", ".woff2", ".json", ".webp", ".gif"];\n'
+            'var PUBLIC_ADMIN_PATHS = ["/admin/login", "/admin/assets/"];\n'
+            "\n"
+            "function handler(event) {\n"
+            "    var request = event.request;\n"
+            "    var uri = request.uri;\n"
+            "    var cookies = request.cookies;\n"
+            "\n"
+            "    for (var i = 0; i < PUBLIC_ADMIN_PATHS.length; i++) {\n"
+            "        if (uri.startsWith(PUBLIC_ADMIN_PATHS[i])) {\n"
+            "            return request;\n"
+            "        }\n"
+            "    }\n"
+            "\n"
+            "    for (var i = 0; i < FILE_EXTENSIONS.length; i++) {\n"
+            "        if (uri.indexOf(FILE_EXTENSIONS[i]) === uri.length - FILE_EXTENSIONS[i].length) {\n"
+            "            return request;\n"
+            "        }\n"
+            "    }\n"
+            "\n"
+            "    if (uri !== '/admin/index.html') {\n"
+            "        request.uri = '/admin/index.html';\n"
+            "    }\n"
+            "\n"
+            "    return request;\n"
+            "}"
+        )
 
         # ------------------------------------------------------------------
         # 1. S3 bucket – private, encrypted, versioned
@@ -53,6 +85,12 @@ class FrontendStack(Stack):
             versioned=True,
             removal_policy=RemovalPolicy.DESTROY,
             auto_delete_objects=True,
+            lifecycle_rules=[
+                s3.LifecycleRule(
+                    id="ExpireOldVersions",
+                    noncurrent_version_expiration=Duration.days(30),
+                ),
+            ],
         )
 
         # ------------------------------------------------------------------
@@ -115,36 +153,16 @@ class FrontendStack(Stack):
         )
 
         # ------------------------------------------------------------------
-        # 4. CloudFront Function — /admin/ routes
-        # For MVP: passes all requests through + SPA routing.
-        # Real auth is at API level (API Key + JWT Bearer token in Lambda).
-        # The backoffice SPA uses localStorage + Bearer token, not cookies.
-        # SPA fallback: rewrites /admin/* paths without file extensions to /admin/index.html.
+        # 4. CloudFront Function — /admin/ routes SPA routing
         # ------------------------------------------------------------------
         admin_auth_func = cloudfront.CfnFunction(
             self,
             "AdminAuthFunction",
             name=f"{project_name}-{environment}-admin-auth",
             auto_publish=True,
-            function_code=cf_function_path.read_text() if cf_function_path.exists() else (
-                "// SPA routing for /admin/\n"
-                'var FILE_EXTENSIONS = [".js", ".css", ".png", ".jpg", ".svg", ".ico", ".woff", ".woff2", ".json"];\n'
-                "function handler(event) {\n"
-                "    var request = event.request;\n"
-                "    var uri = request.uri;\n"
-                "    for (var i = 0; i < FILE_EXTENSIONS.length; i++) {\n"
-                "        if (uri.indexOf(FILE_EXTENSIONS[i]) === uri.length - FILE_EXTENSIONS[i].length) {\n"
-                "            return request;\n"
-                "        }\n"
-                "    }\n"
-                "    if (uri !== '/admin/index.html') {\n"
-                "        request.uri = '/admin/index.html';\n"
-                "    }\n"
-                "    return request;\n"
-                "}"
-            ),
+            function_code=cf_function_code,
             function_config=cloudfront.CfnFunction.FunctionConfigProperty(
-                comment="Pass-through for /admin/ routes (auth via API)",
+                comment="SPA routing for /admin/ + session cookie validation",
                 runtime="cloudfront-js-2.0",
             ),
         )
@@ -163,7 +181,6 @@ class FrontendStack(Stack):
                 sampled_requests_enabled=True,
             ),
             rules=[
-                # AWS managed – common threats (SQLi, XSS, LFI, etc.)
                 wafv2.CfnWebACL.RuleProperty(
                     name="AWS-AWSManagedRulesCommonRuleSet",
                     priority=1,
@@ -180,7 +197,6 @@ class FrontendStack(Stack):
                         sampled_requests_enabled=True,
                     ),
                 ),
-                # AWS managed – SQL injection
                 wafv2.CfnWebACL.RuleProperty(
                     name="AWS-AWSManagedRulesSQLiRuleSet",
                     priority=2,
@@ -197,7 +213,6 @@ class FrontendStack(Stack):
                         sampled_requests_enabled=True,
                     ),
                 ),
-                # AWS managed – known bad inputs
                 wafv2.CfnWebACL.RuleProperty(
                     name="AWS-AWSManagedRulesKnownBadInputsRuleSet",
                     priority=3,
@@ -214,7 +229,6 @@ class FrontendStack(Stack):
                         sampled_requests_enabled=True,
                     ),
                 ),
-                # Rate-based rule – 2000 requests per 5 min per IP
                 wafv2.CfnWebACL.RuleProperty(
                     name="RateLimit",
                     priority=4,
@@ -235,9 +249,8 @@ class FrontendStack(Stack):
         )
 
         # ------------------------------------------------------------------
-        # 5. CloudFront distribution
+        # 6. CloudFront distribution
         # ------------------------------------------------------------------
-        # Build origins list: always the S3 origin, optionally the API origin
         origins = [
             cloudfront.CfnDistribution.OriginProperty(
                 id="S3Origin",
@@ -247,37 +260,29 @@ class FrontendStack(Stack):
             )
         ]
 
-        # Default cache behavior – static assets from S3
-        default_cache_behavior = (
-            cloudfront.CfnDistribution.DefaultCacheBehaviorProperty(
-                target_origin_id="S3Origin",
-                viewer_protocol_policy="redirect-to-https",
-                compress=True,
-                allowed_methods=["GET", "HEAD", "OPTIONS"],
-                cached_methods=["GET", "HEAD"],
-                response_headers_policy_id=security_headers.ref,
-                forwarded_values=cloudfront.CfnDistribution.ForwardedValuesProperty(
-                    query_string=False,
-                    cookies=cloudfront.CfnDistribution.CookiesProperty(
-                        forward="none"
-                    ),
+        default_cache_behavior = cloudfront.CfnDistribution.DefaultCacheBehaviorProperty(
+            target_origin_id="S3Origin",
+            viewer_protocol_policy="redirect-to-https",
+            compress=True,
+            allowed_methods=["GET", "HEAD", "OPTIONS"],
+            cached_methods=["GET", "HEAD"],
+            response_headers_policy_id=security_headers.ref,
+            forwarded_values=cloudfront.CfnDistribution.ForwardedValuesProperty(
+                query_string=False,
+                cookies=cloudfront.CfnDistribution.CookiesProperty(
+                    forward="none"
                 ),
-            )
+            ),
         )
 
-        # Additional cache behaviors (for API route if backend enabled)
         cache_behaviors = []
         if api_endpoint:
-            # Extract domain from API Gateway endpoint
-            # HTTP API (v2) format: https://{api-id}.execute-api.{region}.amazonaws.com
-            # No stage path needed — HTTP API v2 routes are at root
             api_domain = Fn.select(2, Fn.split("/", api_endpoint))
 
             origins.append(
                 cloudfront.CfnDistribution.OriginProperty(
                     id="APIOrigin",
                     domain_name=api_domain,
-                    # HTTP API (v2) no tiene stage en la URL
                     custom_origin_config=cloudfront.CfnDistribution.CustomOriginConfigProperty(
                         https_port=443,
                         origin_protocol_policy="https-only",
@@ -300,7 +305,6 @@ class FrontendStack(Stack):
                 )
             )
 
-            # Admin/backoffice route — S3 origin with CloudFront Function auth
             cache_behaviors.append(
                 cloudfront.CfnDistribution.CacheBehaviorProperty(
                     path_pattern="admin/*",
@@ -350,51 +354,152 @@ class FrontendStack(Stack):
                         response_page_path="/index.html",
                     ),
                 ],
+                # CloudFront default certificate (no custom domain)
                 viewer_certificate=cloudfront.CfnDistribution.ViewerCertificateProperty(
                     cloud_front_default_certificate=True,
                 ),
-                web_acl_id=waf_acl.attr_arn,
+                logging=cloudfront.CfnDistribution.LoggingProperty(
+                    bucket=bucket.bucket_regional_domain_name,
+                    prefix=f"cloudfront-logs/{environment}/",
+                    include_cookies=False,
+                ),
             ),
         )
 
         # ------------------------------------------------------------------
-        # 6. Bucket policy – only CloudFront can read
+        # 7. Bucket policy – only CloudFront can read
         # ------------------------------------------------------------------
-        bucket.add_to_resource_policy(
-            iam.PolicyStatement(
-                sid="AllowCloudFrontRead",
-                effect=iam.Effect.ALLOW,
-                principals=[iam.ServicePrincipal("cloudfront.amazonaws.com")],
-                actions=["s3:GetObject"],
-                resources=[bucket.arn_for_objects("*")],
-                conditions={
-                    "StringEquals": {
-                        "AWS:SourceArn": (
-                            f"arn:aws:cloudfront::{self.account}"
-                            f":distribution/{distribution.ref}"
-                        )
-                    }
-                },
-            )
+        bucket_policy = iam.PolicyStatement(
+            sid="AllowCloudFrontRead",
+            effect=iam.Effect.ALLOW,
+            principals=[iam.ServicePrincipal("cloudfront.amazonaws.com")],
+            actions=["s3:GetObject"],
+            resources=[bucket.arn_for_objects("*")],
+            conditions={
+                "StringEquals": {
+                    "AWS:SourceArn": f"arn:aws:cloudfront::{self.account}:distribution/{distribution.ref}"
+                }
+            },
+        )
+        bucket.add_to_resource_policy(bucket_policy)
+
+        # ------------------------------------------------------------------
+        # 8. CloudFront monitoring dashboard
+        # ------------------------------------------------------------------
+        dashboard = cloudwatch.Dashboard(
+            self,
+            "FrontendDashboard",
+            dashboard_name=f"{project_name}-{environment}-cdn-dashboard",
+        )
+
+        dashboard.add_widgets(
+            cloudwatch.Row(
+                cloudwatch.GraphWidget(
+                    title="CloudFront – Requests & Errors",
+                    left=[
+                        cloudwatch.Metric(
+                            namespace="AWS/CloudFront",
+                            metric_name="Requests",
+                            dimensions_map={
+                                "DistributionId": distribution.ref,
+                                "Region": "Global",
+                            },
+                            statistic="Sum",
+                            period=Duration.minutes(5),
+                            label="Requests",
+                        ),
+                        cloudwatch.Metric(
+                            namespace="AWS/CloudFront",
+                            metric_name="TotalErrorRate",
+                            dimensions_map={
+                                "DistributionId": distribution.ref,
+                                "Region": "Global",
+                            },
+                            statistic="Average",
+                            period=Duration.minutes(5),
+                            label="Error Rate (%)",
+                        ),
+                    ],
+                    view=cloudwatch.GraphWidgetView.TIME_SERIES,
+                ),
+                cloudwatch.GraphWidget(
+                    title="CloudFront – Bytes Downloaded",
+                    left=[
+                        cloudwatch.Metric(
+                            namespace="AWS/CloudFront",
+                            metric_name="BytesDownloaded",
+                            dimensions_map={
+                                "DistributionId": distribution.ref,
+                                "Region": "Global",
+                            },
+                            statistic="Sum",
+                            period=Duration.minutes(5),
+                            label="Bytes Downloaded",
+                        ),
+                    ],
+                    view=cloudwatch.GraphWidgetView.TIME_SERIES,
+                ),
+            ),
+            cloudwatch.Row(
+                cloudwatch.GraphWidget(
+                    title="WAF – Blocked Requests",
+                    left=[
+                        cloudwatch.Metric(
+                            namespace="AWS/WAFV2",
+                            metric_name="BlockedRequests",
+                            dimensions_map={
+                                "WebACL": f"{project_name}-{environment}-waf",
+                                "Region": "Global",
+                            },
+                            statistic="Sum",
+                            period=Duration.minutes(5),
+                            label="Blocked Requests",
+                        ),
+                        cloudwatch.Metric(
+                            namespace="AWS/WAFV2",
+                            metric_name="AllowedRequests",
+                            dimensions_map={
+                                "WebACL": f"{project_name}-{environment}-waf",
+                                "Region": "Global",
+                            },
+                            statistic="Sum",
+                            period=Duration.minutes(5),
+                            label="Allowed Requests",
+                        ),
+                    ],
+                    view=cloudwatch.GraphWidgetView.TIME_SERIES,
+                ),
+                cloudwatch.GraphWidget(
+                    title="S3 – Bucket Size",
+                    left=[
+                        cloudwatch.Metric(
+                            namespace="AWS/S3",
+                            metric_name="BucketSizeBytes",
+                            dimensions_map={
+                                "BucketName": bucket.bucket_name,
+                                "StorageType": "StandardStorage",
+                            },
+                            statistic="Average",
+                            period=Duration.hours(1),
+                            label="Bucket Size (bytes)",
+                        ),
+                    ],
+                    view=cloudwatch.GraphWidgetView.TIME_SERIES,
+                ),
+            ),
         )
 
         # ------------------------------------------------------------------
         # Outputs
         # ------------------------------------------------------------------
+        CfnOutput(
+            self, "WebsiteUrl",
+            value=f"https://{distribution.get_att('DomainName')}",
+            description="CloudFront distribution URL",
+        )
         CfnOutput(self, "WebsiteBucketName", value=bucket.bucket_name)
         CfnOutput(self, "CloudFrontDistributionId", value=distribution.ref)
-        CfnOutput(
-            self,
-            "CloudFrontDomainName",
-            value=distribution.attr_domain_name,
-        )
-        CfnOutput(
-            self,
-            "WebsiteUrl",
-            value=f"https://{distribution.attr_domain_name}",
-        )
-        CfnOutput(
-            self,
-            "AdminAuthFunctionArn",
-            value=admin_auth_func.attr_function_arn,
-        )
+        CfnOutput(self, "CloudFrontDomainName", value=distribution.get_att("DomainName").to_string())
+        CfnOutput(self, "WafWebACLArn", value=waf_acl.attr_arn)
+        CfnOutput(self, "AdminAuthFunctionArn", value=admin_auth_func.attr_function_arn)
+        CfnOutput(self, "CdnDashboardName", value=dashboard.dashboard_name)
