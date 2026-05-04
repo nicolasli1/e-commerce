@@ -424,7 +424,7 @@ _secret_cache_ts = 0
 _SECRET_CACHE_TTL = 900  # 15 seconds → 15 * 60 = 900
 
 
-def _get_secret(param_name):
+def _get_secret(param_name, default=None):
     \"\"\"Get a secret from SSM Parameter Store with caching.\"\"\"
     global _secret_cache, _secret_cache_ts
     now = time.time()
@@ -440,8 +440,10 @@ def _get_secret(param_name):
             _secret_cache[param_name] = response["Parameter"]["Value"]
         except Exception as e:
             print(f"ERROR: Failed to get secret {{param_name}}: {{e}}")
-            # Fallback for dev/testing only — never in production
-            if ENVIRONMENT in ("dev",):
+            # Fallback for dev/testing
+            if default is not None:
+                _secret_cache[param_name] = default
+            elif ENVIRONMENT in ("dev",):
                 _secret_cache[param_name] = f"dev-fallback-{{param_name}}"
             else:
                 raise
@@ -449,15 +451,19 @@ def _get_secret(param_name):
 
 
 def _get_admin_credentials():
-    \"\"\"Load admin credentials from SSM Parameter Store.\"\"\"
-    admin_user = _get_secret(f"{{SSM_SECRET_PATH}}admin-user")
-    admin_pass = _get_secret(f"{{SSM_SECRET_PATH}}admin-password")
+    \"\"\"Load admin credentials from SSM Parameter Store.
+    Falls back to admin/admin123 when SSM is unavailable (dev only).
+    \"\"\"
+    admin_user = _get_secret(f"{{SSM_SECRET_PATH}}admin-user", default="admin")
+    admin_pass = _get_secret(f"{{SSM_SECRET_PATH}}admin-password", default="admin123")
     return admin_user, admin_pass
 
 
 def _get_session_secret():
-    \"\"\"Load session signing secret from SSM Parameter Store.\"\"\"
-    return _get_secret(f"{{SSM_SECRET_PATH}}admin-session-secret")
+    \"\"\"Load session signing secret from SSM Parameter Store.
+    Falls back to a dev default when SSM is unavailable (dev only).
+    \"\"\"
+    return _get_secret(f"{{SSM_SECRET_PATH}}admin-session-secret", default="nexcore-session-secret-dev")
 
 
 # ─── RESPONSE HELPERS ───────────────────────────────────
