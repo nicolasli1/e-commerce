@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "updatedAt": "2026-05-04T13:38:01.425Z",
+  "updatedAt": "2026-05-04T15:01:37.560Z",
   "entries": {
     "memory:memory/2026-05-04.md:87:98": {
       "key": "memory:memory/2026-05-04.md:87:98",
@@ -74,19 +74,20 @@
       "endLine": 41,
       "source": "memory",
       "snippet": "# Daily Log — 2026-05-04 ## CEO Session — First Strategic Review ### Project State - **Brand**: NexCore — Componentes Tecnológicos - **Product**: Sales website for tech components (CPUs, GPUs, RAM, storage, PSUs, cooling) - **Stack**: AWS (S3 + CloudFront + WAF + API Gateway + Lambda + DynamoDB) - **Infrastructure**: CDK (Python) + CloudFormation fallback - **CI/CD**: GitHub Actions pipeline - **Status**: v1 is code-complete, NOT deployed yet ### What exists #### Frontend (landing page) - ✅ `/frontend/index.html` — Full NexCore landing page (dark theme, Inter font, glassmorphism) - Hero section with stats - Categories grid (6 categories) - Featured products (4 products) - Testimo",
-      "recallCount": 5,
+      "recallCount": 6,
       "dailyCount": 0,
       "groundedCount": 0,
-      "totalScore": 4.455028421567885,
+      "totalScore": 5.086499972200877,
       "maxScore": 1,
       "firstRecalledAt": "2026-05-04T05:46:36.208Z",
-      "lastRecalledAt": "2026-05-04T13:38:01.425Z",
+      "lastRecalledAt": "2026-05-04T15:01:37.560Z",
       "queryHashes": [
         "6c940bbda91e",
         "91f83ce686f1",
         "14b692bafbe8",
         "1879de265fc3",
-        "368be7c0bf6d"
+        "368be7c0bf6d",
+        "97ad63f98111"
       ],
       "recallDays": [
         "2026-05-04"
@@ -109,17 +110,18 @@
       "endLine": 74,
       "source": "memory",
       "snippet": "- Products (#/products) — CRUD with modal form, category filter, soft-delete - Leads (#/leads) — list + mark contacted - Quotes (#/quotes) — list + status change dropdown #### Backend (Lambda + DynamoDB) - ✅ Inline Python Lambda (Python 3.12, 30s timeout) - ✅ 3 DynamoDB tables: `leads`, `products`, `quotes` - ✅ Endpoints: - `GET /api/health` - `POST /api/leads` - `POST /api/admin/login` (HMAC token) - `GET /api/admin/dashboard` - `GET/POST /api/admin/products` - `PUT/DELETE /api/admin/products/{productId}` - `GET /api/admin/leads` - `PUT /api/admin/leads/{leadId}` - `GET /api/admin/quotes` - `PUT /api/admin/quotes/{quoteId}` - ✅ Admin auth: HMAC-based JWT-like toke",
-      "recallCount": 3,
+      "recallCount": 4,
       "dailyCount": 0,
       "groundedCount": 0,
-      "totalScore": 2.2637761554689755,
+      "totalScore": 2.8956638874602705,
       "maxScore": 1,
       "firstRecalledAt": "2026-05-04T13:09:24.850Z",
-      "lastRecalledAt": "2026-05-04T13:38:01.425Z",
+      "lastRecalledAt": "2026-05-04T15:01:37.560Z",
       "queryHashes": [
         "14b692bafbe8",
         "1879de265fc3",
-        "368be7c0bf6d"
+        "368be7c0bf6d",
+        "97ad63f98111"
       ],
       "recallDays": [
         "2026-05-04"
