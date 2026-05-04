@@ -76,12 +76,20 @@ def test_cart_button_is_visible_and_opens_modal(
     try:
         cart_button = page.locator("#cartNavBtn")
         expect_modal = page.locator("#cartModal")
+        modal_panel = page.locator("#cartModal .modal")
 
         assert cart_button.is_visible(), "Cart trigger should stay visible"
         cart_button.click()
 
         expect_modal.wait_for(state="visible")
         assert "open" in (expect_modal.get_attribute("class") or "")
+        assert modal_panel.is_visible(), "Cart panel should open inside the viewport"
+        box = modal_panel.bounding_box()
+        assert box is not None
+        viewport = page.viewport_size
+        assert viewport is not None
+        assert box["y"] >= 0
+        assert box["y"] + box["height"] <= viewport["height"]
         assert page.locator("#cartEmpty").is_visible()
     finally:
         with contextlib.suppress(Exception):

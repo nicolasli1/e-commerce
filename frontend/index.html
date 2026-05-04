@@ -657,6 +657,66 @@
     }
 
     /* ==============================
+       CART / CHECKOUT MODAL
+    ============================== */
+    .modal-overlay {
+      position: fixed;
+      inset: 0;
+      display: none;
+      align-items: center;
+      justify-content: center;
+      padding: 24px;
+      background: rgba(6, 8, 15, 0.78);
+      backdrop-filter: blur(18px);
+      -webkit-backdrop-filter: blur(18px);
+      z-index: 3000;
+    }
+    .modal-overlay.open {
+      display: flex;
+    }
+    .modal {
+      width: min(100%, 560px);
+      max-height: min(85vh, 760px);
+      overflow-y: auto;
+      padding: 28px;
+      border-radius: 28px;
+      background: linear-gradient(180deg, rgba(17, 19, 31, 0.98), rgba(10, 10, 15, 0.98));
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      box-shadow: 0 30px 80px rgba(0, 0, 0, 0.45);
+    }
+    .modal-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 16px;
+      margin-bottom: 20px;
+    }
+    .modal-title {
+      font-size: 1.5rem;
+      font-weight: 700;
+      letter-spacing: -0.03em;
+    }
+    .modal-close {
+      width: 40px;
+      height: 40px;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      border-radius: 9999px;
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      background: rgba(255, 255, 255, 0.04);
+      color: #f5f5f7;
+      cursor: pointer;
+      font-size: 1rem;
+    }
+    .modal-close:hover {
+      background: rgba(255, 255, 255, 0.1);
+    }
+    body.modal-open {
+      overflow: hidden;
+    }
+
+    /* ==============================
        CTA / CONTACT
     ============================== */
     .cta {
@@ -696,11 +756,12 @@
       flex-wrap: wrap;
       justify-content: center;
     }
-    .cta-form input {
+    .cta-form input,
+    .cta-form textarea {
       flex: 1;
       min-width: 220px;
       padding: 14px 20px;
-      border-radius: 9999px;
+      border-radius: 20px;
       border: 1px solid rgba(255, 255, 255, 0.1);
       background: rgba(255, 255, 255, 0.05);
       color: #f5f5f7;
@@ -709,10 +770,12 @@
       outline: none;
       transition: border-color 0.3s ease;
     }
-    .cta-form input:focus {
+    .cta-form input:focus,
+    .cta-form textarea:focus {
       border-color: rgba(99, 102, 241, 0.5);
     }
-    .cta-form input::placeholder {
+    .cta-form input::placeholder,
+    .cta-form textarea::placeholder {
       color: #636366;
     }
 
@@ -1230,6 +1293,17 @@
       setTimeout(() => t.remove(), 3000);
     }
 
+    function openCart() {
+      document.getElementById('cartModal')?.classList.add('open');
+      document.body.classList.add('modal-open');
+      renderCart();
+    }
+
+    function closeCart() {
+      document.getElementById('cartModal')?.classList.remove('open');
+      document.body.classList.remove('modal-open');
+    }
+
     function buildCartMessage() {
       if (cart.length === 0) return '';
 
@@ -1260,7 +1334,7 @@
         messageInput.value = buildCartMessage();
       }
 
-      document.getElementById('cartModal')?.classList.remove('open');
+      closeCart();
       window.location.hash = 'contacto';
       document.getElementById('contacto')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
       document.getElementById('emailInput')?.focus();
@@ -1272,15 +1346,14 @@
       if (cartLink) {
         cartLink.addEventListener('click', (e) => {
           e.preventDefault();
-          document.getElementById('cartModal').classList.add('open');
-          renderCart();
+          openCart();
         });
       }
       document.getElementById('cartCloseBtn')?.addEventListener('click', () => {
-        document.getElementById('cartModal').classList.remove('open');
+        closeCart();
       });
       document.getElementById('cartModal')?.addEventListener('click', (e) => {
-        if (e.target === e.currentTarget) e.target.classList.remove('open');
+        if (e.target === e.currentTarget) closeCart();
       });
       document.getElementById('checkoutBtn')?.addEventListener('click', goToCheckout);
       updateCartCount();
