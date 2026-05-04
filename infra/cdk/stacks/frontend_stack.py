@@ -74,7 +74,8 @@ class FrontendStack(Stack):
         )
 
         # ------------------------------------------------------------------
-        # 1. S3 bucket – private, encrypted, versioned
+        # 1. S3 buckets
+        # 1a. Website bucket – private, encrypted, versioned
         # ------------------------------------------------------------------
         bucket = s3.Bucket(
             self,
@@ -91,6 +92,42 @@ class FrontendStack(Stack):
                     noncurrent_version_expiration=Duration.days(30),
                 ),
             ],
+        )
+
+        # ------------------------------------------------------------------
+        # 1b. CloudFront logging bucket – separate, ACL-enabled for CF writes
+        # ------------------------------------------------------------------
+        log_bucket = s3.Bucket(
+            self,
+            "LogBucket",
+            bucket_name=f"{project_name}-{environment}-{self.account}-{self.region}-logs",
+            encryption=s3.BucketEncryption.S3_MANAGED,
+            block_public_access=s3.BlockPublicAccess.BLOCK_ALL,
+            versioned=True,
+            removal_policy=RemovalPolicy.DESTROY,
+            auto_delete_objects=True,
+            lifecycle_rules=[
+                s3.LifecycleRule(
+                    id="ExpireLogsAfter90Days",
+                    expiration=Duration.days(90),
+                ),
+            ],
+        )
+
+        # Bucket policy: grant CloudFront service principal PutObject
+        log_bucket.add_to_resource_policy(
+            iam.PolicyStatement(
+                sid="AllowCloudFrontLogDelivery",
+                effect=iam.Effect.ALLOW,
+                principals=[iam.ServicePrincipal("cloudfront.amazonaws.com")],
+                actions=["s3:PutObject"],
+                resources=[log_bucket.arn_for_objects("*")],
+                conditions={
+                    "StringEquals": {
+                        "AWS:SourceAccount": self.account,
+                    }
+                },
+            )
         )
 
         # ------------------------------------------------------------------
@@ -359,7 +396,7 @@ class FrontendStack(Stack):
                     cloud_front_default_certificate=True,
                 ),
                 logging=cloudfront.CfnDistribution.LoggingProperty(
-                    bucket=bucket.bucket_regional_domain_name,
+                    bucket=log_bucket.bucket_regional_domain_name,
                     prefix=f"cloudfront-logs/{environment}/",
                     include_cookies=False,
                 ),
