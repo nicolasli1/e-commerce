@@ -8,6 +8,9 @@ Base architecture for a sales website on AWS with:
 | Backend     | BackendStack  | **API Gateway HTTP** + **Lambda** + **DynamoDB** |
 | Infra       | CDK (Python)  | `aws-cdk-lib` ≥ 2.100          |
 
+> **100% Python — sin Node.js.** El CLI de CDK corre dentro de Docker.
+> Ver `scripts/deploy.py` para los comandos.
+
 > ⚡ **Dos opciones de gestión de infraestructura:**
 > - **CDK (recomendado)** → `infra/cdk/` — este es el camino principal.
 > - **CloudFormation** → `infra/cloudformation/sales-website.yaml` — versión YAML plana, útil como referencia o para entornos sin CDK.
@@ -43,86 +46,75 @@ Usuario ──► CloudFront ──┬──► S3 (estático)
 
 ---
 
-## Despliegue
+## Despliegue local (100% Python + Docker)
 
 ### Prerrequisitos
 
-```bash
-# 1. Instalar Node.js (para CDK CLI)
-# 2. Instalar CDK CLI
-npm install -g aws-cdk
+- Python 3.12+
+- Docker
+- AWS credentials configuradas (`~/.aws/credentials` o variables de entorno)
 
-# 3. Instalar dependencias Python
+### Devcontainer (VS Code — recomendado)
+
+```bash
+# Abre la carpeta en VS Code
+# Cmd+Shift+P → "Dev Containers: Reopen in Container"
+# Todo viene preinstalado: Python, AWS CLI, Docker-in-Docker
+```
+
+### Sin devcontainer
+
+```bash
 cd infra/cdk
 python -m venv .venv
 source .venv/bin/activate
 pip install -r requirements.txt
 ```
 
-### Bootstrap (una sola vez por cuenta/región)
+### Comandos (vía Python — sin Node.js)
 
 ```bash
-cd infra/cdk
-cdk bootstrap
+# Validar infraestructura
+python scripts/deploy.py synth
+
+# Bootstrap (una sola vez por cuenta/región)
+python scripts/deploy.py bootstrap
+
+# Desplegar todo
+python scripts/deploy.py deploy --all
+
+# Desplegar solo frontend
+python scripts/deploy.py deploy frontend
+
+# Desplegar solo backend
+python scripts/deploy.py deploy backend
+
+# Destruir
+python scripts/deploy.py destroy --all
+
+# Ver outputs
+python scripts/deploy.py outputs
+
+# Con parámetros personalizados
+python scripts/deploy.py deploy --all --env=prod --project=mi-sitio --price-class=PriceClass_All
 ```
 
-### Deploy
+### Subir frontend manualmente
 
 ```bash
-# Todo junto
-cdk deploy --all
+python scripts/deploy.py outputs
+# Copia el bucket name del output y luego:
+aws s3 sync ./frontend s3://<BUCKET_NAME> --delete
 
-# O por separado
-cdk deploy sales-website-dev-backend    # backend primero
-cdk deploy sales-website-dev-frontend   # frontend después
-```
-
-### Subir el frontend
-
-```bash
-# Después del deploy, sube tu sitio compilado
-aws s3 sync ./dist s3://TU_BUCKET_NAME --delete
-
-# Invalida la caché de CloudFront
+# Invalidar CloudFront
 aws cloudfront create-invalidation \
-  --distribution-id TU_DISTRIBUTION_ID \
+  --distribution-id <DISTRIBUTION_ID> \
   --paths '/*'
 ```
-
-### Ver outputs
-
-```bash
-aws cloudformation describe-stacks \
-  --stack-name sales-website-dev-frontend \
-  --query 'Stacks[0].Outputs'
-```
-
----
-
-## Personalización vía context (cdk deploy --context ...)
-
-```bash
-# Entorno staging
-cdk deploy --all \
-  --context environment=stage \
-  --context project_name=mi-sitio
-
-# Solo frontend, sin backend
-cdk deploy sales-website-dev-frontend \
-  --context enable_backend=false
-
-# PriceClass más amplio
-cdk deploy sales-website-dev-frontend \
-  --context price_class=PriceClass_All
-```
-
----
 
 ---
 
 ## CI/CD con GitHub Actions
-
-El pipeline automatiza todo: synth → deploy → frontend → invalidation.
 
 ### Secrets necesarios en GitHub
 
@@ -133,33 +125,22 @@ El pipeline automatiza todo: synth → deploy → frontend → invalidation.
 | `AWS_ACCOUNT_ID` | ID de tu cuenta AWS (12 dígitos) |
 | `AWS_BACKEND_REGION` | Región para el backend (default: `us-east-2`) |
 
-> Alternativa recomendada: usar **OIDC** en vez de access keys.
-> Consulta [aws-actions/configure-aws-credentials](https://github.com/aws-actions/configure-aws-credentials).
+> ⚠️ Sin Node.js en el pipeline. CDK corre via Docker (`public.ecr.aws/aws-cdk/cli`).
 
-### Cómo funciona
+### Disparo
 
-```yaml
-on:
-  push:
-    branches: [main, master]    # auto-deploy al hacer push
-  workflow_dispatch:             # también manual desde GitHub UI
-    inputs:
-      environment:               # dev \| stage \| prod
-```
+- **Automático**: push a `main` o `master`.
+- **Manual**: GitHub UI → Actions → Deploy Sales Website → Run workflow.
 
-1. **Validate** — corre `cdk synth` para verificar que la infraestructura es válida.
-2. **Deploy** — `cdk bootstrap` (una vez) + `cdk deploy` de ambos stacks.
-3. **Frontend** — build del frontend + `aws s3 sync` al bucket.
-4. **Invalidate** — `aws cloudfront create-invalidation /*`.
+### Flujo
 
-Ver `.github/workflows/deploy.yml` para los detalles.
+1. **Validate** — `cdk synth` via Docker.
+2. **Bootstrap** — CDK bootstrap en us-east-1 y backend region.
+3. **Deploy** — backend stack + frontend stack via Docker.
+4. **Sync** — `aws s3 sync ./frontend` al bucket.
+5. **Invalidate** — `aws cloudfront create-invalidation /*`.
 
-### Trigger manual
-
-```bash
-# Desde GitHub UI: Actions → Deploy Sales Website → Run workflow
-# Elegir: dev, stage, o prod
-```
+Ver [`.github/workflows/deploy.yml`](.github/workflows/deploy.yml).
 
 ---
 
@@ -180,3 +161,5 @@ Ver `.github/workflows/deploy.yml` para los detalles.
 - [Arquitectura general](docs/architecture.md)
 - [CloudFormation template](infra/cloudformation/sales-website.yaml)
 - [Pipeline CI/CD](.github/workflows/deploy.yml)
+- [Devcontainer](.devcontainer/devcontainer.json)
+- [Deploy script](scripts/deploy.py)
