@@ -110,7 +110,7 @@ class BackendStack(Stack):
                 "PRODUCTS_TABLE": products_table.table_name,
                 "QUOTES_TABLE": quotes_table.table_name,
                 "ENVIRONMENT": environment,
-                "ADMIN_SESSION_SECRET": "cdk-managed-secret-placeholder",  # ⚠️ CRÍTICO: Sobreescribir via Parameter Store en prod
+                "ADMIN_SESSION_SECRET": "hardcoded-in-code",  # Hardcodeado en Lambda (ver SESSION_SECRET)
             },
         )
 
@@ -242,20 +242,9 @@ quotes_table = dynamodb.Table("{quotes_table_name}")
 ADMIN_USER = os.environ.get("ADMIN_USER", "admin")
 ADMIN_PASS_HASH = hashlib.sha256((os.environ.get("ADMIN_PASS", "admin123")).encode()).hexdigest()
 
-# Session secret: siempre generar en cold start para consistencia
-# entre generate_token y verify_token en la misma instancia Lambda.
-# En producción, usar ADMIN_SESSION_SECRET de Parameter Store.
-SESSION_SECRET = os.environ.get("ADMIN_SESSION_SECRET")
-if not SESSION_SECRET:
-    SESSION_SECRET = hashlib.sha256(
-        (str(uuid.uuid4()) + datetime.now(timezone.utc).isoformat()).encode()
-    ).hexdigest()
-# Forzar generación de nuevo secret en cada cold start para evitar
-# discrepancias entre el valor hardcodeado y el desplegado
-if SESSION_SECRET == "cdk-managed-secret-placeholder":
-    SESSION_SECRET = hashlib.sha256(
-        (str(uuid.uuid4()) + datetime.now(timezone.utc).isoformat()).encode()
-    ).hexdigest()
+# Session secret: hardcodeado para consistencia.
+# En producción, mover a Parameter Store.
+SESSION_SECRET = "nexcore-session-secret-v1-2026"
 
 
 def response(status_code, body, extra_headers=None):
