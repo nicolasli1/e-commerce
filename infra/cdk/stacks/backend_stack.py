@@ -6,7 +6,6 @@ from aws_cdk import (
     aws_lambda as lambda_,
     aws_apigatewayv2 as apigwv2,
     aws_apigatewayv2_integrations as integrations,
-    aws_ssm as ssm,
     aws_cloudwatch as cloudwatch,
     aws_cloudwatch_actions as cw_actions,
     aws_sns as sns,
@@ -53,25 +52,9 @@ class BackendStack(Stack):
             return
 
         # ------------------------------------------------------------------
-        # 0. SSM Parameter Store paths for secrets
-        #    Parameters must exist before deploy. The deploy script
-        #    / CI/CD pipeline creates them if missing.
+        # 0. SSM Parameter Store path (parameters created manually or via CI/CD)
         # ------------------------------------------------------------------
         ssm_secret_path = f"/{project_name}/{environment}/"
-
-        admin_session_secret_param = ssm.StringParameter.from_secure_string_parameter_attributes(
-            self,
-            "AdminSessionSecretParam",
-            parameter_name=f"{ssm_secret_path}admin-session-secret",
-            version=1,
-        )
-
-        admin_password_param = ssm.StringParameter.from_secure_string_parameter_attributes(
-            self,
-            "AdminPasswordParam",
-            parameter_name=f"{ssm_secret_path}admin-password",
-            version=1,
-        )
 
         # ------------------------------------------------------------------
         # 1. DynamoDB tables
@@ -158,8 +141,7 @@ class BackendStack(Stack):
         )
 
         # Grant Lambda read access to SSM parameters (secrets)
-        admin_session_secret_param.grant_read(api_lambda)
-        admin_password_param.grant_read(api_lambda)
+        # SSM permissions granted via Lambda execution role inline policy above
 
         # Grant Lambda access to DynamoDB tables
         leads_table.grant_read_write_data(api_lambda)

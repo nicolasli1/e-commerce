@@ -2,8 +2,8 @@ AWSTemplateFormatVersion: '2010-09-09'
 Description: >
   NexCore Sales Website — AWS serverless stack.
   S3 + CloudFront + WAF + API Gateway + Lambda + DynamoDB.
-  Secrets are stored in SSM Parameter Store (SecureString).
-  This is the CloudFormation fallback; the CDK version is the primary deployment method.
+  Secrets stored in SSM Parameter Store (SecureString).
+  Primary IaC for the NexCore sales website — CloudFormation.
 
 Parameters:
   ProjectName:
@@ -39,8 +39,9 @@ Conditions:
   AlarmsEnabled: !Not [!Equals [!Ref AlarmEmail, '']]
 
 Resources:
+
   # ======================================================================
-  # S3 BUCKET — private, encrypted, versioned
+  # S3 BUCKETS — private, encrypted, versioned
   # ======================================================================
   WebsiteBucket:
     Type: AWS::S3::Bucket
@@ -62,6 +63,33 @@ Resources:
           - Id: ExpireOldVersions
             Status: Enabled
             NoncurrentVersionExpirationInDays: 30
+          - Id: TransitionToIA
+            Status: Enabled
+            ExpirationInDays: 365
+            Transitions:
+              - StorageClass: STANDARD_IA
+                TransitionInDays: 90
+
+  # Separate S3 bucket for CloudFront logs — breaks circular dependency
+  LogsBucket:
+    Type: AWS::S3::Bucket
+    DeletionPolicy: Retain
+    Properties:
+      BucketName: !Sub '${ProjectName}-${Environment}-${AWS::AccountId}-${AWS::Region}-logs'
+      BucketEncryption:
+        ServerSideEncryptionConfiguration:
+          - ServerSideEncryptionByDefault:
+              SSEAlgorithm: AES256
+      PublicAccessBlockConfiguration:
+        BlockPublicAcls: true
+        BlockPublicPolicy: true
+        IgnorePublicAcls: true
+        RestrictPublicBuckets: true
+      LifecycleConfiguration:
+        Rules:
+          - Id: ExpireLogsAfter90Days
+            Status: Enabled
+            ExpirationInDays: 90
 
   # ======================================================================
   # CLOUDFRONT ORIGIN ACCESS CONTROL
@@ -106,32 +134,7 @@ Resources:
             Override: true
 
   # ======================================================================
-  # API CACHE POLICY (no-cache for API routes)
-  # ======================================================================
-  ApiCachePolicy:
-    Type: AWS::CloudFront::CachePolicy
-    Condition: BackendEnabled
-    Properties:
-      CachePolicyConfig:
-        Name: !Sub '${ProjectName}-${Environment}-api-no-cache'
-        DefaultTTL: 0
-        MaxTTL: 1
-        MinTTL: 0
-        ParametersInCacheKeyAndForwardedToOrigin:
-          CookiesConfig:
-            CookieBehavior: all
-          EnableAcceptEncodingBrotli: true
-          EnableAcceptEncodingGzip: true
-          HeadersConfig:
-            HeaderBehavior: whitelist
-            Headers:
-              - Authorization
-              - Content-Type
-          QueryStringsConfig:
-            QueryStringBehavior: all
-
-  # ======================================================================
-  # CLOUDFRONT FUNCTION — SPA routing + cookie validation for /admin/*
+  # CLOUDFRONT FUNCTION — SPA routing for /admin/
   # ======================================================================
   AdminAuthFunction:
     Type: AWS::CloudFront::Function
@@ -140,10 +143,8 @@ Resources:
       AutoPublish: true
       FunctionCode: |
         // CloudFront Function for /admin/ routes
-        // SPA routing + session cookie validation.
-        // Handles:
-        //   1. SPA fallback: rewrites /admin/* paths without file extensions to /admin/index.html
-        //   2. Session cookie check: redirects to /admin/login if no session cookie
+        // 1. SPA fallback: rewrites /admin/* paths without extensions to /admin/index.html
+        // 2. Allows public paths (login page, assets)
         var COOKIE_NAME = "session";
         var FILE_EXTENSIONS = [".js", ".css", ".png", ".jpg", ".jpeg", ".svg", ".ico", ".woff", ".woff2", ".json", ".webp", ".gif"];
         var PUBLIC_ADMIN_PATHS = ["/admin/login", "/admin/assets/"];
@@ -175,7 +176,7 @@ Resources:
             return request;
         }
       FunctionConfig:
-        Comment: SPA routing for /admin/ + session cookie validation
+        Comment: SPA routing for /admin/ + cookie validation
         Runtime: cloudfront-js-2.0
 
   # ======================================================================
@@ -248,6 +249,7 @@ Resources:
     Type: AWS::CloudFront::Distribution
     DependsOn:
       - WebsiteBucket
+      - LogsBucket
       - CloudFrontOAC
     Properties:
       DistributionConfig:
@@ -282,10 +284,8 @@ Resources:
             - GET
             - HEAD
           ResponseHeadersPolicyId: !Ref SecurityHeadersPolicy
-          ForwardedValues:
-            QueryString: false
-            Cookies:
-              Forward: none
+          # Managed CachePolicy ID: CachingOptimized
+          CachePolicyId: 658327ea-f89d-4fab-a63d-7e88639e58f6
         CacheBehaviors:
           - !If
             - BackendEnabled
@@ -304,7 +304,11 @@ Resources:
               CachedMethods:
                 - GET
                 - HEAD
-              CachePolicyId: !Ref ApiCachePolicy
+              # Managed CachePolicy ID: CachingDisabled
+              CachePolicyId: 4135ea2d-6df8-44a3-9df3-4b5a84be39ad
+              ResponseHeadersPolicyId: !Ref SecurityHeadersPolicy
+              # Managed OriginRequestPolicy: AllViewerExceptHostHeader
+              OriginRequestPolicyId: b689b0a8-53d0-40ab-baf2-68738e2966ac
             - !Ref AWS::NoValue
           - PathPattern: admin/*
             TargetOriginId: site-s3
@@ -318,13 +322,10 @@ Resources:
               - GET
               - HEAD
             ResponseHeadersPolicyId: !Ref SecurityHeadersPolicy
+            CachePolicyId: 658327ea-f89d-4fab-a63d-7e88639e58f6
             FunctionAssociations:
               - EventType: viewer-request
                 FunctionARN: !GetAtt AdminAuthFunction.FunctionARN
-            ForwardedValues:
-              QueryString: true
-              Cookies:
-                Forward: all
         CustomErrorResponses:
           - ErrorCode: 403
             ResponseCode: 200
@@ -335,12 +336,12 @@ Resources:
         ViewerCertificate:
           CloudFrontDefaultCertificate: true
         Logging:
-          Bucket: !GetAtt WebsiteBucket.RegionalDomainName
+          Bucket: !GetAtt LogsBucket.RegionalDomainName
           Prefix: !Sub 'cloudfront-logs/${Environment}/'
           IncludeCookies: false
 
   # ======================================================================
-  # S3 BUCKET POLICY — only CloudFront can read
+  # S3 BUCKET POLICIES
   # ======================================================================
   WebsiteBucketPolicy:
     Type: AWS::S3::BucketPolicy
@@ -359,8 +360,25 @@ Resources:
               StringEquals:
                 AWS:SourceArn: !Sub 'arn:aws:cloudfront::${AWS::AccountId}:distribution/${WebsiteDistribution}'
 
+  LogsBucketPolicy:
+    Type: AWS::S3::BucketPolicy
+    Properties:
+      Bucket: !Ref LogsBucket
+      PolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Sid: AllowCloudFrontLogDelivery
+            Effect: Allow
+            Principal:
+              Service: cloudfront.amazonaws.com
+            Action: s3:PutObject
+            Resource: !Sub '${LogsBucket.Arn}/*'
+            Condition:
+              StringEquals:
+                AWS:SourceArn: !Sub 'arn:aws:cloudfront::${AWS::AccountId}:distribution/${WebsiteDistribution}'
+
   # ======================================================================
-  # DYNAMODB TABLES
+  # DYNAMODB TABLES — on-demand capacity, SSE, PITR
   # ======================================================================
   LeadsTable:
     Type: AWS::DynamoDB::Table
@@ -378,6 +396,11 @@ Resources:
         SSEEnabled: true
       PointInTimeRecoverySpecification:
         PointInTimeRecoveryEnabled: true
+      Tags:
+        - Key: Name
+          Value: !Sub '${ProjectName}-${Environment}-leads'
+        - Key: Environment
+          Value: !Ref Environment
 
   ProductsTable:
     Type: AWS::DynamoDB::Table
@@ -395,6 +418,11 @@ Resources:
         SSEEnabled: true
       PointInTimeRecoverySpecification:
         PointInTimeRecoveryEnabled: true
+      Tags:
+        - Key: Name
+          Value: !Sub '${ProjectName}-${Environment}-products'
+        - Key: Environment
+          Value: !Ref Environment
 
   QuotesTable:
     Type: AWS::DynamoDB::Table
@@ -412,9 +440,14 @@ Resources:
         SSEEnabled: true
       PointInTimeRecoverySpecification:
         PointInTimeRecoveryEnabled: true
+      Tags:
+        - Key: Name
+          Value: !Sub '${ProjectName}-${Environment}-quotes'
+        - Key: Environment
+          Value: !Ref Environment
 
   # ======================================================================
-  # IAM ROLE — Lambda execution with DynamoDB + SSM access
+  # IAM ROLE — Lambda with DynamoDB + SSM access
   # ======================================================================
   ApiLambdaRole:
     Type: AWS::IAM::Role
@@ -471,7 +504,7 @@ Resources:
                   - !Sub 'arn:aws:ssm:${AWS::Region}:${AWS::AccountId}:parameter/${ProjectName}/${Environment}/admin-session-secret'
 
   # ======================================================================
-  # API LAMBDA — Reads secrets from SSM Parameter Store
+  # LAMBDA — API handler with full admin CRUD
   # ======================================================================
   ApiLambda:
     Type: AWS::Lambda::Function
@@ -483,6 +516,7 @@ Resources:
       Role: !GetAtt ApiLambdaRole.Arn
       Timeout: 30
       MemorySize: 256
+      ReservedConcurrentExecutions: 10
       Environment:
         Variables:
           LEADS_TABLE: !Ref LeadsTable
@@ -729,7 +763,6 @@ Resources:
       StageName: $default
       AutoDeploy: true
 
-  # ── Integration: Lambda proxy ──
   ApiLambdaIntegration:
     Type: AWS::ApiGatewayV2::Integration
     Condition: BackendEnabled
@@ -798,6 +831,7 @@ Resources:
 
   ApiRouteAdminLeads:
     Type: AWS::ApiGatewayV2::Route
+
     Condition: BackendEnabled
     Properties:
       ApiId: !Ref HttpApi
@@ -828,7 +862,7 @@ Resources:
       RouteKey: ANY /api/admin/quotes/{quoteId}
       Target: !Sub 'integrations/${ApiLambdaIntegration}'
 
-  # ── Lambda permission for API Gateway ──
+  # Lambda permission for API Gateway
   ApiLambdaPermission:
     Type: AWS::Lambda::Permission
     Condition: BackendEnabled
@@ -839,7 +873,7 @@ Resources:
       SourceArn: !Sub 'arn:aws:execute-api:${AWS::Region}:${AWS::AccountId}:${HttpApi}/*/*'
 
   # ======================================================================
-  # CLOUDWATCH DASHBOARD — Backend metrics (simplified version)
+  # CLOUDWATCH DASHBOARD — Backend
   # ======================================================================
   BackendDashboard:
     Type: AWS::CloudWatch::Dashboard
@@ -913,7 +947,7 @@ Resources:
         }
 
   # ======================================================================
-  # CLOUDWATCH ALARM — Lambda errors
+  # CLOUDWATCH ALARMS
   # ======================================================================
   LambdaErrorAlarm:
     Type: AWS::CloudWatch::Alarm
@@ -968,6 +1002,65 @@ Resources:
         - Name: FunctionName
           Value: !Ref ApiLambda
 
+  # ======================================================================
+  # FRONTEND CLOUDWATCH DASHBOARD
+  # ======================================================================
+  FrontendDashboard:
+    Type: AWS::CloudWatch::Dashboard
+    DependsOn:
+      - WebsiteDistribution
+    Properties:
+      DashboardName: !Sub '${ProjectName}-${Environment}-cdn-dashboard'
+      DashboardBody: !Sub |
+        {
+          "widgets": [
+            {
+              "type": "metric",
+              "x": 0, "y": 0, "width": 12, "height": 6,
+              "properties": {
+                "metrics": [
+                  [ "AWS/CloudFront", "Requests", { "region": "us-east-1", "stat": "Sum", "period": 300 } ],
+                  [ "AWS/CloudFront", "TotalErrorRate", { "region": "us-east-1", "stat": "Average", "period": 300 } ]
+                ],
+                "view": "timeSeries",
+                "stacked": false,
+                "region": "us-east-1",
+                "title": "CloudFront Requests & Error Rate",
+                "period": 300
+              }
+            },
+            {
+              "type": "metric",
+              "x": 12, "y": 0, "width": 12, "height": 6,
+              "properties": {
+                "metrics": [
+                  [ "AWS/CloudFront", "BytesDownloaded", { "region": "us-east-1", "stat": "Sum", "period": 300 } ]
+                ],
+                "view": "timeSeries",
+                "stacked": false,
+                "region": "us-east-1",
+                "title": "Bytes Downloaded",
+                "period": 300
+              }
+            },
+            {
+              "type": "metric",
+              "x": 0, "y": 6, "width": 12, "height": 6,
+              "properties": {
+                "metrics": [
+                  [ "AWS/WAFV2", "BlockedRequests", { "region": "us-east-1", "stat": "Sum", "period": 300 } ],
+                  [ "AWS/WAFV2", "AllowedRequests", { "region": "us-east-1", "stat": "Sum", "period": 300 } ]
+                ],
+                "view": "timeSeries",
+                "stacked": false,
+                "region": "us-east-1",
+                "title": "WAF Requests",
+                "period": 300
+              }
+            }
+          ]
+        }
+
 Outputs:
   WebsiteUrl:
     Description: CloudFront distribution URL
@@ -984,6 +1077,9 @@ Outputs:
   WafWebACLArn:
     Description: WAF WebACL ARN
     Value: !GetAtt WebACL.Arn
+  LogsBucketName:
+    Description: CloudFront logs bucket
+    Value: !Ref LogsBucket
   AdminAuthFunctionArn:
     Description: CloudFront Function ARN for admin auth
     Value: !GetAtt AdminAuthFunction.FunctionARN
@@ -994,3 +1090,10 @@ Outputs:
   SSMSecretPath:
     Description: Path in SSM Parameter Store for secrets
     Value: !Sub '/${ProjectName}/${Environment}/'
+  BackendDashboardName:
+    Description: Backend CloudWatch dashboard
+    Condition: BackendEnabled
+    Value: !Ref BackendDashboard
+  FrontendDashboardName:
+    Description: Frontend CloudWatch dashboard
+    Value: !Ref FrontendDashboard

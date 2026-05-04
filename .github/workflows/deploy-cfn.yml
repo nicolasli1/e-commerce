@@ -1,0 +1,181 @@
+name: Deploy Sales Website (CloudFormation)
+
+on:
+  push:
+    branches: [main, master]
+  pull_request:
+    branches: [main, master]
+  workflow_dispatch:
+    inputs:
+      environment:
+        description: 'Entorno'
+        required: true
+        default: 'dev'
+        type: choice
+        options:
+          - dev
+          - stage
+          - prod
+      skip_secrets:
+        description: 'Skip SSM secrets creation (use existing)'
+        required: false
+        default: 'false'
+        type: choice
+        options:
+          - 'true'
+          - 'false'
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  PYTHON_VERSION: '3.12'
+  PROJECT_NAME: sales-website
+  CFN_TEMPLATE: infra/cloudformation/sales-website.yaml
+
+jobs:
+  # ================================================================
+  # VALIDATE — CloudFormation template validation + unit tests
+  # ================================================================
+  validate:
+    name: Validate
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Python ${{ env.PYTHON_VERSION }}
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+          cache: 'pip'
+          cache-dependency-path: tests/requirements-test.txt
+
+      - name: Install Python dependencies
+        run: |
+          pip install -r tests/requirements-test.txt
+          pip install cfn-lint
+
+      - name: Validate CloudFormation template
+        run: |
+          cfn-lint ${{ env.CFN_TEMPLATE }}
+          echo "✅ cfn-lint passed"
+
+      - name: Run unit tests
+        run: |
+          python -m pytest tests/unit/ -v --tb=short
+
+  # ================================================================
+  # DEPLOY — CloudFormation stack
+  # ================================================================
+  deploy:
+    name: Deploy (${{ inputs.environment || 'dev' }})
+    runs-on: ubuntu-latest
+    needs: [validate]
+    if: >
+      github.ref == 'refs/heads/main' ||
+      github.ref == 'refs/heads/master' ||
+      github.event_name == 'workflow_dispatch'
+
+    environment: ${{ inputs.environment || 'dev' }}
+
+    env:
+      ENVIRONMENT: ${{ inputs.environment || 'dev' }}
+      AWS_REGION: us-east-1
+      BACKEND_REGION: ${{ secrets.AWS_BACKEND_REGION || 'us-east-2' }}
+      SKIP_SECRETS: ${{ inputs.skip_secrets || 'false' }}
+
+    steps:
+      - uses: actions/checkout@v4
+
+      # --- AWS credentials ---
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ env.AWS_REGION }}
+
+      # --- Setup Python ---
+      - name: Setup Python ${{ env.PYTHON_VERSION }}
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+          cache: 'pip'
+
+      # --- SSM Secrets (skip if already exist) ---
+      - name: Create SSM Parameter Store secrets
+        if: env.SKIP_SECRETS != 'true'
+        run: |
+          bash scripts/deploy-cfn.sh create-secrets \
+            --env ${{ env.ENVIRONMENT }} \
+            --project ${{ env.PROJECT_NAME }} \
+            --backend-region ${{ env.BACKEND_REGION }}
+
+      # --- Deploy CloudFormation stack ---
+      - name: Deploy CloudFormation stack
+        run: |
+          # Try create-stack first, fall back to update-stack
+          bash scripts/deploy-cfn.sh create-stack \
+            --env ${{ env.ENVIRONMENT }} \
+            --project ${{ env.PROJECT_NAME }} \
+            --alarm-email '${{ secrets.ALARM_EMAIL }}' \
+            --region ${{ env.AWS_REGION }} \
+            --backend-region ${{ env.BACKEND_REGION }} || \
+          bash scripts/deploy-cfn.sh update-stack \
+            --env ${{ env.ENVIRONMENT }} \
+            --project ${{ env.PROJECT_NAME }} \
+            --alarm-email '${{ secrets.ALARM_EMAIL }}' \
+            --region ${{ env.AWS_REGION }} \
+            --backend-region ${{ env.BACKEND_REGION }}
+
+      # --- Sync frontend assets to S3 ---
+      - name: Sync frontend to S3
+        run: |
+          # Get bucket name from stack outputs
+          BUCKET=$(aws cloudformation describe-stacks \
+            --stack-name ${{ env.PROJECT_NAME }}-${{ env.ENVIRONMENT }} \
+            --region ${{ env.AWS_REGION }} \
+            --query "Stacks[0].Outputs[?OutputKey=='WebsiteBucketName'].OutputValue" \
+            --output text)
+
+          echo "📦 Sincronizando frontend a s3://${BUCKET}/"
+          aws s3 sync ./frontend "s3://${BUCKET}/" --delete --cache-control "max-age=3600"
+          aws s3 sync ./backoffice "s3://${BUCKET}/admin/" --delete --cache-control "max-age=3600"
+
+      # --- Invalidate CloudFront ---
+      - name: Invalidate CloudFront Cache
+        run: |
+          DIST_ID=$(aws cloudformation describe-stacks \
+            --stack-name ${{ env.PROJECT_NAME }}-${{ env.ENVIRONMENT }} \
+            --region ${{ env.AWS_REGION }} \
+            --query "Stacks[0].Outputs[?OutputKey=='CloudFrontDistributionId'].OutputValue" \
+            --output text)
+
+          echo "🔄 Invalidando CloudFront (/*)..."
+          aws cloudfront create-invalidation \
+            --distribution-id "$DIST_ID" \
+            --paths '/*'
+
+      # --- Summary ---
+      - name: Show Deployment Summary
+        run: |
+          URL=$(aws cloudformation describe-stacks \
+            --stack-name ${{ env.PROJECT_NAME }}-${{ env.ENVIRONMENT }} \
+            --region ${{ env.AWS_REGION }} \
+            --query "Stacks[0].Outputs[?OutputKey=='WebsiteUrl'].OutputValue" \
+            --output text 2>/dev/null || echo "N/A")
+
+          API_URL=$(aws cloudformation describe-stacks \
+            --stack-name ${{ env.PROJECT_NAME }}-${{ env.ENVIRONMENT }} \
+            --region ${{ env.AWS_REGION }} \
+            --query "Stacks[0].Outputs[?OutputKey=='ApiEndpoint'].OutputValue" \
+            --output text 2>/dev/null || echo "N/A")
+
+          echo ""
+          echo "========================================"
+          echo "  ✅ NexCore Deploy Complete (CFn)"
+          echo "  🌐 Website: $URL"
+          echo "  🔌 API:     $API_URL"
+          echo "  📦 Template: ${{ env.CFN_TEMPLATE }}"
+          echo "========================================"

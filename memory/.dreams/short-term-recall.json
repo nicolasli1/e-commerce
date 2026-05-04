@@ -1,0 +1,139 @@
+{
+  "version": 1,
+  "updatedAt": "2026-05-04T13:38:01.425Z",
+  "entries": {
+    "memory:memory/2026-05-04.md:87:98": {
+      "key": "memory:memory/2026-05-04.md:87:98",
+      "path": "memory/2026-05-04.md",
+      "startLine": 87,
+      "endLine": 98,
+      "source": "memory",
+      "snippet": "4. **Soft-delete**: Products use status=\"deleted\" rather than actual deletion. ### Next Steps (Priority Order) 1. **Deploy to AWS** — Run `python scripts/deploy.py deploy --all` (needs AWS credentials) 2. **Sync frontend + backoffice** to S3 bucket 3. **Invalidate CloudFront** cache 4. **Run E2E tests** against live URL 5. **Fix security**: Move secrets to Parameter Store, use env-specific credentials 6. **Add custom domain** + ACM certificate (v2) 7. **Add SES for email notifications** when leads come in (v3)",
+      "recallCount": 3,
+      "dailyCount": 0,
+      "groundedCount": 0,
+      "totalScore": 2.265973564799838,
+      "maxScore": 1,
+      "firstRecalledAt": "2026-05-04T05:46:36.208Z",
+      "lastRecalledAt": "2026-05-04T13:38:01.425Z",
+      "queryHashes": [
+        "6c940bbda91e",
+        "1879de265fc3",
+        "368be7c0bf6d"
+      ],
+      "recallDays": [
+        "2026-05-04"
+      ],
+      "conceptTags": [
+        "soft-delete",
+        "scripts/deploy.py",
+        "env-specific",
+        "soft",
+        "delete",
+        "products",
+        "use",
+        "status"
+      ]
+    },
+    "memory:memory/2026-05-04.md:65:94": {
+      "key": "memory:memory/2026-05-04.md:65:94",
+      "path": "memory/2026-05-04.md",
+      "startLine": 65,
+      "endLine": 94,
+      "source": "memory",
+      "snippet": "#### Tests - ✅ `tests/unit/test_auth.py` — Auth unit tests (passing) - ✅ `tests/unit/test_crud.py` — CRUD unit tests with moto (passing) - ✅ `tests/e2e/test_site.py` — E2E tests (need deployed site) #### Deploy Script - ✅ `scripts/deploy.py` — Python wrapper around CDK via npx ### What is MISSING (blockers for go-live) 1. **NOT DEPLOYED** — No infrastructure has been deployed to AWS 2. **Hardcoded secrets** — Admin password and session secret are hardcoded in Lambda code 3. **No custom domain** — Will use CloudFront default domain initially 4. **No SES/SQS for notifications** — Leads go to DynamoDB but no email notification 5. **Backoffice quote creation** — The contact form on landing cr",
+      "recallCount": 2,
+      "dailyCount": 0,
+      "groundedCount": 0,
+      "totalScore": 1.6312753314846122,
+      "maxScore": 1,
+      "firstRecalledAt": "2026-05-04T05:46:36.208Z",
+      "lastRecalledAt": "2026-05-04T13:09:24.911Z",
+      "queryHashes": [
+        "6c940bbda91e",
+        "1879de265fc3"
+      ],
+      "recallDays": [
+        "2026-05-04"
+      ],
+      "conceptTags": [
+        "tests/unit/test-auth.py",
+        "tests/unit/test-crud.py",
+        "tests/e2e/test-site.py",
+        "scripts/deploy.py",
+        "go-live",
+        "ses/sqs",
+        "tests",
+        "unit"
+      ]
+    },
+    "memory:memory/2026-05-04.md:1:41": {
+      "key": "memory:memory/2026-05-04.md:1:41",
+      "path": "memory/2026-05-04.md",
+      "startLine": 1,
+      "endLine": 41,
+      "source": "memory",
+      "snippet": "# Daily Log — 2026-05-04 ## CEO Session — First Strategic Review ### Project State - **Brand**: NexCore — Componentes Tecnológicos - **Product**: Sales website for tech components (CPUs, GPUs, RAM, storage, PSUs, cooling) - **Stack**: AWS (S3 + CloudFront + WAF + API Gateway + Lambda + DynamoDB) - **Infrastructure**: CDK (Python) + CloudFormation fallback - **CI/CD**: GitHub Actions pipeline - **Status**: v1 is code-complete, NOT deployed yet ### What exists #### Frontend (landing page) - ✅ `/frontend/index.html` — Full NexCore landing page (dark theme, Inter font, glassmorphism) - Hero section with stats - Categories grid (6 categories) - Featured products (4 products) - Testimo",
+      "recallCount": 5,
+      "dailyCount": 0,
+      "groundedCount": 0,
+      "totalScore": 4.455028421567885,
+      "maxScore": 1,
+      "firstRecalledAt": "2026-05-04T05:46:36.208Z",
+      "lastRecalledAt": "2026-05-04T13:38:01.425Z",
+      "queryHashes": [
+        "6c940bbda91e",
+        "91f83ce686f1",
+        "14b692bafbe8",
+        "1879de265fc3",
+        "368be7c0bf6d"
+      ],
+      "recallDays": [
+        "2026-05-04"
+      ],
+      "conceptTags": [
+        "gateway",
+        "ci/cd",
+        "code-complete",
+        "frontend/index.html",
+        "log",
+        "ceo",
+        "first",
+        "strategic"
+      ]
+    },
+    "memory:memory/2026-05-04.md:34:74": {
+      "key": "memory:memory/2026-05-04.md:34:74",
+      "path": "memory/2026-05-04.md",
+      "startLine": 34,
+      "endLine": 74,
+      "source": "memory",
+      "snippet": "- Products (#/products) — CRUD with modal form, category filter, soft-delete - Leads (#/leads) — list + mark contacted - Quotes (#/quotes) — list + status change dropdown #### Backend (Lambda + DynamoDB) - ✅ Inline Python Lambda (Python 3.12, 30s timeout) - ✅ 3 DynamoDB tables: `leads`, `products`, `quotes` - ✅ Endpoints: - `GET /api/health` - `POST /api/leads` - `POST /api/admin/login` (HMAC token) - `GET /api/admin/dashboard` - `GET/POST /api/admin/products` - `PUT/DELETE /api/admin/products/{productId}` - `GET /api/admin/leads` - `PUT /api/admin/leads/{leadId}` - `GET /api/admin/quotes` - `PUT /api/admin/quotes/{quoteId}` - ✅ Admin auth: HMAC-based JWT-like toke",
+      "recallCount": 3,
+      "dailyCount": 0,
+      "groundedCount": 0,
+      "totalScore": 2.2637761554689755,
+      "maxScore": 1,
+      "firstRecalledAt": "2026-05-04T13:09:24.850Z",
+      "lastRecalledAt": "2026-05-04T13:38:01.425Z",
+      "queryHashes": [
+        "14b692bafbe8",
+        "1879de265fc3",
+        "368be7c0bf6d"
+      ],
+      "recallDays": [
+        "2026-05-04"
+      ],
+      "conceptTags": [
+        "soft-delete",
+        "3.12",
+        "api/health",
+        "api/leads",
+        "api/admin/login",
+        "api/admin/dashboard",
+        "get/post",
+        "api/admin/products"
+      ]
+    }
+  }
+}
