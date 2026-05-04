@@ -157,6 +157,11 @@ class BackendStack(Stack):
             methods=[apigwv2.HttpMethod.POST],
             integration=lambda_integration,
         )
+        http_api.add_routes(
+            path="/api/products",
+            methods=[apigwv2.HttpMethod.GET],
+            integration=lambda_integration,
+        )
 
         # ── Admin/Backoffice routes ──
         http_api.add_routes(
@@ -329,6 +334,24 @@ def list_products():
     items = products_table.scan().get("Items", [])
     items.sort(key=lambda x: x.get("createdAt", ""), reverse=True)
     return response(200, {{"ok": True, "products": items}})
+
+
+def list_public_products():
+    # Public endpoint: retorna solo productos activos (sin auth)
+    items = products_table.scan().get("Items", [])
+    active = [p for p in items if p.get("status", "active") != "deleted"]
+    active.sort(key=lambda x: x.get("createdAt", ""), reverse=True)
+    # Limitar campos sensibles para la API pública
+    safe = [{{
+        "productId": p["productId"],
+        "name": p.get("name", ""),
+        "description": p.get("description", ""),
+        "price": p.get("price", 0),
+        "category": p.get("category", "general"),
+        "imageUrl": p.get("imageUrl", ""),
+        "stock": int(p.get("stock", 0)),
+    }} for p in active]
+    return response(200, {{"ok": True, "products": safe}})
 
 
 def create_product(body):
@@ -514,6 +537,9 @@ def handler(event, context):
     # ── Public endpoints ──
     if method == "GET" and path == "/api/health":
         return response(200, {{"ok": True, "service": "sales-api"}})
+
+    if method == "GET" and path == "/api/products":
+        return list_public_products()
 
     if method == "POST" and path == "/api/leads":
         try:

@@ -897,66 +897,8 @@
         <h2 class="section-title">Más Vendidos</h2>
         <p class="section-subtitle">Los componentes favoritos de nuestra comunidad — calidad y rendimiento garantizados.</p>
       </div>
-      <div class="products-grid">
-        <div class="product-card reveal reveal-delay-1">
-          <div class="product-image" style="background:linear-gradient(135deg,#1e1b4b,#312e81);">
-            <span class="product-badge hot">🔥 Más vendido</span>
-            ⚡
-          </div>
-          <div class="product-body">
-            <h3>AMD Ryzen 7 9800X3D</h3>
-            <p>8 núcleos, 16 hilos. Cache 3D V-Cache para gaming extremo.</p>
-            <div class="product-footer">
-              <span class="product-price">$479 <span>USD</span></span>
-              <button class="btn btn-gradient btn-sm">Lo quiero</button>
-            </div>
-          </div>
-        </div>
-
-        <div class="product-card reveal reveal-delay-2">
-          <div class="product-image" style="background:linear-gradient(135deg,#1c1917,#292524);">
-            <span class="product-badge">Nuevo</span>
-            🎮
-          </div>
-          <div class="product-body">
-            <h3>NVIDIA RTX 5090 Founders</h3>
-            <p>Arquitectura Blackwell. 24GB GDDR7. Trazado de rayos en tiempo real.</p>
-            <div class="product-footer">
-              <span class="product-price">$1,999 <span>USD</span></span>
-              <button class="btn btn-gradient btn-sm">Lo quiero</button>
-            </div>
-          </div>
-        </div>
-
-        <div class="product-card reveal reveal-delay-3">
-          <div class="product-image" style="background:linear-gradient(135deg,#0f172a,#1e293b);">
-            <span class="product-badge">Oferta</span>
-            🧠
-          </div>
-          <div class="product-body">
-            <h3>G.Skill Trident Z5 RGB 32GB</h3>
-            <p>DDR5-6000MHz, CL30. Perfil bajo con iluminación RGB.</p>
-            <div class="product-footer">
-              <span class="product-price">$189 <span>USD</span></span>
-              <button class="btn btn-gradient btn-sm">Lo quiero</button>
-            </div>
-          </div>
-        </div>
-
-        <div class="product-card reveal reveal-delay-1">
-          <div class="product-image" style="background:linear-gradient(135deg,#0d1117,#161b22);">
-            <span class="product-badge hot">🔥 Popular</span>
-            💾
-          </div>
-          <div class="product-body">
-            <h3>Samsung 990 Pro 2TB NVMe</h3>
-            <p>PCIe 4.0. Lectura 7450MB/s. Ideal para gaming y creación.</p>
-            <div class="product-footer">
-              <span class="product-price">$229 <span>USD</span></span>
-              <button class="btn btn-gradient btn-sm">Lo quiero</button>
-            </div>
-          </div>
-        </div>
+      <div class="products-grid" id="productsGrid">
+        <!-- Los productos se cargan desde /api/products -->
       </div>
     </div>
   </section>
@@ -1134,6 +1076,70 @@
   </footer>
 
   <script>
+    // ==============================
+    // PRODUCTOS DESDE LA API
+    // ==============================
+    async function loadProducts() {
+      try {
+        const res = await fetch('/api/products?_t=' + Date.now());
+        const data = await res.json();
+        const grid = document.getElementById('productsGrid');
+        if (!grid) return;
+        
+        const products = data.products || [];
+        if (products.length === 0) {
+          grid.innerHTML = '<p style="grid-column:1/-1;text-align:center;color:#86868b;">Próximamente — nuevos componentes en camino.</p>';
+          return;
+        }
+        
+        const gradients = [
+          'linear-gradient(135deg,#1e1b4b,#312e81)',
+          'linear-gradient(135deg,#1c1917,#292524)',
+          'linear-gradient(135deg,#0f172a,#1e293b)',
+          'linear-gradient(135deg,#0d1117,#161b22)',
+          'linear-gradient(135deg,#1a0a2e,#16213e)',
+          'linear-gradient(135deg,#0b0f19,#1a1f2e)',
+          'linear-gradient(135deg,#1a1a2e,#16213e)',
+          'linear-gradient(135deg,#0d0d2b,#1a1a3e)',
+        ];
+        const emojis = ['⚡','🎮','🧠','💾','🔌','❄️','🖥️','🔧'];
+        const badges = ['🔥 Más vendido','Nuevo','⭐ Destacado','💥 Oferta','🔥 Popular','Nuevo','💎 Premium','⚡'];
+        
+        grid.innerHTML = products.slice(0, 8).map((p, i) => {
+          const delay = (i % 4) + 1;
+          const gradient = gradients[i % gradients.length];
+          const emoji = emojis[i % emojis.length];
+          const badge = badges[i % badges.length];
+          const priceStr = '$' + Number(p.price).toLocaleString('en-US', {minimumFractionDigits: 2});
+          return `
+            <div class="product-card reveal reveal-delay-${delay}">
+              <div class="product-image" style="background:${gradient};">
+                <span class="product-badge">${badge}</span>
+                ${emoji}
+              </div>
+              <div class="product-body">
+                <h3>${p.name}</h3>
+                <p>${p.description || p.category || ''}</p>
+                <div class="product-footer">
+                  <span class="product-price">${priceStr} <span>USD</span></span>
+                  <button class="btn btn-gradient btn-sm" onclick="window.location.hash='#contacto'">Lo quiero</button>
+                </div>
+              </div>
+            </div>
+          `;
+        }).join('');
+        
+        // Re-inicializar scroll reveal para los nuevos elementos
+        const newReveals = document.querySelectorAll('.reveal:not(.visible)');
+        newReveals.forEach(el => observer.observe(el));
+      } catch (err) {
+        console.log('Error cargando productos:', err);
+        document.getElementById('productsGrid').innerHTML = '<p style="grid-column:1/-1;text-align:center;color:#86868b;">Próximamente — nuevos componentes en camino.</p>';
+      }
+    }
+    
+    loadProducts();
+
     // ==============================
     // SCROLL REVEAL (Intersection Observer)
     // ==============================
