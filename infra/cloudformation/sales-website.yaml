@@ -1,0 +1,372 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Description: Sales website on AWS using S3, CloudFront, API Gateway, Lambda, and DynamoDB.
+
+Parameters:
+  ProjectName:
+    Type: String
+    Default: sales-website
+  Environment:
+    Type: String
+    Default: dev
+    AllowedValues:
+      - dev
+      - stage
+      - prod
+  EnableBackend:
+    Type: String
+    Default: 'true'
+    AllowedValues:
+      - 'true'
+      - 'false'
+  PriceClass:
+    Type: String
+    Default: PriceClass_100
+    AllowedValues:
+      - PriceClass_100
+      - PriceClass_200
+      - PriceClass_All
+
+Conditions:
+  BackendEnabled: !Equals [!Ref EnableBackend, 'true']
+
+Resources:
+  WebsiteBucket:
+    Type: AWS::S3::Bucket
+    Properties:
+      BucketName: !Sub '${ProjectName}-${Environment}-${AWS::AccountId}-${AWS::Region}-site'
+      VersioningConfiguration:
+        Status: Enabled
+      BucketEncryption:
+        ServerSideEncryptionConfiguration:
+          - ServerSideEncryptionByDefault:
+              SSEAlgorithm: AES256
+      PublicAccessBlockConfiguration:
+        BlockPublicAcls: true
+        BlockPublicPolicy: true
+        IgnorePublicAcls: true
+        RestrictPublicBuckets: true
+
+  CloudFrontOAC:
+    Type: AWS::CloudFront::OriginAccessControl
+    Properties:
+      OriginAccessControlConfig:
+        Name: !Sub '${ProjectName}-${Environment}-oac'
+        Description: Access control for CloudFront to private S3 origin
+        OriginAccessControlOriginType: s3
+        SigningBehavior: always
+        SigningProtocol: sigv4
+
+  SecurityHeadersPolicy:
+    Type: AWS::CloudFront::ResponseHeadersPolicy
+    Properties:
+      ResponseHeadersPolicyConfig:
+        Name: !Sub '${ProjectName}-${Environment}-security-headers'
+        SecurityHeadersConfig:
+          ContentSecurityPolicy:
+            ContentSecurityPolicy: "default-src 'self'; img-src 'self' data: https:; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline' https:; connect-src 'self' https:;"
+            Override: true
+          ContentTypeOptions:
+            Override: true
+          FrameOptions:
+            FrameOption: DENY
+            Override: true
+          ReferrerPolicy:
+            ReferrerPolicy: strict-origin-when-cross-origin
+            Override: true
+          StrictTransportSecurity:
+            AccessControlMaxAgeSec: 31536000
+            IncludeSubdomains: true
+            Override: true
+          XSSProtection:
+            ModeBlock: true
+            Protection: true
+            Override: true
+
+  ApiCachePolicy:
+    Type: AWS::CloudFront::CachePolicy
+    Condition: BackendEnabled
+    Properties:
+      CachePolicyConfig:
+        Name: !Sub '${ProjectName}-${Environment}-api-no-cache'
+        DefaultTTL: 0
+        MaxTTL: 1
+        MinTTL: 0
+        ParametersInCacheKeyAndForwardedToOrigin:
+          CookiesConfig:
+            CookieBehavior: all
+          EnableAcceptEncodingBrotli: true
+          EnableAcceptEncodingGzip: true
+          HeadersConfig:
+            HeaderBehavior: whitelist
+            Headers:
+              - Authorization
+              - Content-Type
+          QueryStringsConfig:
+            QueryStringBehavior: all
+
+  WebsiteDistribution:
+    Type: AWS::CloudFront::Distribution
+    Properties:
+      DistributionConfig:
+        Enabled: true
+        Comment: !Sub '${ProjectName}-${Environment} sales website'
+        DefaultRootObject: index.html
+        HttpVersion: http2
+        IPV6Enabled: true
+        PriceClass: !Ref PriceClass
+        Origins:
+          - Id: site-s3
+            DomainName: !GetAtt WebsiteBucket.RegionalDomainName
+            S3OriginConfig: {}
+            OriginAccessControlId: !GetAtt CloudFrontOAC.Id
+          - !If
+            - BackendEnabled
+            - Id: api-origin
+              DomainName: !Select [2, !Split ['/', !GetAtt HttpApi.ApiEndpoint]]
+              OriginPath: /prod
+              CustomOriginConfig:
+                HTTPSPort: 443
+                OriginProtocolPolicy: https-only
+            - !Ref AWS::NoValue
+        DefaultCacheBehavior:
+          TargetOriginId: site-s3
+          ViewerProtocolPolicy: redirect-to-https
+          Compress: true
+          AllowedMethods:
+            - GET
+            - HEAD
+            - OPTIONS
+          CachedMethods:
+            - GET
+            - HEAD
+          ResponseHeadersPolicyId: !Ref SecurityHeadersPolicy
+          ForwardedValues:
+            QueryString: false
+            Cookies:
+              Forward: none
+        CacheBehaviors:
+          - !If
+            - BackendEnabled
+            - PathPattern: api/*
+              TargetOriginId: api-origin
+              ViewerProtocolPolicy: redirect-to-https
+              Compress: true
+              AllowedMethods:
+                - GET
+                - HEAD
+                - OPTIONS
+                - PUT
+                - POST
+                - PATCH
+                - DELETE
+              CachedMethods:
+                - GET
+                - HEAD
+              CachePolicyId: !Ref ApiCachePolicy
+            - !Ref AWS::NoValue
+        CustomErrorResponses:
+          - ErrorCode: 403
+            ResponseCode: 200
+            ResponsePagePath: /index.html
+          - ErrorCode: 404
+            ResponseCode: 200
+            ResponsePagePath: /index.html
+        ViewerCertificate:
+          CloudFrontDefaultCertificate: true
+
+  WebsiteBucketPolicy:
+    Type: AWS::S3::BucketPolicy
+    Properties:
+      Bucket: !Ref WebsiteBucket
+      PolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Sid: AllowCloudFrontRead
+            Effect: Allow
+            Principal:
+              Service: cloudfront.amazonaws.com
+            Action: s3:GetObject
+            Resource: !Sub '${WebsiteBucket.Arn}/*'
+            Condition:
+              StringEquals:
+                AWS:SourceArn: !Sub 'arn:aws:cloudfront::${AWS::AccountId}:distribution/${WebsiteDistribution}'
+
+  LeadsTable:
+    Type: AWS::DynamoDB::Table
+    Condition: BackendEnabled
+    Properties:
+      TableName: !Sub '${ProjectName}-${Environment}-leads'
+      BillingMode: PAY_PER_REQUEST
+      AttributeDefinitions:
+        - AttributeName: id
+          AttributeType: S
+      KeySchema:
+        - AttributeName: id
+          KeyType: HASH
+
+  ApiLambdaRole:
+    Type: AWS::IAM::Role
+    Condition: BackendEnabled
+    Properties:
+      RoleName: !Sub '${ProjectName}-${Environment}-api-lambda-role'
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service:
+                - lambda.amazonaws.com
+            Action: sts:AssumeRole
+      ManagedPolicyArns:
+        - arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole
+      Policies:
+        - PolicyName: dynamodb-write-leads
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              - Effect: Allow
+                Action:
+                  - dynamodb:PutItem
+                Resource: !GetAtt LeadsTable.Arn
+
+  ApiLambda:
+    Type: AWS::Lambda::Function
+    Condition: BackendEnabled
+    Properties:
+      FunctionName: !Sub '${ProjectName}-${Environment}-api'
+      Runtime: python3.12
+      Handler: index.handler
+      Role: !GetAtt ApiLambdaRole.Arn
+      Timeout: 10
+      MemorySize: 256
+      Environment:
+        Variables:
+          LEADS_TABLE: !Ref LeadsTable
+      Code:
+        ZipFile: |
+          import json
+          import os
+          import uuid
+          from datetime import datetime, timezone
+          import boto3
+
+          dynamodb = boto3.resource("dynamodb")
+          table = dynamodb.Table(os.environ["LEADS_TABLE"])
+
+          def response(status_code, body):
+              return {
+                  "statusCode": status_code,
+                  "headers": {
+                      "Content-Type": "application/json"
+                  },
+                  "body": json.dumps(body)
+              }
+
+          def handler(event, context):
+              method = event.get("requestContext", {}).get("http", {}).get("method", "")
+              path = event.get("rawPath", "")
+
+              if method == "GET" and path == "/api/health":
+                  return response(200, {"ok": True, "service": "sales-api"})
+
+              if method == "POST" and path == "/api/leads":
+                  try:
+                      body = json.loads(event.get("body") or "{}")
+                  except json.JSONDecodeError:
+                      return response(400, {"error": "invalid_json"})
+
+                  name = (body.get("name") or "").strip()
+                  email = (body.get("email") or "").strip().lower()
+                  message = (body.get("message") or "").strip()
+
+                  if not name or not email:
+                      return response(400, {"error": "name_and_email_required"})
+
+                  item = {
+                      "id": str(uuid.uuid4()),
+                      "name": name,
+                      "email": email,
+                      "message": message,
+                      "createdAt": datetime.now(timezone.utc).isoformat()
+                  }
+
+                  table.put_item(Item=item)
+                  return response(201, {"ok": True, "leadId": item["id"]})
+
+              return response(404, {"error": "not_found"})
+
+  HttpApi:
+    Type: AWS::ApiGatewayV2::Api
+    Condition: BackendEnabled
+    Properties:
+      Name: !Sub '${ProjectName}-${Environment}-http-api'
+      ProtocolType: HTTP
+      CorsConfiguration:
+        AllowOrigins:
+          - '*'
+        AllowMethods:
+          - GET
+          - POST
+          - OPTIONS
+        AllowHeaders:
+          - Content-Type
+          - Authorization
+
+  HttpApiIntegration:
+    Type: AWS::ApiGatewayV2::Integration
+    Condition: BackendEnabled
+    Properties:
+      ApiId: !Ref HttpApi
+      IntegrationType: AWS_PROXY
+      IntegrationUri: !GetAtt ApiLambda.Arn
+      PayloadFormatVersion: '2.0'
+
+  HealthRoute:
+    Type: AWS::ApiGatewayV2::Route
+    Condition: BackendEnabled
+    Properties:
+      ApiId: !Ref HttpApi
+      RouteKey: 'GET /api/health'
+      Target: !Sub 'integrations/${HttpApiIntegration}'
+
+  LeadsRoute:
+    Type: AWS::ApiGatewayV2::Route
+    Condition: BackendEnabled
+    Properties:
+      ApiId: !Ref HttpApi
+      RouteKey: 'POST /api/leads'
+      Target: !Sub 'integrations/${HttpApiIntegration}'
+
+  HttpApiStage:
+    Type: AWS::ApiGatewayV2::Stage
+    Condition: BackendEnabled
+    Properties:
+      ApiId: !Ref HttpApi
+      StageName: prod
+      AutoDeploy: true
+
+  ApiLambdaPermission:
+    Type: AWS::Lambda::Permission
+    Condition: BackendEnabled
+    Properties:
+      Action: lambda:InvokeFunction
+      FunctionName: !Ref ApiLambda
+      Principal: apigateway.amazonaws.com
+      SourceArn: !Sub 'arn:aws:execute-api:${AWS::Region}:${AWS::AccountId}:${HttpApi}/*/*'
+
+Outputs:
+  WebsiteBucketName:
+    Value: !Ref WebsiteBucket
+
+  CloudFrontDistributionId:
+    Value: !Ref WebsiteDistribution
+
+  CloudFrontDomainName:
+    Value: !GetAtt WebsiteDistribution.DomainName
+
+  WebsiteUrl:
+    Value: !Sub 'https://${WebsiteDistribution.DomainName}'
+
+  ApiEndpoint:
+    Condition: BackendEnabled
+    Value: !Sub '${HttpApi.ApiEndpoint}/prod'
