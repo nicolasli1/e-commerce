@@ -227,6 +227,7 @@ class BackendStack(Stack):
 import json
 import os
 import uuid
+from decimal import Decimal
 import hashlib
 import hmac
 import base64
@@ -332,7 +333,7 @@ def create_product(body):
         "productId": str(uuid.uuid4()),
         "name": body["name"].strip(),
         "description": (body.get("description") or "").strip(),
-        "price": float(body["price"]),
+        "price": Decimal(str(body["price"])),
         "category": (body.get("category") or "general").strip(),
         "imageUrl": (body.get("imageUrl") or "").strip(),
         "stock": int(body.get("stock", 0)),
@@ -355,7 +356,7 @@ def update_product(product_id, body):
         if field in body:
             updates[field] = body[field]
     if "price" in body:
-        updates["price"] = float(body["price"])
+        updates["price"] = Decimal(str(body["price"]))
     if "stock" in body:
         updates["stock"] = int(body["stock"])
     updates["updatedAt"] = datetime.now(timezone.utc).isoformat()
