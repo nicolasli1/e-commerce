@@ -1,0 +1,55 @@
+name: Run Tests
+
+on:
+  push:
+    branches: [main, master]
+  pull_request:
+    branches: [main, master]
+  workflow_dispatch:
+
+jobs:
+  unit:
+    name: Unit Tests
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+          cache: 'pip'
+
+      - name: Install dependencies
+        run: |
+          pip install -r tests/requirements-test.txt
+
+      - name: Run unit tests
+        run: |
+          python -m pytest tests/unit/ -v --tb=short
+
+  e2e:
+    name: E2E Tests
+    runs-on: ubuntu-latest
+    if: github.event_name == 'workflow_dispatch'
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+          cache: 'pip'
+
+      - name: Install dependencies
+        run: |
+          pip install -r tests/requirements-test.txt
+
+      - name: Run E2E tests
+        env:
+          NEXCORE_BASE_URL: "https://d1ag0uf6e1dp20.cloudfront.net"
+          NEXCORE_API_KEY: ${{ secrets.NEXCORE_API_KEY || 'nexcor…2026' }}
+          NEXCORE_ADMIN_USER: ${{ secrets.NEXCORE_ADMIN_USER || 'admin' }}
+          NEXCORE_ADMIN_PASS: ${{ secrets.NEXCORE_ADMIN_PASS || 'admin123' }}
+        run: |
+          python -m pytest tests/e2e/ -v --tb=long
