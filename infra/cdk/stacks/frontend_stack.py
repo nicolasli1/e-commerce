@@ -268,15 +268,16 @@ class FrontendStack(Stack):
         # Additional cache behaviors (for API route if backend enabled)
         cache_behaviors = []
         if api_endpoint:
-            # Extract domain using CloudFormation intrinsic functions
-            # api_endpoint format: https://{api-id}.execute-api.{region}.amazonaws.com
+            # Extract domain from API Gateway endpoint
+            # HTTP API (v2) format: https://{api-id}.execute-api.{region}.amazonaws.com
+            # No stage path needed — HTTP API v2 routes are at root
             api_domain = Fn.select(2, Fn.split("/", api_endpoint))
 
             origins.append(
                 cloudfront.CfnDistribution.OriginProperty(
                     id="APIOrigin",
                     domain_name=api_domain,
-                    origin_path="/prod",
+                    # HTTP API (v2) no tiene stage en la URL
                     custom_origin_config=cloudfront.CfnDistribution.CustomOriginConfigProperty(
                         https_port=443,
                         origin_protocol_policy="https-only",
