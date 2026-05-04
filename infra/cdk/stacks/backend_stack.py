@@ -460,7 +460,7 @@ def update_quote(quote_id, body):
 # ── Admin: Dashboard ──
 
 def handle_dashboard():
-    """Returns aggregated stats for the backoffice dashboard."""
+    # Returns aggregated stats for the backoffice dashboard.
     products = products_table.scan().get("Items", [])
     leads = leads_table.scan().get("Items", [])
     quotes = quotes_table.scan().get("Items", [])
