@@ -336,6 +336,10 @@
       pointer-events: none;
       animation: glow-float 12s ease-in-out infinite reverse;
     }
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(10px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
     @keyframes glow-float {
       0%, 100% { transform: translate(0, 0) scale(1); }
       33% { transform: translate(30px, -30px) scale(1.05); }
@@ -800,7 +804,7 @@
         <div class="reveal visible">
           <div class="hero-badge">
             <span class="hero-badge-dot"></span>
-            🇨🇴 Envíos a toda Colombia
+            🇨🇴 Envíos a Colombia
           </div>
           <h1>
             El futuro del<br/>
@@ -824,16 +828,16 @@
 
         <div class="hero-stats reveal visible reveal-delay-2">
           <div class="hero-stat">
-            <h3>12.4K+</h3>
+            <h3>5,000+</h3>
             <p>Repuestos vendidos</p>
           </div>
           <div class="hero-stat">
-            <h3>98.7%</h3>
+            <h3>99.2%</h3>
             <p>Clientes satisfechos</p>
           </div>
           <div class="hero-stat">
-            <h3>24h</h3>
-            <p>Envíos a toda Colombia</p>
+            <h3>24-48h</h3>
+            <p>Envíos a Colombia</p>
           </div>
           <div class="hero-stat">
             <h3>4.9★</h3>
@@ -895,7 +899,7 @@
     <div class="container">
       <div class="section-header reveal">
         <h2 class="section-title">Más Vendidos</h2>
-        <p class="section-subtitle">Los repuestos favoritos de los técnicos en Colombia — calidad garantizada.</p>
+        <p class="section-subtitle">Los repuestos preferidos por los técnicos en Colombia. Calidad original, AAA y OEM.</p>
       </div>
       <div class="products-grid" id="productsGrid">
         <!-- Los productos se cargan desde /api/products -->
@@ -957,14 +961,14 @@
     <div class="container">
       <div class="section-header reveal">
         <h2 class="section-title">Kits para tu Taller</h2>
-        <p class="section-subtitle">Desde kits básicos hasta abastecimiento completo. Tú eliges.</p>
+        <p class="section-subtitle">Ahorra con nuestros kits. Desde básico hasta profesional.</p>
       </div>
       <div class="pricing-grid">
         <div class="pricing-card reveal reveal-delay-1">
           <h3>Starter</h3>
           <p>Perfecto para oficina o estudio básico.</p>
           <div class="pricing-amount">$799 <span>USD</span></div>
-          <div class="pricing-period">ensamblado y probado</div>
+          <div class="pricing-period"></div>
           <ul class="pricing-features">
             <li>CPU Ryzen 5 / Intel i5</li>
             <li>16GB RAM DDR5</li>
@@ -973,7 +977,7 @@
             <li>Gabinete ATX estándar</li>
             <li>Garantía de 1 año</li>
           </ul>
-          <a href="#contacto" class="btn btn-secondary" style="width:100%;justify-content:center;">Lo quiero</a>
+          <a href="#contacto" class="btn btn-secondary" style="width:100%;justify-content:center;">Cotizar</a>
         </div>
 
         <div class="pricing-card featured reveal reveal-delay-2">
@@ -981,7 +985,7 @@
           <h3>Pro</h3>
           <p>Para gaming competitivo y creación de contenido.</p>
           <div class="pricing-amount">$1,999 <span>USD</span></div>
-          <div class="pricing-period">ensamblado y probado</div>
+          <div class="pricing-period"></div>
           <ul class="pricing-features">
             <li>CPU Ryzen 7 / Intel i7</li>
             <li>32GB RAM DDR5 RGB</li>
@@ -991,14 +995,14 @@
             <li>Refrigeración líquida AIO</li>
             <li>Garantía de 2 años</li>
           </ul>
-          <a href="#contacto" class="btn btn-gradient" style="width:100%;justify-content:center;">Lo quiero</a>
+          <a href="#contacto" class="btn btn-gradient" style="width:100%;justify-content:center;">Cotizar kit</a>
         </div>
 
         <div class="pricing-card reveal reveal-delay-3">
           <h3>Ultimate</h3>
           <p>Potencia sin compromisos. Workstation extrema.</p>
           <div class="pricing-amount">$3,999 <span>USD</span></div>
-          <div class="pricing-period">ensamblado y probado</div>
+          <div class="pricing-period"></div>
           <ul class="pricing-features">
             <li>CPU Ryzen 9 / Intel i9</li>
             <li>64GB RAM DDR5</li>
@@ -1008,7 +1012,7 @@
             <li>Refrigeración líquida custom</li>
             <li>Garantía de 3 años</li>
           </ul>
-          <a href="#contacto" class="btn btn-secondary" style="width:100%;justify-content:center;">Lo quiero</a>
+          <a href="#contacto" class="btn btn-secondary" style="width:100%;justify-content:center;">Cotizar</a>
         </div>
       </div>
     </div>
@@ -1075,7 +1079,144 @@
     </div>
   </footer>
 
+  <!-- ============================
+       CART MODAL
+  ============================ -->
+  <div class="modal-overlay" id="cartModal">
+    <div class="modal" style="max-width:500px;">
+      <div class="modal-header">
+        <h2 class="modal-title">🛒 Tu Carrito</h2>
+        <button class="modal-close" id="cartCloseBtn">✕</button>
+      </div>
+      <div id="cartContent">
+        <div id="cartItems"></div>
+        <div id="cartEmpty" style="text-align:center;padding:40px;color:#86868b;">
+          <p style="font-size:2rem;margin-bottom:12px;">🛒</p>
+          <p>Tu carrito está vacío</p>
+        </div>
+        <div id="cartSummary" style="display:none;border-top:1px solid rgba(255,255,255,0.06);padding-top:20px;margin-top:20px;">
+          <div style="display:flex;justify-content:space-between;font-size:1.125rem;font-weight:600;margin-bottom:16px;">
+            <span>Total</span>
+            <span id="cartTotal">$0 COP</span>
+          </div>
+          <button class="btn btn-gradient" id="checkoutBtn" style="width:100%;justify-content:center;">
+            Solicitar cotización
+          </button>
+          <p style="font-size:0.75rem;color:#86868b;text-align:center;margin-top:8px;">Pronto: Pago con PSE, Nequi y tarjeta</p>
+        </div>
+      </div>
+    </div>
+  </div>
+
   <script>
+    // ==============================
+    // CARRITO
+    // ==============================
+    let cart = JSON.parse(localStorage.getItem('nexcore_cart') || '[]');
+    
+    function addToCart(product) {
+      const existing = cart.find(c => c.productId === product.productId);
+      if (existing) {
+        existing.quantity += 1;
+      } else {
+        cart.push({...product, quantity: 1});
+      }
+      localStorage.setItem('nexcore_cart', JSON.stringify(cart));
+      updateCartCount();
+      showCartToast(product.name + ' agregado al carrito');
+    }
+    
+    function removeFromCart(productId) {
+      cart = cart.filter(c => c.productId !== productId);
+      localStorage.setItem('nexcore_cart', JSON.stringify(cart));
+      updateCartCount();
+      renderCart();
+    }
+    
+    function updateQuantity(productId, delta) {
+      const item = cart.find(c => c.productId === productId);
+      if (item) {
+        item.quantity = Math.max(1, item.quantity + delta);
+        localStorage.setItem('nexcore_cart', JSON.stringify(cart));
+        renderCart();
+      }
+    }
+    
+    function updateCartCount() {
+      const count = cart.reduce((sum, c) => sum + c.quantity, 0);
+      const badge = document.getElementById('cartCount');
+      if (badge) {
+        badge.textContent = count;
+        badge.style.display = count > 0 ? 'flex' : 'none';
+      }
+    }
+    
+    function renderCart() {
+      const container = document.getElementById('cartItems');
+      const empty = document.getElementById('cartEmpty');
+      const summary = document.getElementById('cartSummary');
+      
+      if (cart.length === 0) {
+        container.innerHTML = '';
+        empty.style.display = 'block';
+        summary.style.display = 'none';
+        return;
+      }
+      
+      empty.style.display = 'none';
+      summary.style.display = 'block';
+      
+      const total = cart.reduce((sum, c) => sum + (Number(c.price) || 0) * c.quantity, 0);
+      
+      container.innerHTML = cart.map(c => `
+        <div style="display:flex;align-items:center;gap:12px;padding:12px 0;border-bottom:1px solid rgba(255,255,255,0.04);">
+          <div style="flex:1;">
+            <div style="font-weight:600;font-size:0.875rem;">${c.name}</div>
+            <div style="color:#86868b;font-size:0.75rem;">$${Number(c.price).toLocaleString('es-CO', {minimumFractionDigits:0})} COP c/u</div>
+          </div>
+          <div style="display:flex;align-items:center;gap:8px;">
+            <button class="btn btn-secondary btn-sm" onclick="updateQuantity('${c.productId}', -1)" style="padding:4px 10px;">−</button>
+            <span style="min-width:20px;text-align:center;">${c.quantity}</span>
+            <button class="btn btn-secondary btn-sm" onclick="updateQuantity('${c.productId}', 1)" style="padding:4px 10px;">+</button>
+          </div>
+          <div style="min-width:80px;text-align:right;font-weight:600;">
+            $${(Number(c.price) * c.quantity).toLocaleString('es-CO', {minimumFractionDigits:0})}
+          </div>
+          <button class="btn btn-danger btn-sm" onclick="removeFromCart('${c.productId}')" style="padding:4px 8px;">✕</button>
+        </div>
+      `).join('');
+      
+      document.getElementById('cartTotal').textContent = '$' + total.toLocaleString('es-CO', {minimumFractionDigits:0}) + ' COP';
+    }
+    
+    function showCartToast(msg) {
+      const t = document.createElement('div');
+      t.style.cssText = 'position:fixed;bottom:20px;right:20px;background:rgba(34,197,94,0.12);color:#22c55e;padding:12px 20px;border-radius:12px;border:1px solid rgba(34,197,94,0.2);font-size:0.875rem;z-index:9999;animation:fadeIn 0.3s;';
+      t.textContent = '✅ ' + msg;
+      document.body.appendChild(t);
+      setTimeout(() => { t.style.opacity = '0'; t.style.transition = 'opacity 0.3s'; }, 2500);
+      setTimeout(() => t.remove(), 3000);
+    }
+    
+    // Cart modal
+    document.addEventListener('DOMContentLoaded', () => {
+      const cartLink = document.querySelector('a[href="#carrito"]');
+      if (cartLink) {
+        cartLink.addEventListener('click', (e) => {
+          e.preventDefault();
+          document.getElementById('cartModal').classList.add('open');
+          renderCart();
+        });
+      }
+      document.getElementById('cartCloseBtn')?.addEventListener('click', () => {
+        document.getElementById('cartModal').classList.remove('open');
+      });
+      document.getElementById('cartModal')?.addEventListener('click', (e) => {
+        if (e.target === e.currentTarget) e.target.classList.remove('open');
+      });
+      updateCartCount();
+    });
+
     // ==============================
     // PRODUCTOS DESDE LA API
     // ==============================
@@ -1122,7 +1263,7 @@
                 <p>${p.description || p.category || ''}</p>
                 <div class="product-footer">
                   <span class="product-price">${priceStr} <span>COP</span></span>
-                  <button class="btn btn-gradient btn-sm" onclick="window.location.hash='#contacto'">Lo quiero</button>
+                  <button class="btn btn-gradient btn-sm" onclick='addToCart({productId:"${p.productId}",name:${JSON.stringify(p.name)},price:${p.price}})'>🛒 Agregar</button>
                 </div>
               </div>
             </div>
