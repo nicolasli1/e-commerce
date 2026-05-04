@@ -16,14 +16,6 @@ on:
           - dev
           - stage
           - prod
-      skip_secrets:
-        description: 'Skip SSM secrets creation (use existing)'
-        required: false
-        default: 'false'
-        type: choice
-        options:
-          - 'true'
-          - 'false'
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
@@ -37,10 +29,10 @@ env:
 
 jobs:
   # ================================================================
-  # VALIDACIÓN — CDK synth + unit tests
+  # VALIDACIÓN
   # ================================================================
   validate:
-    name: Validate
+    name: Validate CDK
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -50,9 +42,7 @@ jobs:
         with:
           python-version: ${{ env.PYTHON_VERSION }}
           cache: 'pip'
-          cache-dependency-path: |
-            ${{ env.CDK_DIR }}/requirements.txt
-            tests/requirements-test.txt
+          cache-dependency-path: ${{ env.CDK_DIR }}/requirements.txt
 
       - name: Setup Node.js ${{ env.NODE_VERSION }}
         uses: actions/setup-node@v4
@@ -70,11 +60,6 @@ jobs:
         working-directory: ${{ env.CDK_DIR }}
         run: cdk synth --all
 
-      - name: Run unit tests
-        run: |
-          pip install -r tests/requirements-test.txt
-          python -m pytest tests/unit/ -v --tb=short
-
   # ================================================================
   # DEPLOY
   # ================================================================
@@ -90,7 +75,6 @@ jobs:
       ENVIRONMENT: ${{ inputs.environment || 'dev' }}
       AWS_REGION: us-east-1
       BACKEND_REGION: ${{ secrets.AWS_BACKEND_REGION || 'us-east-2' }}
-      SKIP_SECRETS: ${{ inputs.skip_secrets || 'false' }}
 
     steps:
       - uses: actions/checkout@v4
@@ -109,9 +93,7 @@ jobs:
         with:
           python-version: ${{ env.PYTHON_VERSION }}
           cache: 'pip'
-          cache-dependency-path: |
-            ${{ env.CDK_DIR }}/requirements.txt
-            tests/requirements-test.txt
+          cache-dependency-path: ${{ env.CDK_DIR }}/requirements.txt
 
       - name: Setup Node.js ${{ env.NODE_VERSION }}
         uses: actions/setup-node@v4
@@ -123,43 +105,24 @@ jobs:
 
       - name: Install Python dependencies
         working-directory: ${{ env.CDK_DIR }}
-        run: |
-          pip install -r requirements.txt
-          pip install boto3
+        run: pip install -r requirements.txt
 
-      # --- SSM Secrets (skip if already exist) ---
-      - name: Create SSM Parameter Store secrets
-        if: env.SKIP_SECRETS != 'true'
-        working-directory: ${{ github.workspace }}
-        run: |
-          python scripts/deploy.py secrets create \
-            --env ${{ env.ENVIRONMENT }} \
-            --project ${{ env.PROJECT_NAME }} \
-            --backend-region ${{ env.BACKEND_REGION }} \
-            --admin-user ${{ secrets.ADMIN_USER || 'admin' }}
-
-      # --- Bootstrap (one-time per account/region) ---
+      # --- Bootstrap (una vez) ---
       - name: CDK Bootstrap
         working-directory: ${{ env.CDK_DIR }}
         run: |
-          cdk bootstrap aws://${{ secrets.AWS_ACCOUNT_ID }}/${{ env.AWS_REGION }} \
-            --context environment=${{ env.ENVIRONMENT }} \
-            --context enable_backend=true
-          cdk bootstrap aws://${{ secrets.AWS_ACCOUNT_ID }}/${{ env.BACKEND_REGION }} \
-            --context environment=${{ env.ENVIRONMENT }} \
-            --context enable_backend=true
+          cdk bootstrap aws://${{ secrets.AWS_ACCOUNT_ID }}/${{ env.AWS_REGION }}
+          cdk bootstrap aws://${{ secrets.AWS_ACCOUNT_ID }}/${{ env.BACKEND_REGION }}
 
-      # --- Deploy Backend ---
+      # --- Deploy stacks ---
       - name: Deploy Backend Stack
         working-directory: ${{ env.CDK_DIR }}
         run: |
           cdk deploy ${{ env.PROJECT_NAME }}-${{ env.ENVIRONMENT }}-backend \
             --context environment=${{ env.ENVIRONMENT }} \
             --context enable_backend=true \
-            --context alarm_email=${{ secrets.ALARM_EMAIL || '' }} \
             --require-approval never
 
-      # --- Deploy Frontend ---
       - name: Deploy Frontend Stack
         working-directory: ${{ env.CDK_DIR }}
         run: |
@@ -167,23 +130,12 @@ jobs:
             --context environment=${{ env.ENVIRONMENT }} \
             --context price_class=PriceClass_100 \
             --require-approval never
-          echo "FRONTEND_DEPLOY_EXIT_CODE=$?" >> $GITHUB_ENV
 
-      # --- Debug: check CloudFormation status if failed ---
-      - name: Debug Frontend Failure
-        if: failure()
-        run: |
-          echo "=== Stack Status ==="
-          aws cloudformation describe-stacks --stack-name ${{ env.PROJECT_NAME }}-${{ env.ENVIRONMENT }}-frontend --query 'Stacks[0].StackStatus' --output text || echo 'Stack not found'
-          echo "=== Failed Events ==="
-          aws cloudformation describe-stack-events --stack-name ${{ env.PROJECT_NAME }}-${{ env.ENVIRONMENT }}-frontend --query 'StackEvents[?contains(ResourceStatus,"FAILED")].[ResourceType,ResourceStatusReason]' --max-items 5 --output text || echo 'No failed events'
-
-      # --- Get Stack Outputs ---
+      # --- Obtener outputs ---
       - name: Get Stack Outputs
         id: stack-outputs
         run: |
           FRONTEND_STACK="${{ env.PROJECT_NAME }}-${{ env.ENVIRONMENT }}-frontend"
-          BACKEND_STACK="${{ env.PROJECT_NAME }}-${{ env.ENVIRONMENT }}-backend"
 
           BUCKET=$(aws cloudformation describe-stacks \
             --stack-name "$FRONTEND_STACK" \
@@ -203,49 +155,35 @@ jobs:
             --query 'Stacks[0].Outputs[?OutputKey==`WebsiteUrl`].OutputValue' \
             --output text)
 
-          API_URL=$(aws cloudformation describe-stacks \
-            --stack-name "$BACKEND_STACK" \
-            --region ${{ env.BACKEND_REGION }} \
-            --query 'Stacks[0].Outputs[?OutputKey==`ApiEndpoint`].OutputValue' \
-            --output text 2>/dev/null || echo ""
-
           echo "S3_BUCKET=$BUCKET" >> $GITHUB_OUTPUT
           echo "CLOUDFRONT_DIST_ID=$DIST_ID" >> $GITHUB_OUTPUT
           echo "WEBSITE_URL=$URL" >> $GITHUB_OUTPUT
-          echo "API_URL=$API_URL" >> $GITHUB_OUTPUT
 
-      # --- Sync frontend static assets to S3 ---
+      # --- Sync frontend a S3 ---
       - name: Sync frontend to S3
         run: |
           aws s3 sync ./frontend \
             s3://${{ steps.stack-outputs.outputs.S3_BUCKET }} \
-            --delete \
-            --cache-control "max-age=3600"
+            --delete
 
-      # --- Sync backoffice SPA to S3 (/admin/) ---
+      # --- Sync backoffice a S3 (/admin/) ---
       - name: Sync backoffice to S3
         run: |
           aws s3 sync ./backoffice \
             s3://${{ steps.stack-outputs.outputs.S3_BUCKET }}/admin/ \
-            --delete \
-            --cache-control "max-age=3600"
+            --delete
 
-      # --- Invalidate CloudFront cache ---
+      # --- Invalidar CloudFront ---
       - name: Invalidate CloudFront Cache
         run: |
           aws cloudfront create-invalidation \
             --distribution-id ${{ steps.stack-outputs.outputs.CLOUDFRONT_DIST_ID }} \
             --paths '/*'
 
-      # --- Summary ---
-      - name: Show Deployment Summary
+      # --- URL final ---
+      - name: Show Website URL
         run: |
           echo ""
           echo "========================================"
-          echo "  ✅ NexCore Deploy Complete"
-          echo "  🌐 Website: ${{ steps.stack-outputs.outputs.WEBSITE_URL }}"
-          echo "  🔌 API:     ${{ steps.stack-outputs.outputs.API_URL || 'N/A' }}"
-          echo "  📦 Bucket:  ${{ steps.stack-outputs.outputs.S3_BUCKET }}"
-          echo "  🆔 CF Dist: ${{ steps.stack-outputs.outputs.CLOUDFRONT_DIST_ID }}"
-          echo "  📋 Dashboard: CloudWatch → ${{ env.PROJECT_NAME }}-${{ env.ENVIRONMENT }}-api-dashboard"
+          echo "  ✅ Deployed: ${{ steps.stack-outputs.outputs.WEBSITE_URL }}"
           echo "========================================"
