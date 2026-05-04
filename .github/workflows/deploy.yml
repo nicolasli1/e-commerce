@@ -160,10 +160,17 @@ jobs:
           echo "WEBSITE_URL=$URL" >> $GITHUB_OUTPUT
 
       # --- Sync frontend a S3 ---
-      - name: Sync to S3
+      - name: Sync frontend to S3
         run: |
           aws s3 sync ./frontend \
             s3://${{ steps.stack-outputs.outputs.S3_BUCKET }} \
+            --delete
+
+      # --- Sync backoffice a S3 (/admin/) ---
+      - name: Sync backoffice to S3
+        run: |
+          aws s3 sync ./backoffice \
+            s3://${{ steps.stack-outputs.outputs.S3_BUCKET }}/admin/ \
             --delete
 
       # --- Invalidar CloudFront ---

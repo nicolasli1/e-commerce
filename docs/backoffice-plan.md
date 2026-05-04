@@ -88,7 +88,7 @@ Crear un panel de administración web (backoffice) para gestionar el e-commerce 
 ## Siguientes Pasos
 
 1. ✅ CEO escribe este plan
-2. ⬜ DevOps: prepara infraestructura (tablas, rutas, permisos)
-3. ⬜ Developer: implementa backend (Lambdas)
-4. ⬜ Developer: implementa frontend (SPA backoffice)
-5. ⬜ DevOps: despliega todo
+2. ✅ Developer: implementa backend (Lambdas) — código inline en backend_stack.py
+3. ✅ Developer: implementa frontend (SPA backoffice) — en /backoffice/
+4. ✅ CEO: arregla CloudFront Function (pass-through, no cookie) + placeholders
+5. ⬜ **DEV-OPS: Desplegar TODO** (backend stack + frontend stack + sync backoffice + invalidate CF)

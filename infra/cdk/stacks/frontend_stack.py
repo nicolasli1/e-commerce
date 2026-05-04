@@ -115,7 +115,10 @@ class FrontendStack(Stack):
         )
 
         # ------------------------------------------------------------------
-        # 4. CloudFront Function — admin session auth
+        # 4. CloudFront Function — /admin/ routes
+        # For MVP: passes all requests through.
+        # Real auth is at API level (API Key + JWT Bearer token in Lambda).
+        # The backoffice SPA uses localStorage + Bearer token, not cookies.
         # ------------------------------------------------------------------
         admin_auth_func = cloudfront.CfnFunction(
             self,
@@ -123,39 +126,12 @@ class FrontendStack(Stack):
             name=f"{project_name}-{environment}-admin-auth",
             auto_publish=True,
             function_code=cf_function_path.read_text() if cf_function_path.exists() else (
-                """// Admin auth CloudFront function\n"
-                'var COOKIE_NAME = "session";\n'"""
-                'var PUBLIC_ADMIN_PATHS = ["/admin/login", "/admin/assets/"];\n'"""\n"
                 "function handler(event) {\n"
-                "    var request = event.request;\n"
-                "    var uri = request.uri;\n"
-                "    var cookies = request.cookies;\n"
-                "    for (var i = 0; i < PUBLIC_ADMIN_PATHS.length; i++) {\n"
-                "        if (uri.startsWith(PUBLIC_ADMIN_PATHS[i])) {\n"
-                "            return request;\n"
-                "        }\n"
-                "    }\n"
-                "    var hasSession = false;\n"
-                "    if (cookies && cookies[COOKIE_NAME]) {\n"
-                "        var val = cookies[COOKIE_NAME].value;\n"
-                "        if (val && val.length > 0) {\n"
-                "            hasSession = true;\n"
-                "        }\n"
-                "    }\n"
-                "    if (!hasSession) {\n"
-                "        return {\n"
-                "            statusCode: 302,\n"
-                "            statusDescription: 'Found',\n"
-                "            headers: {\n"
-                "                location: { value: '/admin/login' }\n"
-                "            }\n"
-                "        };\n"
-                "    }\n"
-                "    return request;\n"
+                "    return event.request;\n"
                 "}"
             ),
             function_config=cloudfront.CfnFunction.FunctionConfigProperty(
-                comment="Validates admin session cookie for /admin/ routes",
+                comment="Pass-through for /admin/ routes (auth via API)",
                 runtime="cloudfront-js-2.0",
             ),
         )

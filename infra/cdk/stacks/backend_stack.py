@@ -110,7 +110,7 @@ class BackendStack(Stack):
                 "PRODUCTS_TABLE": products_table.table_name,
                 "QUOTES_TABLE": quotes_table.table_name,
                 "ENVIRONMENT": environment,
-                "ADMIN_SESSION_SECRET": "cdk-managed-secret-placeholder",  # Override via Parameter Store in production
+                "ADMIN_SESSION_SECRET": "cdk-managed-secret-placeholder",  # ⚠️ CRÍTICO: Sobreescribir via Parameter Store en prod
             },
         )
 
@@ -172,6 +172,11 @@ class BackendStack(Stack):
         http_api.add_routes(
             path="/api/admin/products/{productId}",
             methods=[apigwv2.HttpMethod.PUT, apigwv2.HttpMethod.DELETE],
+            integration=lambda_integration,
+        )
+        http_api.add_routes(
+            path="/api/admin/dashboard",
+            methods=[apigwv2.HttpMethod.GET],
             integration=lambda_integration,
         )
         http_api.add_routes(
@@ -452,6 +457,32 @@ def update_quote(quote_id, body):
 
 # ─── MAIN HANDLER ───────────────────────────────────────
 
+# ── Admin: Dashboard ──
+
+def handle_dashboard():
+    """Returns aggregated stats for the backoffice dashboard."""
+    products = products_table.scan().get("Items", [])
+    leads = leads_table.scan().get("Items", [])
+    quotes = quotes_table.scan().get("Items", [])
+
+    active_products = [p for p in products if p.get("status", "active") != "deleted"]
+    quotes_sorted = sorted(quotes, key=lambda x: x.get("createdAt", ""), reverse=True)
+
+    return response(200, {{
+        "ok": True,
+        "totalProducts": len(active_products),
+        "totalLeads": len(leads),
+        "totalQuotes": len(quotes),
+        "recentQuotes": [{{
+            "name": q.get("name", ""),
+            "email": q.get("email", ""),
+            "plan": q.get("plan", ""),
+            "status": q.get("status", "pending"),
+            "createdAt": q.get("createdAt", "")
+        }} for q in quotes_sorted[:5]],
+    }})
+
+
 def admin_auth_required(event):
     auth = event.get("headers", {{}}).get("authorization", "") or \\
            event.get("headers", {{}}).get("Authorization", "")
@@ -522,6 +553,11 @@ def handler(event, context):
             return update_product(product_id, data)
         if method == "DELETE":
             return delete_product(product_id)
+
+    # ── Admin: Dashboard ──
+    if path == "/api/admin/dashboard":
+        if method == "GET":
+            return handle_dashboard()
 
     # ── Admin: Leads ──
     if path == "/api/admin/leads":
