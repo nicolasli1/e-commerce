@@ -261,7 +261,10 @@ const App = (() => {
           <h1 class="page-title">Productos</h1>
           <p class="page-subtitle">Gestiona el catálogo de componentes</p>
         </div>
-        <button class="btn btn-gradient" id="newProductBtn">+ Nuevo Producto</button>
+        <div style="display:flex;gap:8px;">
+          <button class="btn btn-secondary" id="refreshProductsBtn">🔄 Actualizar</button>
+          <button class="btn btn-gradient" id="newProductBtn">+ Nuevo Producto</button>
+        </div>
       </div>
 
       <div class="table-container">
@@ -408,6 +411,7 @@ const App = (() => {
     }
 
     document.getElementById('newProductBtn').addEventListener('click', () => openModal());
+    document.getElementById('refreshProductsBtn').addEventListener('click', () => renderProducts());
 
     document.getElementById('modalCloseBtn').addEventListener('click', closeModal);
     document.getElementById('modalCancelBtn').addEventListener('click', closeModal);
