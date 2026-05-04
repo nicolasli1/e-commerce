@@ -23,6 +23,7 @@ concurrency:
 
 env:
   PYTHON_VERSION: '3.12'
+  NODE_VERSION: '20'
   CDK_DIR: infra/cdk
   PROJECT_NAME: sales-website
 
@@ -43,17 +44,21 @@ jobs:
           cache: 'pip'
           cache-dependency-path: ${{ env.CDK_DIR }}/requirements.txt
 
-      - name: Install dependencies
+      - name: Setup Node.js ${{ env.NODE_VERSION }}
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+
+      - name: Install CDK CLI
+        run: npm install -g aws-cdk
+
+      - name: Install Python dependencies
         working-directory: ${{ env.CDK_DIR }}
         run: pip install -r requirements.txt
 
-      - name: CDK Synth (via Docker)
-        run: |
-          docker run --rm \
-            -v ${{ github.workspace }}:/app \
-            -w /app/${{ env.CDK_DIR }} \
-            public.ecr.aws/aws-cdk/cli:latest \
-            synth --all
+      - name: CDK Synth
+        working-directory: ${{ env.CDK_DIR }}
+        run: cdk synth --all
 
   # ================================================================
   # DEPLOY
@@ -82,7 +87,7 @@ jobs:
           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
           aws-region: ${{ env.AWS_REGION }}
 
-      # --- Python setup ---
+      # --- Setup ---
       - name: Setup Python ${{ env.PYTHON_VERSION }}
         uses: actions/setup-python@v5
         with:
@@ -90,64 +95,38 @@ jobs:
           cache: 'pip'
           cache-dependency-path: ${{ env.CDK_DIR }}/requirements.txt
 
-      - name: Install dependencies
+      - name: Setup Node.js ${{ env.NODE_VERSION }}
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+
+      - name: Install CDK CLI
+        run: npm install -g aws-cdk
+
+      - name: Install Python dependencies
         working-directory: ${{ env.CDK_DIR }}
         run: pip install -r requirements.txt
 
-      # --- CDK Bootstrap (una vez) ---
+      # --- Bootstrap (una vez) ---
       - name: CDK Bootstrap
+        working-directory: ${{ env.CDK_DIR }}
         run: |
-          docker run --rm \
-            -v ${{ github.workspace }}:/app \
-            -v ~/.aws:/root/.aws:ro \
-            -e AWS_DEFAULT_REGION=${{ env.AWS_REGION }} \
-            -e AWS_ACCESS_KEY_ID \
-            -e AWS_SECRET_ACCESS_KEY \
-            -e AWS_SESSION_TOKEN \
-            -w /app/${{ env.CDK_DIR }} \
-            public.ecr.aws/aws-cdk/cli:latest \
-            bootstrap aws://${{ secrets.AWS_ACCOUNT_ID }}/${{ env.AWS_REGION }}
+          cdk bootstrap aws://${{ secrets.AWS_ACCOUNT_ID }}/${{ env.AWS_REGION }}
+          cdk bootstrap aws://${{ secrets.AWS_ACCOUNT_ID }}/${{ env.BACKEND_REGION }}
 
-          docker run --rm \
-            -v ${{ github.workspace }}:/app \
-            -v ~/.aws:/root/.aws:ro \
-            -e AWS_DEFAULT_REGION=${{ env.BACKEND_REGION }} \
-            -e AWS_ACCESS_KEY_ID \
-            -e AWS_SECRET_ACCESS_KEY \
-            -e AWS_SESSION_TOKEN \
-            -w /app/${{ env.CDK_DIR }} \
-            public.ecr.aws/aws-cdk/cli:latest \
-            bootstrap aws://${{ secrets.AWS_ACCOUNT_ID }}/${{ env.BACKEND_REGION }}
-
-      # --- Deploy stacks via Docker + CDK ---
+      # --- Deploy stacks ---
       - name: Deploy Backend Stack
+        working-directory: ${{ env.CDK_DIR }}
         run: |
-          docker run --rm \
-            -v ${{ github.workspace }}:/app \
-            -v ~/.aws:/root/.aws:ro \
-            -e AWS_DEFAULT_REGION=${{ env.BACKEND_REGION }} \
-            -e AWS_ACCESS_KEY_ID \
-            -e AWS_SECRET_ACCESS_KEY \
-            -e AWS_SESSION_TOKEN \
-            -w /app/${{ env.CDK_DIR }} \
-            public.ecr.aws/aws-cdk/cli:latest \
-            deploy ${{ env.PROJECT_NAME }}-${{ env.ENVIRONMENT }}-backend \
+          cdk deploy ${{ env.PROJECT_NAME }}-${{ env.ENVIRONMENT }}-backend \
             --context environment=${{ env.ENVIRONMENT }} \
             --context enable_backend=true \
             --require-approval never
 
       - name: Deploy Frontend Stack
+        working-directory: ${{ env.CDK_DIR }}
         run: |
-          docker run --rm \
-            -v ${{ github.workspace }}:/app \
-            -v ~/.aws:/root/.aws:ro \
-            -e AWS_DEFAULT_REGION=${{ env.AWS_REGION }} \
-            -e AWS_ACCESS_KEY_ID \
-            -e AWS_SECRET_ACCESS_KEY \
-            -e AWS_SESSION_TOKEN \
-            -w /app/${{ env.CDK_DIR }} \
-            public.ecr.aws/aws-cdk/cli:latest \
-            deploy ${{ env.PROJECT_NAME }}-${{ env.ENVIRONMENT }}-frontend \
+          cdk deploy ${{ env.PROJECT_NAME }}-${{ env.ENVIRONMENT }}-frontend \
             --context environment=${{ env.ENVIRONMENT }} \
             --context price_class=PriceClass_100 \
             --require-approval never

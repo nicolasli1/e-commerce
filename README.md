@@ -8,7 +8,8 @@ Base architecture for a sales website on AWS with:
 | Backend     | BackendStack  | **API Gateway HTTP** + **Lambda** + **DynamoDB** |
 | Infra       | CDK (Python)  | `aws-cdk-lib` ≥ 2.100          |
 
-> **100% Python — sin Node.js.** El CLI de CDK corre dentro de Docker.
+> **Infraestructura en Python puro.** El CDK CLI usa Node.js internamente,
+> pero tú interactúas siempre via `python scripts/deploy.py`.
 > Ver `scripts/deploy.py` para los comandos.
 
 > ⚡ **Dos opciones de gestión de infraestructura:**
