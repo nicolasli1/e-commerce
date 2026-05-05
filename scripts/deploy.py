@@ -134,6 +134,16 @@ SSM_SECRETS = {
         "default": "",
         "type": "SecureString",
     },
+    "order-notifications-from-email": {
+        "description": "SES verified sender address used for customer order confirmations",
+        "default": "",
+        "type": "String",
+    },
+    "order-alerts-to-email": {
+        "description": "Internal email that receives new approved order alerts",
+        "default": "",
+        "type": "String",
+    },
 }
 
 

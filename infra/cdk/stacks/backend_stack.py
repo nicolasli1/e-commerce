@@ -135,6 +135,8 @@ class BackendStack(Stack):
                 "MERCADOPAGO_PUBLIC_KEY_PARAM": f"/{project_name}/{environment}/mercadopago-public-key",
                 "MERCADOPAGO_ACCESS_TOKEN_PARAM": f"/{project_name}/{environment}/mercadopago-access-token",
                 "MERCADOPAGO_WEBHOOK_SECRET_PARAM": f"/{project_name}/{environment}/mercadopago-webhook-secret",
+                "ORDER_NOTIFICATIONS_FROM_EMAIL_PARAM": f"/{project_name}/{environment}/order-notifications-from-email",
+                "ORDER_ALERTS_TO_EMAIL_PARAM": f"/{project_name}/{environment}/order-alerts-to-email",
             },
         )
 
@@ -149,6 +151,12 @@ class BackendStack(Stack):
                 resources=[
                     f"arn:aws:ssm:{self.region}:{self.account}:parameter/{project_name}/{environment}/*"
                 ],
+            )
+        )
+        api_lambda.add_to_role_policy(
+            iam.PolicyStatement(
+                actions=["ses:SendEmail", "ses:SendRawEmail"],
+                resources=["*"],
             )
         )
 
@@ -254,6 +262,16 @@ class BackendStack(Stack):
         )
         http_api.add_routes(
             path="/api/admin/quotes/{quoteId}",
+            methods=[apigwv2.HttpMethod.PUT],
+            integration=lambda_integration,
+        )
+        http_api.add_routes(
+            path="/api/admin/orders",
+            methods=[apigwv2.HttpMethod.GET],
+            integration=lambda_integration,
+        )
+        http_api.add_routes(
+            path="/api/admin/orders/{reference}",
             methods=[apigwv2.HttpMethod.PUT],
             integration=lambda_integration,
         )

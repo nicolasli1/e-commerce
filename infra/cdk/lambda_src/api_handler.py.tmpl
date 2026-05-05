@@ -15,6 +15,7 @@ import boto3
 
 dynamodb = boto3.resource("dynamodb")
 ssm = boto3.client("ssm")
+ses = boto3.client("sesv2")
 
 leads_table = dynamodb.Table("__LEADS_TABLE_NAME__")
 products_table = dynamodb.Table("__PRODUCTS_TABLE_NAME__")
@@ -31,6 +32,8 @@ WOMPI_EVENTS_SECRET_PARAM = os.environ.get("WOMPI_EVENTS_SECRET_PARAM", "")
 MERCADOPAGO_PUBLIC_KEY_PARAM = os.environ.get("MERCADOPAGO_PUBLIC_KEY_PARAM", "")
 MERCADOPAGO_ACCESS_TOKEN_PARAM = os.environ.get("MERCADOPAGO_ACCESS_TOKEN_PARAM", "")
 MERCADOPAGO_WEBHOOK_SECRET_PARAM = os.environ.get("MERCADOPAGO_WEBHOOK_SECRET_PARAM", "")
+ORDER_NOTIFICATIONS_FROM_EMAIL_PARAM = os.environ.get("ORDER_NOTIFICATIONS_FROM_EMAIL_PARAM", "")
+ORDER_ALERTS_TO_EMAIL_PARAM = os.environ.get("ORDER_ALERTS_TO_EMAIL_PARAM", "")
 
 _param_cache = {}
 
@@ -72,6 +75,10 @@ def cents_to_cop_units(amount_in_cents):
             rounding=ROUND_HALF_UP,
         )
     )
+
+
+def cents_to_cop_text(amount_in_cents):
+    return f"${cents_to_cop_units(amount_in_cents):,}".replace(",", ".") + " COP"
 
 
 def get_json_body(event):
@@ -131,6 +138,20 @@ def get_mercadopago_access_token():
 def get_mercadopago_webhook_secret():
     try:
         return get_parameter(MERCADOPAGO_WEBHOOK_SECRET_PARAM, decrypt=True)
+    except Exception:
+        return ""
+
+
+def get_order_notifications_from_email():
+    try:
+        return get_parameter(ORDER_NOTIFICATIONS_FROM_EMAIL_PARAM, decrypt=False)
+    except Exception:
+        return ""
+
+
+def get_order_alerts_to_email():
+    try:
+        return get_parameter(ORDER_ALERTS_TO_EMAIL_PARAM, decrypt=False)
     except Exception:
         return ""
 
@@ -375,13 +396,21 @@ def handle_dashboard():
     products = products_table.scan().get("Items", [])
     leads = leads_table.scan().get("Items", [])
     quotes = quotes_table.scan().get("Items", [])
+    orders = orders_table.scan().get("Items", [])
     active_products = [p for p in products if p.get("status", "active") != "deleted"]
     quotes_sorted = sorted(quotes, key=lambda x: x.get("createdAt", ""), reverse=True)
+    orders_sorted = sorted(orders, key=lambda x: x.get("createdAt", ""), reverse=True)
+    ready_orders = [
+        order for order in orders
+        if order.get("status") == "APPROVED" and order.get("fulfillmentStatus") in ("READY_TO_FULFILL", "PROCESSING")
+    ]
     return response(200, {
         "ok": True,
         "totalProducts": len(active_products),
         "totalLeads": len(leads),
         "totalQuotes": len(quotes),
+        "totalOrders": len(orders),
+        "readyToFulfillOrders": len(ready_orders),
         "recentQuotes": [{
             "name": q.get("name", ""),
             "email": q.get("email", ""),
@@ -389,7 +418,49 @@ def handle_dashboard():
             "status": q.get("status", "pending"),
             "createdAt": q.get("createdAt", ""),
         } for q in quotes_sorted[:5]],
+        "recentOrders": [{
+            "reference": order.get("reference", ""),
+            "status": order.get("status", ""),
+            "fulfillmentStatus": order.get("fulfillmentStatus", ""),
+            "customerName": (order.get("customer") or {}).get("fullName", ""),
+            "amountInCents": order.get("amountInCents", 0),
+            "createdAt": order.get("createdAt", ""),
+        } for order in orders_sorted[:5]],
     })
+
+
+def list_orders():
+    items = orders_table.scan().get("Items", [])
+    items.sort(key=lambda x: x.get("createdAt", ""), reverse=True)
+    return response(200, {"ok": True, "orders": items})
+
+
+def update_order_admin(reference, body):
+    if not body:
+        return response(400, {"error": "invalid_json"})
+    existing = orders_table.get_item(Key={"reference": reference}).get("Item")
+    if not existing:
+        return response(404, {"error": "not_found"})
+    updates = {}
+    for field in ["fulfillmentStatus", "trackingNumber", "courier", "fulfillmentNotes"]:
+        if field in body:
+            value = body.get(field)
+            updates[field] = value.strip() if isinstance(value, str) else value
+    if not updates:
+        return response(400, {"error": "no_fields_to_update"})
+    updates["updatedAt"] = now_iso()
+    update_expr = "SET " + ", ".join(f"#{k}=:v{k}" for k in updates)
+    attr_names = {f"#{k}": k for k in updates}
+    attr_vals = {f":v{k}": v for k, v in updates.items()}
+    orders_table.update_item(
+        Key={"reference": reference},
+        UpdateExpression=update_expr,
+        ExpressionAttributeNames=attr_names,
+        ExpressionAttributeValues=attr_vals,
+        ReturnValues="ALL_NEW",
+    )
+    updated = orders_table.get_item(Key={"reference": reference}).get("Item")
+    return response(200, {"ok": True, "order": updated})
 
 
 def get_origin(event):
@@ -450,6 +521,128 @@ def build_order_items(cart_items):
             "subtotalCents": subtotal_cents,
         })
     return built, total
+
+
+def build_order_summary_lines(order):
+    lines = []
+    for item in order.get("items", []):
+        lines.append(
+            f"- {item.get('name', 'Producto')} x{item.get('quantity', 1)} · {cents_to_cop_text(item.get('subtotalCents', 0))}"
+        )
+    return "\n".join(lines) if lines else "- Sin items"
+
+
+def send_email(recipient, subject, text_body, html_body):
+    sender = get_order_notifications_from_email()
+    if not sender or not recipient:
+        return False
+    ses.send_email(
+        FromEmailAddress=sender,
+        Destination={"ToAddresses": [recipient]},
+        Content={
+            "Simple": {
+                "Subject": {"Data": subject, "Charset": "UTF-8"},
+                "Body": {
+                    "Text": {"Data": text_body, "Charset": "UTF-8"},
+                    "Html": {"Data": html_body, "Charset": "UTF-8"},
+                },
+            }
+        },
+    )
+    return True
+
+
+def send_customer_confirmation(order):
+    customer = order.get("customer") or {}
+    recipient = customer.get("email", "")
+    if not recipient:
+        return False
+    total = cents_to_cop_text(order.get("amountInCents", 0))
+    reference = order.get("reference", "")
+    items_text = build_order_summary_lines(order)
+    text_body = (
+        f"Hola {customer.get('fullName', '')},\n\n"
+        f"Recibimos tu compra en NexCore.\n"
+        f"Referencia: {reference}\n"
+        f"Total: {total}\n\n"
+        f"Productos:\n{items_text}\n\n"
+        f"Tu pedido ya quedó listo para preparación y despacho.\n"
+    )
+    html_body = (
+        f"<h2>Gracias por tu compra en NexCore</h2>"
+        f"<p>Hola {customer.get('fullName', '')},</p>"
+        f"<p>Recibimos tu pago y tu pedido ya quedó listo para preparación.</p>"
+        f"<p><strong>Referencia:</strong> {reference}<br><strong>Total:</strong> {total}</p>"
+        f"<pre style='font-family:inherit;white-space:pre-wrap'>{items_text}</pre>"
+    )
+    return send_email(recipient, f"NexCore: confirmación de pedido {reference}", text_body, html_body)
+
+
+def send_internal_order_alert(order):
+    recipient = get_order_alerts_to_email()
+    if not recipient:
+        return False
+    customer = order.get("customer") or {}
+    total = cents_to_cop_text(order.get("amountInCents", 0))
+    reference = order.get("reference", "")
+    items_text = build_order_summary_lines(order)
+    text_body = (
+        f"Nuevo pedido aprobado.\n\n"
+        f"Referencia: {reference}\n"
+        f"Cliente: {customer.get('fullName', '')} <{customer.get('email', '')}>\n"
+        f"Total: {total}\n\n"
+        f"Productos:\n{items_text}\n"
+    )
+    html_body = (
+        f"<h2>Nuevo pedido aprobado</h2>"
+        f"<p><strong>Referencia:</strong> {reference}<br>"
+        f"<strong>Cliente:</strong> {customer.get('fullName', '')} &lt;{customer.get('email', '')}&gt;<br>"
+        f"<strong>Total:</strong> {total}</p>"
+        f"<pre style='font-family:inherit;white-space:pre-wrap'>{items_text}</pre>"
+    )
+    return send_email(recipient, f"NexCore: nuevo pedido {reference}", text_body, html_body)
+
+
+def ensure_post_payment_side_effects(order):
+    if not order or order.get("status") != "APPROVED":
+        return order
+    notifications = dict(order.get("notifications") or {})
+    updates = {}
+
+    if order.get("fulfillmentStatus") in ("", "PENDING_PAYMENT", None):
+        updates["fulfillmentStatus"] = "READY_TO_FULFILL"
+
+    if not notifications.get("customerConfirmationSentAt"):
+        try:
+            if send_customer_confirmation(order):
+                notifications["customerConfirmationSentAt"] = now_iso()
+        except Exception:
+            pass
+
+    if not notifications.get("internalAlertSentAt"):
+        try:
+            if send_internal_order_alert(order):
+                notifications["internalAlertSentAt"] = now_iso()
+        except Exception:
+            pass
+
+    if notifications != dict(order.get("notifications") or {}):
+        updates["notifications"] = notifications
+
+    if not updates:
+        return order
+
+    updates["updatedAt"] = now_iso()
+    update_expr = "SET " + ", ".join(f"#{k}=:{k}" for k in updates)
+    attr_names = {f"#{k}": k for k in updates}
+    attr_values = {f":{k}": v for k, v in updates.items()}
+    orders_table.update_item(
+        Key={"reference": order["reference"]},
+        UpdateExpression=update_expr,
+        ExpressionAttributeNames=attr_names,
+        ExpressionAttributeValues=attr_values,
+    )
+    return orders_table.get_item(Key={"reference": order["reference"]}).get("Item") or order
 
 
 def normalize_customer(body):
@@ -658,6 +851,7 @@ def create_checkout_session(event):
         "orderId": str(uuid.uuid4()),
         "status": "CHECKOUT_CREATED",
         "statusMessage": "Checkout creado y listo para pago",
+        "fulfillmentStatus": "PENDING_PAYMENT",
         "currency": "COP",
         "amountInCents": total_cents,
         "items": items,
@@ -667,6 +861,10 @@ def create_checkout_session(event):
         "redirectUrl": redirect_url,
         "provider": provider,
         "providerData": provider_data,
+        "trackingNumber": "",
+        "courier": "",
+        "fulfillmentNotes": "",
+        "notifications": {},
         "createdAt": now_iso(),
         "updatedAt": now_iso(),
     }
@@ -704,17 +902,19 @@ def update_order_from_transaction(reference, transaction):
     status = transaction.get("status", "PENDING")
     orders_table.update_item(
         Key={"reference": reference},
-        UpdateExpression="SET #status=:status, #statusMessage=:message, #updatedAt=:updatedAt, #wompi=:wompi",
+        UpdateExpression="SET #status=:status, #statusMessage=:message, #updatedAt=:updatedAt, #wompi=:wompi, #fulfillmentStatus=if_not_exists(#fulfillmentStatus, :fulfillmentDefault)",
         ExpressionAttributeNames={
             "#status": "status",
             "#statusMessage": "statusMessage",
             "#updatedAt": "updatedAt",
             "#wompi": "wompi",
+            "#fulfillmentStatus": "fulfillmentStatus",
         },
         ExpressionAttributeValues={
             ":status": status,
             ":message": transaction.get("status_message", status),
             ":updatedAt": now_iso(),
+            ":fulfillmentDefault": "PENDING_PAYMENT",
             ":wompi": {
                 "environment": "sandbox" if get_wompi_public_key().startswith("pub_test_") else "production",
                 "transactionId": transaction.get("id", ""),
@@ -723,7 +923,9 @@ def update_order_from_transaction(reference, transaction):
             },
         },
     )
-    return orders_table.get_item(Key={"reference": reference}).get("Item")
+    return ensure_post_payment_side_effects(
+        orders_table.get_item(Key={"reference": reference}).get("Item")
+    )
 
 
 def update_order_from_mercadopago_payment(reference, payment):
@@ -741,21 +943,25 @@ def update_order_from_mercadopago_payment(reference, payment):
     }
     orders_table.update_item(
         Key={"reference": reference},
-        UpdateExpression="SET #status=:status, #statusMessage=:message, #updatedAt=:updatedAt, #providerData=:providerData",
+        UpdateExpression="SET #status=:status, #statusMessage=:message, #updatedAt=:updatedAt, #providerData=:providerData, #fulfillmentStatus=if_not_exists(#fulfillmentStatus, :fulfillmentDefault)",
         ExpressionAttributeNames={
             "#status": "status",
             "#statusMessage": "statusMessage",
             "#updatedAt": "updatedAt",
             "#providerData": "providerData",
+            "#fulfillmentStatus": "fulfillmentStatus",
         },
         ExpressionAttributeValues={
             ":status": mapped_status,
             ":message": payment.get("status_detail", payment.get("status", mapped_status)),
             ":updatedAt": now_iso(),
+            ":fulfillmentDefault": "PENDING_PAYMENT",
             ":providerData": provider_data,
         },
     )
-    return orders_table.get_item(Key={"reference": reference}).get("Item")
+    return ensure_post_payment_side_effects(
+        orders_table.get_item(Key={"reference": reference}).get("Item")
+    )
 
 
 def fetch_mercadopago_payment(payment_id):
@@ -973,5 +1179,14 @@ def handler(event, context):
         if not quote_id:
             return response(400, {"error": "missing_quote_id"})
         return update_quote(quote_id, get_json_body(event))
+
+    if path == "/api/admin/orders" and method == "GET":
+        return list_orders()
+
+    if path.startswith("/api/admin/orders/") and method == "PUT":
+        reference = path.replace("/api/admin/orders/", "").split("/")[0]
+        if not reference:
+            return response(400, {"error": "missing_reference"})
+        return update_order_admin(reference, get_json_body(event))
 
     return response(404, {"error": "not_found"})

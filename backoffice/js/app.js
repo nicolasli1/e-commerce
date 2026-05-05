@@ -194,6 +194,24 @@ const App = (() => {
             <div class="card-icon">🕐</div>
           </div>
         </div>
+        <div class="card">
+          <div style="display:flex;justify-content:space-between;align-items:flex-start;">
+            <div>
+              <div class="card-title">Total Pedidos</div>
+              <div class="card-value">${data.totalOrders || 0}</div>
+            </div>
+            <div class="card-icon">🛒</div>
+          </div>
+        </div>
+        <div class="card">
+          <div style="display:flex;justify-content:space-between;align-items:flex-start;">
+            <div>
+              <div class="card-title">Listos para despachar</div>
+              <div class="card-value">${data.readyToFulfillOrders || 0}</div>
+            </div>
+            <div class="card-icon">🚚</div>
+          </div>
+        </div>
       </div>
 
       <div class="table-container">
@@ -633,6 +651,209 @@ const App = (() => {
     });
   }
 
+  // ---- ORDERS ----
+  async function renderOrders() {
+    showLoading();
+    try {
+      const data = await Api.get('/api/admin/orders');
+      renderOrdersTable(data.orders || []);
+    } catch (err) {
+      $main.innerHTML = `<div class="empty-state"><p>${err.message}</p></div>`;
+    }
+  }
+
+  function formatCurrencyCopFromCents(cents) {
+    return '$' + Number((Number(cents) || 0) / 100).toLocaleString('es-CO', {
+      minimumFractionDigits: 0,
+      maximumFractionDigits: 0,
+    }) + ' COP';
+  }
+
+  function renderOrdersTable(orders) {
+    $main.innerHTML = `
+      <div class="page-header">
+        <div>
+          <h1 class="page-title">Pedidos</h1>
+          <p class="page-subtitle">Pedidos aprobados, preparación y despacho</p>
+        </div>
+        <span style="font-size:0.875rem;color:var(--text-secondary);">${orders.length} total</span>
+      </div>
+
+      <div class="table-container">
+        <table>
+          <thead>
+            <tr>
+              <th>Referencia</th>
+              <th>Cliente</th>
+              <th>Pago</th>
+              <th>Despacho</th>
+              <th>Total</th>
+              <th>Fecha</th>
+              <th>Acción</th>
+            </tr>
+          </thead>
+          <tbody id="ordersBody"></tbody>
+        </table>
+      </div>
+
+      <div class="modal-overlay" id="orderModal">
+        <div class="modal">
+          <div class="modal-header">
+            <h2 class="modal-title">Gestionar pedido</h2>
+            <button class="modal-close" id="orderModalCloseBtn">✕</button>
+          </div>
+          <div id="orderModalContent"></div>
+        </div>
+      </div>`;
+
+    const tbody = document.getElementById('ordersBody');
+    const modal = document.getElementById('orderModal');
+    const modalContent = document.getElementById('orderModalContent');
+
+    if (orders.length === 0) {
+      tbody.innerHTML = `<tr><td colspan="7" style="text-align:center;padding:40px;color:var(--text-secondary);">Sin pedidos aún</td></tr>`;
+      return;
+    }
+
+    function paymentBadge(status) {
+      return ({
+        APPROVED: 'badge-active',
+        PENDING: 'badge-pending',
+        DECLINED: 'badge-inactive',
+        CHECKOUT_CREATED: 'badge-pending',
+      })[status] || 'badge-pending';
+    }
+
+    function fulfillmentBadge(status) {
+      return ({
+        READY_TO_FULFILL: 'badge-pending',
+        PROCESSING: 'badge-contacted',
+        SHIPPED: 'badge-active',
+        DELIVERED: 'badge-active',
+        CANCELLED: 'badge-inactive',
+        PENDING_PAYMENT: 'badge-pending',
+      })[status] || 'badge-pending';
+    }
+
+    function closeModal() {
+      modal.classList.remove('open');
+      modalContent.innerHTML = '';
+    }
+
+    function openModal(order) {
+      const itemsHtml = (order.items || []).map((item) => `
+        <tr>
+          <td>${esc(item.name || 'Producto')}</td>
+          <td>${item.quantity || 0}</td>
+          <td>${formatCurrencyCopFromCents(item.subtotalCents || 0)}</td>
+        </tr>
+      `).join('');
+
+      modalContent.innerHTML = `
+        <div class="form-group">
+          <label class="form-label">Referencia</label>
+          <div style="font-weight:600;">${esc(order.reference || '—')}</div>
+        </div>
+        <div class="form-row">
+          <div class="form-group">
+            <label class="form-label">Cliente</label>
+            <div>${esc(order.customer?.fullName || '—')}<br><span style="color:var(--text-secondary);">${esc(order.customer?.email || '—')}</span></div>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Total</label>
+            <div>${formatCurrencyCopFromCents(order.amountInCents || 0)}</div>
+          </div>
+        </div>
+        <div class="form-row">
+          <div class="form-group">
+            <label class="form-label">Estado de pago</label>
+            <div><span class="badge ${paymentBadge(order.status)}">${esc(order.status || '—')}</span></div>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Correo de confirmación</label>
+            <div>${order.notifications?.customerConfirmationSentAt ? 'Enviado' : 'Pendiente / no configurado'}</div>
+          </div>
+        </div>
+        <div class="table-container" style="margin:16px 0;">
+          <table>
+            <thead><tr><th>Producto</th><th>Cant.</th><th>Subtotal</th></tr></thead>
+            <tbody>${itemsHtml}</tbody>
+          </table>
+        </div>
+        <form id="orderUpdateForm">
+          <div class="form-group">
+            <label class="form-label">Estado de despacho</label>
+            <select class="form-select" id="orderFulfillmentStatus">
+              ${['PENDING_PAYMENT','READY_TO_FULFILL','PROCESSING','SHIPPED','DELIVERED','CANCELLED'].map((status) => (
+                `<option value="${status}" ${order.fulfillmentStatus === status ? 'selected' : ''}>${status}</option>`
+              )).join('')}
+            </select>
+          </div>
+          <div class="form-row">
+            <div class="form-group">
+              <label class="form-label">Transportadora</label>
+              <input class="form-input" id="orderCourier" value="${esc(order.courier || '')}" placeholder="Servientrega, Coordinadora…" />
+            </div>
+            <div class="form-group">
+              <label class="form-label">Tracking</label>
+              <input class="form-input" id="orderTrackingNumber" value="${esc(order.trackingNumber || '')}" placeholder="Guía o tracking" />
+            </div>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Notas internas</label>
+            <textarea class="form-textarea" id="orderFulfillmentNotes" placeholder="Empacado, pendiente inventario, despacho parcial…">${esc(order.fulfillmentNotes || '')}</textarea>
+          </div>
+          <div class="modal-footer">
+            <button type="button" class="btn btn-secondary" id="orderModalCancelBtn">Cancelar</button>
+            <button type="submit" class="btn btn-gradient">Guardar cambios</button>
+          </div>
+        </form>
+      `;
+      modal.classList.add('open');
+
+      document.getElementById('orderModalCancelBtn').addEventListener('click', closeModal);
+      document.getElementById('orderUpdateForm').addEventListener('submit', async (e) => {
+        e.preventDefault();
+        try {
+          await Api.put(`/api/admin/orders/${order.reference}`, {
+            fulfillmentStatus: document.getElementById('orderFulfillmentStatus').value,
+            courier: document.getElementById('orderCourier').value.trim(),
+            trackingNumber: document.getElementById('orderTrackingNumber').value.trim(),
+            fulfillmentNotes: document.getElementById('orderFulfillmentNotes').value.trim(),
+          });
+          showToast('Pedido actualizado correctamente');
+          closeModal();
+          renderOrders();
+        } catch (err) {
+          showToast(err.message, 'error');
+        }
+      });
+    }
+
+    orders.forEach((order) => {
+      const tr = $el('tr', { dataset: { reference: order.reference || '' } });
+      tr.innerHTML = `
+        <td><strong>${esc(order.reference || '—')}</strong><br><span style="color:var(--text-secondary);font-size:0.75rem;">${esc(order.provider || '—')}</span></td>
+        <td>${esc(order.customer?.fullName || '—')}<br><span style="color:var(--text-secondary);font-size:0.75rem;">${esc(order.customer?.email || '—')}</span></td>
+        <td><span class="badge ${paymentBadge(order.status)}">${esc(order.status || '—')}</span></td>
+        <td><span class="badge ${fulfillmentBadge(order.fulfillmentStatus)}">${esc(order.fulfillmentStatus || '—')}</span></td>
+        <td>${formatCurrencyCopFromCents(order.amountInCents || 0)}</td>
+        <td style="color:var(--text-secondary);font-size:0.8125rem;">${formatDate(order.createdAt)}</td>
+        <td><button class="btn btn-secondary btn-sm order-manage-btn" data-reference="${order.reference}">Gestionar</button></td>
+      `;
+      tbody.appendChild(tr);
+    });
+
+    document.getElementById('orderModalCloseBtn')?.addEventListener('click', closeModal);
+    modal.addEventListener('click', (e) => { if (e.target === modal) closeModal(); });
+    tbody.addEventListener('click', (e) => {
+      const btn = e.target.closest('.order-manage-btn');
+      if (!btn) return;
+      const order = orders.find((entry) => entry.reference === btn.dataset.reference);
+      if (order) openModal(order);
+    });
+  }
+
   /* =========================================================
      HELPERS
      ========================================================= */
@@ -689,6 +910,7 @@ const App = (() => {
     registerRoute('#/products', renderProducts);
     registerRoute('#/leads', renderLeads);
     registerRoute('#/quotes', renderQuotes);
+    registerRoute('#/orders', renderOrders);
 
     // Router listening
     window.addEventListener('hashchange', () => {
