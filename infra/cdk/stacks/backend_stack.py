@@ -132,6 +132,9 @@ class BackendStack(Stack):
                 "WOMPI_PUBLIC_KEY_PARAM": f"/{project_name}/{environment}/wompi-public-key",
                 "WOMPI_INTEGRITY_SECRET_PARAM": f"/{project_name}/{environment}/wompi-integrity-secret",
                 "WOMPI_EVENTS_SECRET_PARAM": f"/{project_name}/{environment}/wompi-events-secret",
+                "MERCADOPAGO_PUBLIC_KEY_PARAM": f"/{project_name}/{environment}/mercadopago-public-key",
+                "MERCADOPAGO_ACCESS_TOKEN_PARAM": f"/{project_name}/{environment}/mercadopago-access-token",
+                "MERCADOPAGO_WEBHOOK_SECRET_PARAM": f"/{project_name}/{environment}/mercadopago-webhook-secret",
             },
         )
 
@@ -207,6 +210,11 @@ class BackendStack(Stack):
             methods=[apigwv2.HttpMethod.POST],
             integration=lambda_integration,
         )
+        http_api.add_routes(
+            path="/api/webhooks/mercadopago",
+            methods=[apigwv2.HttpMethod.POST],
+            integration=lambda_integration,
+        )
 
         # ── Admin/Backoffice routes ──
         http_api.add_routes(
@@ -263,6 +271,7 @@ class BackendStack(Stack):
         CfnOutput(self, "OrdersTableName", value=orders_table.table_name)
         CfnOutput(self, "LambdaFunctionName", value=api_lambda.function_name)
         CfnOutput(self, "WompiWebhookUrl", value=f"{http_api.api_endpoint}/api/webhooks/wompi")
+        CfnOutput(self, "MercadoPagoWebhookUrl", value=f"{http_api.api_endpoint}/api/webhooks/mercadopago")
         CfnOutput(self, "BackendEnabled", value="true")
 
     @staticmethod

@@ -119,6 +119,21 @@ SSM_SECRETS = {
         "default": "",
         "type": "SecureString",
     },
+    "mercadopago-public-key": {
+        "description": "Mercado Pago public key used on the frontend when needed",
+        "default": "",
+        "type": "String",
+    },
+    "mercadopago-access-token": {
+        "description": "Mercado Pago access token used to create Checkout Pro preferences",
+        "default": "",
+        "type": "SecureString",
+    },
+    "mercadopago-webhook-secret": {
+        "description": "Mercado Pago webhook secret used to validate x-signature",
+        "default": "",
+        "type": "SecureString",
+    },
 }
 
 
