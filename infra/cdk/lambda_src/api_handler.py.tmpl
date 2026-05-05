@@ -394,6 +394,14 @@ def handle_dashboard():
 
 def get_origin(event):
     headers = event.get("headers", {}) or {}
+    origin = headers.get("origin") or headers.get("Origin") or ""
+    if origin:
+        return origin.rstrip("/")
+    referer = headers.get("referer") or headers.get("Referer") or ""
+    if referer:
+        parsed = urllib.parse.urlsplit(referer)
+        if parsed.scheme and parsed.netloc:
+            return f"{parsed.scheme}://{parsed.netloc}"
     proto = headers.get("x-forwarded-proto") or headers.get("X-Forwarded-Proto") or "https"
     host = headers.get("x-forwarded-host") or headers.get("X-Forwarded-Host") or headers.get("host") or headers.get("Host")
     if not host:
