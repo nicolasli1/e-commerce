@@ -715,16 +715,24 @@
     body.modal-open {
       overflow: hidden;
     }
+    .checkout-modal {
+      width: min(100%, 1120px);
+      max-height: min(92vh, 860px);
+      padding: clamp(20px, 3vw, 32px);
+      overflow: hidden auto;
+    }
     .checkout-shell {
       display: grid;
-      grid-template-columns: minmax(0, 1.1fr) minmax(320px, 0.9fr);
-      gap: 24px;
+      grid-template-columns: minmax(0, 1.2fr) minmax(320px, 0.8fr);
+      gap: clamp(18px, 2.4vw, 28px);
+      align-items: start;
     }
     .checkout-panel {
       border-radius: 24px;
       background: rgba(255, 255, 255, 0.03);
       border: 1px solid rgba(255, 255, 255, 0.06);
-      padding: 24px;
+      padding: clamp(18px, 2vw, 24px);
+      min-width: 0;
     }
     .checkout-kicker {
       display: inline-flex;
@@ -743,11 +751,33 @@
       color: #9ca3af;
       font-size: 0.9375rem;
       margin-bottom: 18px;
-      max-width: 48ch;
+      max-width: 60ch;
+    }
+    .checkout-meta-strip {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 10px;
+      margin-bottom: 20px;
+    }
+    .checkout-meta-card {
+      border-radius: 18px;
+      padding: 14px 16px;
+      border: 1px solid rgba(255, 255, 255, 0.06);
+      background: rgba(255, 255, 255, 0.035);
+    }
+    .checkout-meta-card strong {
+      display: block;
+      font-size: 0.88rem;
+      margin-bottom: 4px;
+    }
+    .checkout-meta-card span {
+      color: #9ca3af;
+      font-size: 0.76rem;
+      line-height: 1.45;
     }
     .checkout-grid {
       display: grid;
-      grid-template-columns: repeat(2, minmax(0, 1fr));
+      grid-template-columns: repeat(2, minmax(180px, 1fr));
       gap: 14px;
     }
     .checkout-field {
@@ -794,6 +824,8 @@
       background:
         radial-gradient(circle at top right, rgba(168, 85, 247, 0.16), transparent 38%),
         linear-gradient(180deg, rgba(255,255,255,0.04), rgba(255,255,255,0.02));
+      position: sticky;
+      top: 0;
     }
     .checkout-summary-top {
       display: flex;
@@ -811,6 +843,9 @@
       display: grid;
       gap: 12px;
       margin-bottom: 20px;
+      max-height: min(42vh, 420px);
+      overflow-y: auto;
+      padding-right: 6px;
     }
     .checkout-summary-item {
       display: grid;
@@ -949,6 +984,64 @@
       margin-bottom: 14px;
       background: rgba(255,255,255,0.08);
     }
+    .checkout-provider-wrap {
+      display: grid;
+      gap: 12px;
+      margin: 18px 0 22px;
+    }
+    .checkout-provider-grid {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 12px;
+    }
+    .checkout-provider {
+      position: relative;
+      border-radius: 20px;
+      border: 1px solid rgba(255,255,255,0.08);
+      background: rgba(255,255,255,0.03);
+      overflow: hidden;
+    }
+    .checkout-provider input {
+      position: absolute;
+      inset: 0;
+      opacity: 0;
+      cursor: pointer;
+    }
+    .checkout-provider-card {
+      padding: 16px 18px;
+      min-height: 116px;
+      display: grid;
+      gap: 10px;
+      transition: border-color 0.2s ease, transform 0.2s ease, background 0.2s ease;
+    }
+    .checkout-provider input:checked + .checkout-provider-card {
+      background: linear-gradient(180deg, rgba(99,102,241,0.18), rgba(99,102,241,0.08));
+      box-shadow: inset 0 0 0 1px rgba(139,92,246,0.35);
+      transform: translateY(-1px);
+    }
+    .checkout-provider-title {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 12px;
+      font-weight: 700;
+      font-size: 0.95rem;
+    }
+    .checkout-provider-tag {
+      font-size: 0.7rem;
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+      color: #c4b5fd;
+    }
+    .checkout-provider-copy {
+      color: #cbd5e1;
+      font-size: 0.84rem;
+      line-height: 1.45;
+    }
+    .checkout-provider-foot {
+      color: #9ca3af;
+      font-size: 0.76rem;
+    }
 
     /* ==============================
        CTA / CONTACT
@@ -1084,14 +1177,32 @@
       .pricing-card.featured {
         transform: none;
       }
-      .checkout-shell {
+      .checkout-modal {
+        width: 100%;
+        max-height: min(94vh, 940px);
+      }
+      .checkout-shell,
+      .checkout-grid,
+      .checkout-provider-grid,
+      .checkout-meta-strip {
         grid-template-columns: 1fr;
       }
-      .checkout-grid {
-        grid-template-columns: 1fr;
+      .checkout-summary-card {
+        position: static;
       }
       .footer-grid {
         grid-template-columns: repeat(2, 1fr);
+      }
+    }
+    @media (max-width: 1180px) {
+      .checkout-shell {
+        grid-template-columns: 1fr;
+      }
+      .checkout-modal {
+        width: min(100%, 920px);
+      }
+      .checkout-summary-card {
+        position: static;
       }
     }
   </style>
@@ -1436,14 +1547,14 @@
           <button class="btn btn-gradient" id="checkoutBtn" style="width:100%;justify-content:center;">
             Continuar al pago
           </button>
-          <p style="font-size:0.75rem;color:#86868b;text-align:center;margin-top:8px;">Checkout seguro con Wompi. Más adelante podremos sumar PSE, Nequi y tarjeta con lógica avanzada.</p>
+          <p style="font-size:0.75rem;color:#86868b;text-align:center;margin-top:8px;">Checkout seguro con Wompi o Mercado Pago. El backend firma la referencia y valida el estado final con webhook.</p>
         </div>
       </div>
     </div>
   </div>
 
   <div class="modal-overlay" id="checkoutModal">
-    <div class="modal" style="max-width:1040px;">
+    <div class="modal checkout-modal">
       <div class="modal-header">
         <div>
           <span class="checkout-kicker">Checkout</span>
@@ -1455,7 +1566,50 @@
       <div class="checkout-shell">
         <div class="checkout-panel">
           <div id="checkoutStatus" class="checkout-status"></div>
-          <p class="checkout-lead">Vamos a generar un checkout firmado desde el backend para que el monto, la referencia y la trazabilidad del pedido no dependan del navegador.</p>
+          <p class="checkout-lead">Elige la pasarela, confirma tus datos y deja que el backend construya el cobro con la referencia y los montos reales del carrito. Esta capa ya nos sirve para conectar hoy Wompi o Mercado Pago, y mañana una pasarela adicional sin romper el flujo.</p>
+
+          <div class="checkout-meta-strip">
+            <div class="checkout-meta-card">
+              <strong>Monto protegido</strong>
+              <span>El total final se recalcula en backend usando el carrito real.</span>
+            </div>
+            <div class="checkout-meta-card">
+              <strong>Referencia única</strong>
+              <span>Cada intento de pago queda ligado al pedido para trazabilidad.</span>
+            </div>
+            <div class="checkout-meta-card">
+              <strong>Estado confiable</strong>
+              <span>El webhook de la pasarela confirma si el pago fue aprobado o no.</span>
+            </div>
+          </div>
+
+          <div class="checkout-provider-wrap">
+            <span class="checkout-label">Pasarela de pago</span>
+            <div class="checkout-provider-grid">
+              <label class="checkout-provider">
+                <input type="radio" name="checkoutProvider" value="wompi" checked />
+                <div class="checkout-provider-card">
+                  <div class="checkout-provider-title">
+                    <span>Wompi</span>
+                    <span class="checkout-provider-tag">Widget</span>
+                  </div>
+                  <div class="checkout-provider-copy">Abre un checkout embebido y firmado desde backend. Ideal para una experiencia más integrada.</div>
+                  <div class="checkout-provider-foot">PSE, Nequi, tarjetas y métodos soportados por Wompi.</div>
+                </div>
+              </label>
+              <label class="checkout-provider">
+                <input type="radio" name="checkoutProvider" value="mercadopago" />
+                <div class="checkout-provider-card">
+                  <div class="checkout-provider-title">
+                    <span>Mercado Pago</span>
+                    <span class="checkout-provider-tag">Checkout Pro</span>
+                  </div>
+                  <div class="checkout-provider-copy">Genera una preferencia en backend y redirige al comprador al entorno seguro de Mercado Pago.</div>
+                  <div class="checkout-provider-foot">Útil para sumar PSE, cuenta Mercado Pago y métodos disponibles en Colombia.</div>
+                </div>
+              </label>
+            </div>
+          </div>
 
           <form id="checkoutForm">
             <div class="checkout-grid">
@@ -1500,11 +1654,11 @@
               </label>
               <label class="checkout-checkbox">
                 <input type="checkbox" id="checkoutAcceptPayment" required />
-                <span>Entiendo que el pago se realizará en Wompi y que el estado final se confirma por webhook seguro.</span>
+                <span>Entiendo que el pago se realizará en la pasarela seleccionada y que el estado final se confirma por webhook seguro.</span>
               </label>
             </div>
 
-            <p class="checkout-inline-note">Este primer release usa Checkout Widget de Wompi con firma generada en backend. Es la forma más segura y rápida de salir a producción mientras dejamos lista la arquitectura para evolucionar a una integración más profunda.</p>
+            <p class="checkout-inline-note" id="checkoutInlineNote">Este checkout crea la sesión en backend y nunca confía en precios enviados por el navegador. Cada pasarela se conecta con su propio webhook para cerrar el estado real del pedido.</p>
 
             <div class="checkout-actions">
               <button type="submit" class="btn btn-gradient" id="checkoutPayBtn">Pagar con Wompi</button>
@@ -1515,7 +1669,7 @@
           <div id="checkoutResult" class="checkout-result">
             <div id="checkoutResultBadge" class="checkout-status-pill">Procesando</div>
             <div id="checkoutResultTitle" class="checkout-result-title">Estamos validando tu pago</div>
-            <p id="checkoutResultCopy" class="checkout-result-copy">En cuanto Wompi confirme el estado final, actualizaremos el pedido.</p>
+            <p id="checkoutResultCopy" class="checkout-result-copy">En cuanto la pasarela confirme el estado final, actualizaremos el pedido.</p>
             <p id="checkoutResultMeta" class="checkout-result-meta"></p>
           </div>
         </div>
@@ -1537,8 +1691,8 @@
 
           <ul class="checkout-points">
             <li>La referencia del pedido se genera en backend y queda asociada al carrito real.</li>
-            <li>Si el usuario vuelve desde Wompi, consultamos el estado del pedido por referencia y webhook.</li>
-            <li>Más adelante podemos migrar este flujo a una experiencia de pagos más avanzada sin reescribir toda la arquitectura.</li>
+            <li>Si el usuario vuelve desde la pasarela, consultamos el estado del pedido por referencia y webhook.</li>
+            <li>Más adelante podemos sumar otra pasarela o un checkout más avanzado sin reescribir toda la arquitectura.</li>
           </ul>
         </div>
       </div>
@@ -1698,6 +1852,24 @@
       }
     }
 
+    function selectedCheckoutProvider() {
+      return document.querySelector('input[name="checkoutProvider"]:checked')?.value || 'wompi';
+    }
+
+    function syncCheckoutProviderUI() {
+      const provider = selectedCheckoutProvider();
+      const button = document.getElementById('checkoutPayBtn');
+      const note = document.getElementById('checkoutInlineNote');
+      if (button) {
+        button.textContent = provider === 'mercadopago' ? 'Pagar con Mercado Pago' : 'Pagar con Wompi';
+      }
+      if (note) {
+        note.textContent = provider === 'mercadopago'
+          ? 'Mercado Pago usa Checkout Pro: el backend crea una preferencia y el comprador es redirigido al entorno seguro de Mercado Pago. El webhook completa el estado final del pedido.'
+          : 'Wompi usa un checkout firmado desde backend para que el total, la referencia y la trazabilidad del pedido no dependan del navegador.';
+      }
+    }
+
     function setCheckoutStatus(message, type = '') {
       const el = document.getElementById('checkoutStatus');
       if (!el) return;
@@ -1715,16 +1887,18 @@
 
       result.classList.add('visible');
       const status = (order?.status || 'PENDING').toUpperCase();
+      const provider = (order?.provider || selectedCheckoutProvider()).toLowerCase();
+      const providerLabel = provider === 'mercadopago' ? 'Mercado Pago' : 'Wompi';
       const statusMap = {
         APPROVED: {
           badge: 'Pago aprobado',
           title: 'Tu pago fue confirmado',
-          copy: 'El pedido quedó validado. Ya puedes continuar con la experiencia post-compra o preparar la siguiente pantalla de confirmación.',
+          copy: `El pedido quedó validado en ${providerLabel}. Ya puedes continuar con la experiencia post-compra o preparar la siguiente pantalla de confirmación.`,
         },
         DECLINED: {
           badge: 'Pago rechazado',
           title: 'El pago no fue aprobado',
-          copy: 'Puedes volver a intentar con otro método desde Wompi o revisar los datos ingresados.',
+          copy: `Puedes volver a intentar con otro método desde ${providerLabel} o revisar los datos ingresados.`,
         },
         ERROR: {
           badge: 'Error de pago',
@@ -1734,12 +1908,12 @@
         CHECKOUT_CREATED: {
           badge: 'Checkout creado',
           title: 'Abrimos el checkout seguro',
-          copy: 'Cuando Wompi redirija al usuario, aquí mostraremos el resultado final del pedido.',
+          copy: `Cuando ${providerLabel} redirija al usuario, aquí mostraremos el resultado final del pedido.`,
         },
         PENDING: {
           badge: 'Pago en proceso',
           title: 'Estamos esperando confirmación',
-          copy: 'Wompi ya recibió la operación. El webhook o la consulta de estado terminarán de confirmar el resultado.',
+          copy: `${providerLabel} ya recibió la operación. El webhook o la consulta de estado terminarán de confirmar el resultado.`,
         }
       };
       const ui = statusMap[status] || statusMap.PENDING;
@@ -1780,6 +1954,7 @@
       const notes = document.getElementById('checkoutNotes').value.trim();
 
       return {
+        provider: selectedCheckoutProvider(),
         cart: cart.map((item) => ({
           productId: item.productId,
           quantity: item.quantity
@@ -1827,6 +2002,14 @@
       });
     }
 
+    async function launchMercadoPago(session) {
+      const targetUrl = session?.mercadopago?.initPoint || session?.mercadopago?.sandboxInitPoint || '';
+      if (!targetUrl) {
+        throw new Error('Mercado Pago no devolvió una URL de checkout válida.');
+      }
+      window.location.href = targetUrl;
+    }
+
     async function submitCheckout(event) {
       event.preventDefault();
       if (cart.length === 0) {
@@ -1854,21 +2037,31 @@
         }
 
         localStorage.setItem(CHECKOUT_REFERENCE_STORAGE_KEY, data.reference);
-        setCheckoutStatus('Checkout firmado. Estamos abriendo Wompi con el total calculado por backend.', 'success');
+        const provider = data.order?.provider || selectedCheckoutProvider();
+        setCheckoutStatus(
+          provider === 'mercadopago'
+            ? 'Preferencia creada. Te vamos a redirigir a Mercado Pago con la referencia real del pedido.'
+            : 'Checkout firmado. Estamos abriendo Wompi con el total calculado por backend.',
+          'success'
+        );
         showCheckoutResult(data.order);
-        await launchWompi(data);
+        if (provider === 'mercadopago') {
+          await launchMercadoPago(data);
+        } else {
+          await launchWompi(data);
+        }
       } catch (err) {
         setCheckoutStatus(err.message || 'No pudimos iniciar el pago.', 'error');
       } finally {
         payBtn.disabled = false;
-        payBtn.textContent = 'Pagar con Wompi';
+        syncCheckoutProviderUI();
       }
     }
 
     async function syncReturnedCheckout() {
       const params = new URLSearchParams(window.location.search);
       const reference = params.get('reference') || localStorage.getItem(CHECKOUT_REFERENCE_STORAGE_KEY);
-      const transactionId = params.get('id') || '';
+      const transactionId = params.get('transactionId') || params.get('payment_id') || params.get('id') || '';
       if (!reference) return;
 
       openCheckout();
@@ -1895,7 +2088,7 @@
         await new Promise((resolve) => setTimeout(resolve, 2500));
       }
 
-      setCheckoutStatus('El pago sigue en proceso. El webhook de Wompi debería actualizarlo en breve.', 'warning');
+      setCheckoutStatus('El pago sigue en proceso. El webhook de la pasarela debería actualizarlo en breve.', 'warning');
     }
     
     // Cart modal
@@ -1923,9 +2116,13 @@
         closeCheckout();
         openCart();
       });
+      document.querySelectorAll('input[name="checkoutProvider"]').forEach((input) => {
+        input.addEventListener('change', syncCheckoutProviderUI);
+      });
       document.getElementById('checkoutForm')?.addEventListener('submit', submitCheckout);
       document.getElementById('checkoutBtn')?.addEventListener('click', goToCheckout);
       updateCartCount();
+      syncCheckoutProviderUI();
       syncReturnedCheckout();
     });
 

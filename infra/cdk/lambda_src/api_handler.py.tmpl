@@ -28,6 +28,9 @@ SESSION_SECRET = os.environ.get("ADMIN_SESSION_SECRET", "nexcore-session-secret-
 WOMPI_PUBLIC_KEY_PARAM = os.environ.get("WOMPI_PUBLIC_KEY_PARAM", "")
 WOMPI_INTEGRITY_SECRET_PARAM = os.environ.get("WOMPI_INTEGRITY_SECRET_PARAM", "")
 WOMPI_EVENTS_SECRET_PARAM = os.environ.get("WOMPI_EVENTS_SECRET_PARAM", "")
+MERCADOPAGO_PUBLIC_KEY_PARAM = os.environ.get("MERCADOPAGO_PUBLIC_KEY_PARAM", "")
+MERCADOPAGO_ACCESS_TOKEN_PARAM = os.environ.get("MERCADOPAGO_ACCESS_TOKEN_PARAM", "")
+MERCADOPAGO_WEBHOOK_SECRET_PARAM = os.environ.get("MERCADOPAGO_WEBHOOK_SECRET_PARAM", "")
 
 _param_cache = {}
 
@@ -102,8 +105,33 @@ def get_wompi_events_secret():
         return ""
 
 
+def get_mercadopago_public_key():
+    try:
+        return get_parameter(MERCADOPAGO_PUBLIC_KEY_PARAM, decrypt=False)
+    except Exception:
+        return ""
+
+
+def get_mercadopago_access_token():
+    try:
+        return get_parameter(MERCADOPAGO_ACCESS_TOKEN_PARAM, decrypt=True)
+    except Exception:
+        return ""
+
+
+def get_mercadopago_webhook_secret():
+    try:
+        return get_parameter(MERCADOPAGO_WEBHOOK_SECRET_PARAM, decrypt=True)
+    except Exception:
+        return ""
+
+
 def wompi_enabled():
     return bool(get_wompi_public_key() and get_wompi_integrity_secret())
+
+
+def mercadopago_enabled():
+    return bool(get_mercadopago_access_token())
 
 
 def wompi_base_url(public_key=None):
@@ -473,15 +501,109 @@ def build_widget_config(reference, amount_in_cents, customer, shipping, redirect
     return config
 
 
+def mercadopago_base_url():
+    return "https://api.mercadopago.com"
+
+
+def mercadopago_notification_url(origin):
+    if not origin:
+        return ""
+    return f"{origin}/api/webhooks/mercadopago?source=webhooks"
+
+
+def build_mercadopago_preference(reference, items, customer, shipping, origin):
+    access_token = get_mercadopago_access_token()
+    if not access_token:
+        raise ValueError("mercadopago_not_configured")
+
+    payload = {
+        "external_reference": reference,
+        "items": [{
+            "id": item["productId"],
+            "title": item["name"],
+            "description": item["category"],
+            "quantity": item["quantity"],
+            "currency_id": "COP",
+            "unit_price": round(item["unitPriceCents"] / 100, 2),
+        } for item in items],
+        "payer": {
+            "name": customer.get("fullName", ""),
+            "email": customer.get("email", ""),
+        },
+        "payment_methods": {
+            "installments": 12,
+        },
+        "metadata": {
+            "reference": reference,
+            "integration": "nexcore-checkout",
+        },
+        "back_urls": {
+            "success": f"{origin}/?checkout=return&provider=mercadopago&reference={urllib.parse.quote(reference)}" if origin else "",
+            "failure": f"{origin}/?checkout=return&provider=mercadopago&reference={urllib.parse.quote(reference)}" if origin else "",
+            "pending": f"{origin}/?checkout=return&provider=mercadopago&reference={urllib.parse.quote(reference)}" if origin else "",
+        },
+        "auto_return": "approved",
+        "statement_descriptor": "NEXCORE",
+    }
+    if shipping:
+        payload["shipments"] = {
+            "receiver_address": {
+                "zip_code": shipping.get("region", "000000"),
+                "street_name": shipping.get("addressLine1", ""),
+                "apartment": shipping.get("addressLine2", ""),
+                "city_name": shipping.get("city", ""),
+                "state_name": shipping.get("region", ""),
+                "country_name": shipping.get("country", "CO"),
+            }
+        }
+    notification_url = mercadopago_notification_url(origin)
+    if notification_url:
+        payload["notification_url"] = notification_url
+
+    status, data = http_json(
+        "POST",
+        f"{mercadopago_base_url()}/checkout/preferences",
+        headers={"Authorization": f"Bearer {access_token}"},
+        body=payload,
+    )
+    if status not in (200, 201):
+        message = (data.get("message") or data.get("error") or "mercadopago_preference_error")
+        raise RuntimeError(message)
+    return data
+
+
+def map_mercadopago_status(status):
+    mapping = {
+        "approved": "APPROVED",
+        "authorized": "APPROVED",
+        "pending": "PENDING",
+        "in_process": "PENDING",
+        "in_mediation": "PENDING",
+        "rejected": "DECLINED",
+        "cancelled": "CANCELLED",
+        "charged_back": "CHARGEDBACK",
+        "refunded": "REFUNDED",
+    }
+    return mapping.get((status or "").lower(), (status or "PENDING").upper())
+
+
 def create_checkout_session(event):
-    if not wompi_enabled():
+    body = get_json_body(event)
+    if not body:
+        return response(400, {"error": "invalid_json"})
+    provider = (body.get("provider") or "wompi").strip().lower()
+    if provider not in ("wompi", "mercadopago"):
+        return response(400, {"error": "unsupported_provider"})
+    if provider == "wompi" and not wompi_enabled():
         return response(503, {
             "error": "checkout_unavailable",
             "message": "Wompi no está configurado todavía en este entorno.",
         })
-    body = get_json_body(event)
-    if not body:
-        return response(400, {"error": "invalid_json"})
+    if provider == "mercadopago" and not mercadopago_enabled():
+        return response(503, {
+            "error": "checkout_unavailable",
+            "message": "Mercado Pago no está configurado todavía en este entorno.",
+        })
     try:
         customer = normalize_customer(body)
         shipping = normalize_shipping(body)
@@ -492,7 +614,28 @@ def create_checkout_session(event):
     reference = generate_order_reference()
     origin = get_origin(event)
     redirect_url = f"{origin}/?checkout=return&reference={urllib.parse.quote(reference)}" if origin else ""
-    widget_config = build_widget_config(reference, total_cents, customer, shipping, redirect_url)
+    widget_config = None
+    mercadopago_config = None
+    provider_data = {"name": provider}
+    if provider == "wompi":
+        widget_config = build_widget_config(reference, total_cents, customer, shipping, redirect_url)
+        provider_data["wompi"] = {
+            "environment": "sandbox" if get_wompi_public_key().startswith("pub_test_") else "production",
+            "transactionId": "",
+        }
+    else:
+        preference = build_mercadopago_preference(reference, items, customer, shipping, origin)
+        mercadopago_config = {
+            "publicKey": get_mercadopago_public_key(),
+            "preferenceId": preference.get("id", ""),
+            "initPoint": preference.get("init_point", ""),
+            "sandboxInitPoint": preference.get("sandbox_init_point", ""),
+        }
+        provider_data["mercadopago"] = {
+            "preferenceId": preference.get("id", ""),
+            "paymentId": "",
+            "initPoint": preference.get("init_point", ""),
+        }
     order = {
         "reference": reference,
         "orderId": str(uuid.uuid4()),
@@ -505,20 +648,22 @@ def create_checkout_session(event):
         "shippingAddress": shipping,
         "notes": (body.get("notes") or "").strip(),
         "redirectUrl": redirect_url,
-        "wompi": {
-            "environment": "sandbox" if get_wompi_public_key().startswith("pub_test_") else "production",
-            "transactionId": "",
-        },
+        "provider": provider,
+        "providerData": provider_data,
         "createdAt": now_iso(),
         "updatedAt": now_iso(),
     }
     orders_table.put_item(Item=order)
-    return response(201, {
+    payload = {
         "ok": True,
         "reference": reference,
         "order": order,
-        "wompi": widget_config,
-    })
+    }
+    if widget_config:
+        payload["wompi"] = widget_config
+    if mercadopago_config:
+        payload["mercadopago"] = mercadopago_config
+    return response(201, payload)
 
 
 def fetch_wompi_transaction(transaction_id):
@@ -564,15 +709,67 @@ def update_order_from_transaction(reference, transaction):
     return orders_table.get_item(Key={"reference": reference}).get("Item")
 
 
+def update_order_from_mercadopago_payment(reference, payment):
+    if not payment:
+        return None
+    mapped_status = map_mercadopago_status(payment.get("status"))
+    current = orders_table.get_item(Key={"reference": reference}).get("Item") or {}
+    provider_data = current.get("providerData", {})
+    provider_data["mercadopago"] = {
+        "paymentId": payment.get("id", ""),
+        "status": payment.get("status", ""),
+        "statusDetail": payment.get("status_detail", ""),
+        "merchantOrderId": payment.get("order", {}).get("id", ""),
+        "externalReference": payment.get("external_reference", ""),
+    }
+    orders_table.update_item(
+        Key={"reference": reference},
+        UpdateExpression="SET #status=:status, #statusMessage=:message, #updatedAt=:updatedAt, #providerData=:providerData",
+        ExpressionAttributeNames={
+            "#status": "status",
+            "#statusMessage": "statusMessage",
+            "#updatedAt": "updatedAt",
+            "#providerData": "providerData",
+        },
+        ExpressionAttributeValues={
+            ":status": mapped_status,
+            ":message": payment.get("status_detail", payment.get("status", mapped_status)),
+            ":updatedAt": now_iso(),
+            ":providerData": provider_data,
+        },
+    )
+    return orders_table.get_item(Key={"reference": reference}).get("Item")
+
+
+def fetch_mercadopago_payment(payment_id):
+    access_token = get_mercadopago_access_token()
+    if not access_token:
+        return None
+    status, payload = http_json(
+        "GET",
+        f"{mercadopago_base_url()}/v1/payments/{payment_id}",
+        headers={"Authorization": f"Bearer {access_token}"},
+    )
+    if status != 200:
+        return None
+    return payload
+
+
 def get_checkout_order(reference, transaction_id=None):
     order = orders_table.get_item(Key={"reference": reference}).get("Item")
     if not order:
         return response(404, {"error": "order_not_found"})
+    provider = order.get("provider", "wompi")
     current_status = order.get("status", "")
     if transaction_id and current_status in ("CHECKOUT_CREATED", "PENDING"):
-        transaction = fetch_wompi_transaction(transaction_id)
-        if transaction and transaction.get("reference") == reference:
-            order = update_order_from_transaction(reference, transaction) or order
+        if provider == "mercadopago":
+            payment = fetch_mercadopago_payment(transaction_id)
+            if payment and payment.get("external_reference") == reference:
+                order = update_order_from_mercadopago_payment(reference, payment) or order
+        else:
+            transaction = fetch_wompi_transaction(transaction_id)
+            if transaction and transaction.get("reference") == reference:
+                order = update_order_from_transaction(reference, transaction) or order
     return response(200, {"ok": True, "order": order})
 
 
@@ -619,6 +816,55 @@ def handle_wompi_webhook(event):
     return response(200, {"ok": True, "order": updated})
 
 
+def verify_mercadopago_signature(event):
+    secret = get_mercadopago_webhook_secret()
+    if not secret:
+        return True
+    headers = event.get("headers", {}) or {}
+    x_signature = headers.get("x-signature") or headers.get("X-Signature") or ""
+    x_request_id = headers.get("x-request-id") or headers.get("X-Request-Id") or ""
+    query = event.get("queryStringParameters") or {}
+    data_id = (query.get("data.id") or "").lower()
+    if not x_signature or not x_request_id or not data_id:
+        return False
+    ts = ""
+    v1 = ""
+    for part in x_signature.split(","):
+        key, _, value = part.partition("=")
+        key = key.strip()
+        value = value.strip()
+        if key == "ts":
+            ts = value
+        elif key == "v1":
+            v1 = value
+    if not ts or not v1:
+        return False
+    manifest = f"id:{data_id};request-id:{x_request_id};ts:{ts};"
+    expected = hmac.new(secret.encode(), manifest.encode(), hashlib.sha256).hexdigest()
+    return hmac.compare_digest(expected, v1)
+
+
+def handle_mercadopago_webhook(event):
+    if not verify_mercadopago_signature(event):
+        return response(401, {"error": "invalid_signature"})
+    query = event.get("queryStringParameters") or {}
+    notification_type = (query.get("type") or query.get("topic") or "").lower()
+    payment_id = query.get("data.id") or query.get("id") or ""
+    if notification_type != "payment" or not payment_id:
+        return response(200, {"ok": True, "ignored": True})
+    payment = fetch_mercadopago_payment(payment_id)
+    if not payment:
+        return response(200, {"ok": True, "ignored": True})
+    reference = payment.get("external_reference", "")
+    if not reference:
+        return response(200, {"ok": True, "ignored": True})
+    existing = orders_table.get_item(Key={"reference": reference}).get("Item")
+    if not existing:
+        return response(200, {"ok": True, "ignored": True})
+    updated = update_order_from_mercadopago_payment(reference, payment)
+    return response(200, {"ok": True, "order": updated})
+
+
 def handler(event, context):
     method = event.get("requestContext", {}).get("http", {}).get("method", "")
     path = event.get("rawPath", "").rstrip("/")
@@ -656,6 +902,9 @@ def handler(event, context):
 
     if method == "POST" and path == "/api/webhooks/wompi":
         return handle_wompi_webhook(event)
+
+    if method == "POST" and path == "/api/webhooks/mercadopago":
+        return handle_mercadopago_webhook(event)
 
     if path.startswith("/api/checkout/orders/") and method == "GET":
         reference = path.replace("/api/checkout/orders/", "").split("/")[0]

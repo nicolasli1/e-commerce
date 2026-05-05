@@ -127,6 +127,12 @@ def test_checkout_button_opens_checkout_modal(
         assert checkout_panel.is_visible()
         assert page.locator("#checkoutPayBtn").is_visible()
         assert "Finaliza tu pedido" in checkout_panel.inner_text()
+        box = checkout_panel.bounding_box()
+        assert box is not None
+        viewport = page.viewport_size
+        assert viewport is not None
+        assert box["y"] >= 0
+        assert box["height"] <= viewport["height"]
     finally:
         with contextlib.suppress(Exception):
             context.close()
