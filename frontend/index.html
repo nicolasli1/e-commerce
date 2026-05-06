@@ -2100,9 +2100,15 @@
 
     async function syncReturnedCheckout() {
       const params = new URLSearchParams(window.location.search);
+      const isCheckoutReturn = params.get('checkout') === 'return';
+      if (!isCheckoutReturn) return;
+
       const reference = params.get('reference') || localStorage.getItem(CHECKOUT_REFERENCE_STORAGE_KEY);
       const transactionId = params.get('transactionId') || params.get('payment_id') || params.get('id') || '';
-      if (!reference) return;
+      if (!reference) {
+        window.history.replaceState({}, document.title, window.location.pathname + window.location.hash);
+        return;
+      }
 
       openCheckout();
       setCheckoutStatus('Consultando el estado más reciente del pedido...', 'warning');
@@ -2119,16 +2125,19 @@
           const status = (order?.status || '').toUpperCase();
           if (['APPROVED', 'DECLINED', 'ERROR'].includes(status)) {
             setCheckoutStatus('Estado final recibido desde backend.', status === 'APPROVED' ? 'success' : 'error');
+            window.history.replaceState({}, document.title, window.location.pathname + window.location.hash);
             return;
           }
         } catch (err) {
           setCheckoutStatus(err.message || 'No pudimos sincronizar el pago.', 'error');
+          window.history.replaceState({}, document.title, window.location.pathname + window.location.hash);
           return;
         }
         await new Promise((resolve) => setTimeout(resolve, 2500));
       }
 
       setCheckoutStatus('El pago sigue en proceso. El webhook de la pasarela debería actualizarlo en breve.', 'warning');
+      window.history.replaceState({}, document.title, window.location.pathname + window.location.hash);
     }
     
     // Cart modal

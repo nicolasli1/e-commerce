@@ -236,6 +236,11 @@ class BackendStack(Stack):
             integration=lambda_integration,
         )
         http_api.add_routes(
+            path="/api/admin/products/seed",
+            methods=[apigwv2.HttpMethod.POST],
+            integration=lambda_integration,
+        )
+        http_api.add_routes(
             path="/api/admin/products/{productId}",
             methods=[apigwv2.HttpMethod.PUT, apigwv2.HttpMethod.DELETE],
             integration=lambda_integration,
