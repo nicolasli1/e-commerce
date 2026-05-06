@@ -22,9 +22,9 @@ products_table = dynamodb.Table("__PRODUCTS_TABLE_NAME__")
 quotes_table = dynamodb.Table("__QUOTES_TABLE_NAME__")
 orders_table = dynamodb.Table("__ORDERS_TABLE_NAME__")
 
-ADMIN_USER = os.environ.get("ADMIN_USER", "admin")
-ADMIN_PASS_HASH = hashlib.sha256((os.environ.get("ADMIN_PASS", "admin123")).encode()).hexdigest()
-SESSION_SECRET = os.environ.get("ADMIN_SESSION_SECRET", "nexcore-session-secret-v1-2026")
+ADMIN_USER_PARAM = os.environ.get("ADMIN_USER_PARAM", "")
+ADMIN_PASSWORD_PARAM = os.environ.get("ADMIN_PASSWORD_PARAM", "")
+ADMIN_SESSION_SECRET_PARAM = os.environ.get("ADMIN_SESSION_SECRET_PARAM", "")
 
 WOMPI_PUBLIC_KEY_PARAM = os.environ.get("WOMPI_PUBLIC_KEY_PARAM", "")
 WOMPI_INTEGRITY_SECRET_PARAM = os.environ.get("WOMPI_INTEGRITY_SECRET_PARAM", "")
@@ -206,6 +206,28 @@ def get_parameter(name, decrypt=False):
     return value
 
 
+def get_admin_user():
+    try:
+        return get_parameter(ADMIN_USER_PARAM, decrypt=False)
+    except Exception:
+        return ""
+
+
+def get_admin_password_hash():
+    try:
+        password = get_parameter(ADMIN_PASSWORD_PARAM, decrypt=True)
+    except Exception:
+        return ""
+    return hashlib.sha256(password.encode()).hexdigest()
+
+
+def get_session_secret():
+    try:
+        return get_parameter(ADMIN_SESSION_SECRET_PARAM, decrypt=True)
+    except Exception:
+        return ""
+
+
 def get_wompi_public_key():
     try:
         return get_parameter(WOMPI_PUBLIC_KEY_PARAM, decrypt=False)
@@ -297,11 +319,14 @@ def http_json(method, url, headers=None, body=None):
 
 
 def generate_token(username):
+    session_secret = get_session_secret()
+    if not session_secret:
+        raise RuntimeError("admin_session_secret_not_configured")
     payload = base64.b64encode(
         json.dumps({"user": username, "iat": now_iso()}).encode()
     ).decode()
     sig = hmac.new(
-        SESSION_SECRET.encode(),
+        session_secret.encode(),
         payload.encode(),
         hashlib.sha256,
     ).hexdigest()
@@ -310,12 +335,15 @@ def generate_token(username):
 
 def verify_token(token):
     try:
+        session_secret = get_session_secret()
+        if not session_secret:
+            return None
         parts = token.split(".")
         if len(parts) != 2:
             return None
         payload, sig = parts
         expected = hmac.new(
-            SESSION_SECRET.encode(),
+            session_secret.encode(),
             payload.encode(),
             hashlib.sha256,
         ).hexdigest()
@@ -331,9 +359,14 @@ def handle_login(event):
     body = get_json_body(event)
     if not body:
         return response(400, {"error": "invalid_json"})
+    admin_user = get_admin_user()
+    admin_pass_hash = get_admin_password_hash()
+    session_secret = get_session_secret()
+    if not admin_user or not admin_pass_hash or not session_secret:
+        return response(503, {"error": "admin_auth_not_configured"})
     user = (body.get("username") or "").strip()
     pwd = (body.get("password") or "").strip()
-    if user == ADMIN_USER and hashlib.sha256(pwd.encode()).hexdigest() == ADMIN_PASS_HASH:
+    if user == admin_user and hashlib.sha256(pwd.encode()).hexdigest() == admin_pass_hash:
         return response(200, {"ok": True, "token": generate_token(user)})
     return response(401, {"error": "invalid_credentials"})
 

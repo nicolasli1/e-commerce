@@ -55,8 +55,7 @@ class FrontendStack(Stack):
             encryption=s3.BucketEncryption.S3_MANAGED,
             block_public_access=s3.BlockPublicAccess.BLOCK_ALL,
             versioned=True,
-            removal_policy=RemovalPolicy.DESTROY,
-            auto_delete_objects=True,
+            removal_policy=RemovalPolicy.RETAIN,
         )
 
         # ------------------------------------------------------------------

@@ -58,7 +58,7 @@ class BackendStack(Stack):
                 type=dynamodb.AttributeType.STRING,
             ),
             billing_mode=dynamodb.BillingMode.PAY_PER_REQUEST,
-            removal_policy=RemovalPolicy.DESTROY,
+            removal_policy=RemovalPolicy.RETAIN,
         )
 
         # Products table (new — for backoffice CRUD)
@@ -71,7 +71,7 @@ class BackendStack(Stack):
                 type=dynamodb.AttributeType.STRING,
             ),
             billing_mode=dynamodb.BillingMode.PAY_PER_REQUEST,
-            removal_policy=RemovalPolicy.DESTROY,
+            removal_policy=RemovalPolicy.RETAIN,
             point_in_time_recovery=True,
             encryption=dynamodb.TableEncryption.AWS_MANAGED,
         )
@@ -86,7 +86,7 @@ class BackendStack(Stack):
                 type=dynamodb.AttributeType.STRING,
             ),
             billing_mode=dynamodb.BillingMode.PAY_PER_REQUEST,
-            removal_policy=RemovalPolicy.DESTROY,
+            removal_policy=RemovalPolicy.RETAIN,
             point_in_time_recovery=True,
             encryption=dynamodb.TableEncryption.AWS_MANAGED,
         )
@@ -101,7 +101,7 @@ class BackendStack(Stack):
                 type=dynamodb.AttributeType.STRING,
             ),
             billing_mode=dynamodb.BillingMode.PAY_PER_REQUEST,
-            removal_policy=RemovalPolicy.DESTROY,
+            removal_policy=RemovalPolicy.RETAIN,
             point_in_time_recovery=True,
             encryption=dynamodb.TableEncryption.AWS_MANAGED,
         )
@@ -129,6 +129,9 @@ class BackendStack(Stack):
                 "QUOTES_TABLE": quotes_table.table_name,
                 "ORDERS_TABLE": orders_table.table_name,
                 "ENVIRONMENT": environment,
+                "ADMIN_USER_PARAM": f"/{project_name}/{environment}/admin-user",
+                "ADMIN_PASSWORD_PARAM": f"/{project_name}/{environment}/admin-password",
+                "ADMIN_SESSION_SECRET_PARAM": f"/{project_name}/{environment}/admin-session-secret",
                 "WOMPI_PUBLIC_KEY_PARAM": f"/{project_name}/{environment}/wompi-public-key",
                 "WOMPI_INTEGRITY_SECRET_PARAM": f"/{project_name}/{environment}/wompi-integrity-secret",
                 "WOMPI_EVENTS_SECRET_PARAM": f"/{project_name}/{environment}/wompi-events-secret",
