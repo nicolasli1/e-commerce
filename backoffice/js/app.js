@@ -753,6 +753,13 @@ const App = (() => {
       })[status] || 'badge-pending';
     }
 
+    function notificationLabel(order) {
+      const status = order?.notifications?.customerConfirmation?.status || '';
+      if (status === 'SENT') return 'Enviado';
+      if (status === 'FAILED') return 'Falló';
+      return 'Pendiente';
+    }
+
     function fulfillmentBadge(status) {
       return ({
         READY_TO_FULFILL: 'badge-pending',
@@ -781,7 +788,7 @@ const App = (() => {
       modalContent.innerHTML = `
         <div class="form-group">
           <label class="form-label">Referencia</label>
-          <div style="font-weight:600;">${esc(order.reference || '—')}</div>
+          <div style="display:inline-flex;align-items:center;gap:8px;padding:8px 12px;border-radius:9999px;background:rgba(99,102,241,0.14);border:1px solid rgba(99,102,241,0.28);color:#c4b5fd;font-weight:700;">${esc(order.reference || '—')}</div>
         </div>
         <div class="form-row">
           <div class="form-group">
@@ -800,7 +807,7 @@ const App = (() => {
           </div>
           <div class="form-group">
             <label class="form-label">Correo de confirmación</label>
-            <div>${order.notifications?.customerConfirmationSentAt ? 'Enviado' : 'Pendiente / no configurado'}</div>
+            <div>${notificationLabel(order)}</div>
           </div>
         </div>
         <div class="table-container" style="margin:16px 0;">
@@ -862,7 +869,7 @@ const App = (() => {
     orders.forEach((order) => {
       const tr = $el('tr', { dataset: { reference: order.reference || '' } });
       tr.innerHTML = `
-        <td><strong>${esc(order.reference || '—')}</strong><br><span style="color:var(--text-secondary);font-size:0.75rem;">${esc(order.provider || '—')}</span></td>
+        <td><span style="display:inline-flex;align-items:center;padding:6px 10px;border-radius:9999px;background:rgba(99,102,241,0.14);border:1px solid rgba(99,102,241,0.28);color:#c4b5fd;font-size:0.75rem;font-weight:700;">${esc(order.reference || '—')}</span><br><span style="color:var(--text-secondary);font-size:0.75rem;">${esc(order.provider || '—')}</span></td>
         <td>${esc(order.customer?.fullName || '—')}<br><span style="color:var(--text-secondary);font-size:0.75rem;">${esc(order.customer?.email || '—')}</span></td>
         <td><span class="badge ${paymentBadge(order.status)}">${esc(order.status || '—')}</span></td>
         <td><span class="badge ${fulfillmentBadge(order.fulfillmentStatus)}">${esc(order.fulfillmentStatus || '—')}</span></td>

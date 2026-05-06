@@ -1008,6 +1008,68 @@
       color: #9ca3af;
       font-size: 0.8125rem;
     }
+    .checkout-reference-tag {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 10px 14px;
+      border-radius: 9999px;
+      background: rgba(99,102,241,0.14);
+      border: 1px solid rgba(99,102,241,0.28);
+      color: #ddd6fe;
+      font-size: 0.8125rem;
+      font-weight: 700;
+      margin: 8px 0 16px;
+      flex-wrap: wrap;
+    }
+    .checkout-result-grid {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) minmax(240px, 320px);
+      gap: 16px;
+      margin-top: 18px;
+    }
+    .checkout-result-card {
+      border-radius: 20px;
+      background: rgba(255,255,255,0.03);
+      border: 1px solid rgba(255,255,255,0.06);
+      padding: 18px;
+      min-width: 0;
+    }
+    .checkout-result-card h4 {
+      font-size: 0.95rem;
+      margin-bottom: 12px;
+    }
+    .checkout-result-items {
+      display: grid;
+      gap: 10px;
+    }
+    .checkout-result-item {
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      gap: 12px;
+      padding-bottom: 10px;
+      border-bottom: 1px solid rgba(255,255,255,0.05);
+    }
+    .checkout-result-item:last-child {
+      border-bottom: none;
+      padding-bottom: 0;
+    }
+    .checkout-result-item-name {
+      font-size: 0.875rem;
+      font-weight: 600;
+    }
+    .checkout-result-item-meta,
+    .checkout-result-side p {
+      color: #9ca3af;
+      font-size: 0.8125rem;
+    }
+    .checkout-result-actions {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      margin-top: 18px;
+    }
     .checkout-status-pill {
       display: inline-flex;
       align-items: center;
@@ -1140,6 +1202,70 @@
     .cta-form textarea::placeholder {
       color: #636366;
     }
+    .tracking {
+      padding: 0 0 120px;
+    }
+    .tracking-shell {
+      border-radius: 28px;
+      padding: 32px;
+      background: rgba(255,255,255,0.03);
+      border: 1px solid rgba(255,255,255,0.06);
+      display: grid;
+      gap: 22px;
+    }
+    .tracking-form {
+      display: flex;
+      gap: 12px;
+      flex-wrap: wrap;
+    }
+    .tracking-form input {
+      flex: 1;
+      min-width: 240px;
+      padding: 14px 18px;
+      border-radius: 16px;
+      border: 1px solid rgba(255,255,255,0.1);
+      background: rgba(255,255,255,0.04);
+      color: #f5f5f7;
+      font: inherit;
+    }
+    .tracking-result {
+      display: none;
+      border-radius: 22px;
+      padding: 22px;
+      background: linear-gradient(180deg, rgba(99,102,241,0.08), rgba(255,255,255,0.02));
+      border: 1px solid rgba(255,255,255,0.08);
+    }
+    .tracking-result.visible {
+      display: block;
+    }
+    .tracking-result-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+      gap: 12px;
+      margin: 16px 0 18px;
+    }
+    .tracking-box {
+      border-radius: 18px;
+      padding: 14px;
+      background: rgba(255,255,255,0.03);
+      border: 1px solid rgba(255,255,255,0.06);
+    }
+    .tracking-box strong {
+      display: block;
+      font-size: 0.75rem;
+      color: #a5b4fc;
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+      margin-bottom: 8px;
+    }
+    .tracking-order-items {
+      display: grid;
+      gap: 10px;
+    }
+    .tracking-empty {
+      color: #9ca3af;
+      font-size: 0.875rem;
+    }
 
     /* ==============================
        FOOTER
@@ -1222,8 +1348,14 @@
       .checkout-meta-strip {
         grid-template-columns: 1fr;
       }
+      .checkout-result-grid {
+        grid-template-columns: 1fr;
+      }
       .checkout-summary-card {
         position: static;
+      }
+      .tracking-shell {
+        padding: 22px;
       }
       .footer-grid {
         grid-template-columns: repeat(2, 1fr);
@@ -1521,6 +1653,48 @@
     </div>
   </section>
 
+  <section class="tracking" id="rastrear-pedido">
+    <div class="container">
+      <div class="tracking-shell reveal">
+        <div class="section-header" style="margin-bottom:0;text-align:left;">
+          <h2 class="section-title">Rastrea tu pedido</h2>
+          <p class="section-subtitle" style="margin:0;">Ingresa la referencia del pedido para ver el estado del pago, el avance del despacho y el resumen de la compra.</p>
+        </div>
+        <form class="tracking-form" id="trackingForm">
+          <input id="trackingReferenceInput" placeholder="Ejemplo: NXC-1777944622-B7D83F70" />
+          <button type="submit" class="btn btn-gradient">Consultar estado</button>
+        </form>
+        <div id="trackingResult" class="tracking-result">
+          <div id="trackingResultBadge" class="checkout-status-pill">Seguimiento</div>
+          <div id="trackingResultTitle" class="checkout-result-title">Estado del pedido</div>
+          <p id="trackingResultCopy" class="checkout-result-copy">Consulta lista.</p>
+          <div class="tracking-result-grid">
+            <div class="tracking-box">
+              <strong>Referencia</strong>
+              <span id="trackingReferenceValue">—</span>
+            </div>
+            <div class="tracking-box">
+              <strong>Pago</strong>
+              <span id="trackingPaymentStatusValue">—</span>
+            </div>
+            <div class="tracking-box">
+              <strong>Despacho</strong>
+              <span id="trackingFulfillmentStatusValue">—</span>
+            </div>
+            <div class="tracking-box">
+              <strong>Guía</strong>
+              <span id="trackingGuideValue">—</span>
+            </div>
+          </div>
+          <div class="checkout-result-card">
+            <h4>Resumen del pedido</h4>
+            <div id="trackingItems" class="tracking-order-items"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
   <!-- ============================
        FOOTER
   ============================ -->
@@ -1710,7 +1884,22 @@
             <div id="checkoutResultBadge" class="checkout-status-pill">Procesando</div>
             <div id="checkoutResultTitle" class="checkout-result-title">Estamos validando tu pago</div>
             <p id="checkoutResultCopy" class="checkout-result-copy">En cuanto la pasarela confirme el estado final, actualizaremos el pedido.</p>
+            <div id="checkoutResultReference" class="checkout-reference-tag" style="display:none;"></div>
             <p id="checkoutResultMeta" class="checkout-result-meta"></p>
+            <div id="checkoutResultDetails" class="checkout-result-grid" style="display:none;">
+              <div class="checkout-result-card">
+                <h4>Lo que compraste</h4>
+                <div id="checkoutResultItems" class="checkout-result-items"></div>
+              </div>
+              <div class="checkout-result-card checkout-result-side">
+                <h4>Siguiente paso</h4>
+                <p id="checkoutResultNextStep">Usa tu referencia para revisar el estado del pedido cuando quieras.</p>
+                <div class="checkout-result-actions">
+                  <button type="button" class="btn btn-secondary btn-sm" id="checkoutCopyReferenceBtn">Copiar referencia</button>
+                  <button type="button" class="btn btn-gradient btn-sm" id="checkoutTrackBtn">Rastrear pedido</button>
+                </div>
+              </div>
+            </div>
           </div>
         </div>
 
@@ -1862,6 +2051,42 @@
       return formatCOP((Number(value) || 0) / 100) + ' COP';
     }
 
+    function humanizeStatus(status) {
+      const labels = {
+        CHECKOUT_CREATED: 'Checkout creado',
+        PENDING: 'Pago en proceso',
+        APPROVED: 'Pago aprobado',
+        DECLINED: 'Pago rechazado',
+        CANCELLED: 'Cancelado',
+        REFUNDED: 'Reembolsado',
+        READY_TO_FULFILL: 'Listo para alistar',
+        PROCESSING: 'En preparación',
+        SHIPPED: 'Despachado',
+        DELIVERED: 'Entregado',
+        PENDING_PAYMENT: 'Pendiente de pago',
+      };
+      return labels[(status || '').toUpperCase()] || status || '—';
+    }
+
+    function orderItemsHtml(order) {
+      return (order?.items || []).map((item) => `
+        <div class="checkout-result-item">
+          <div>
+            <div class="checkout-result-item-name">${item.name || 'Producto'}</div>
+            <div class="checkout-result-item-meta">${item.quantity || 0} x ${formatCents(item.unitPriceCents || 0)}</div>
+          </div>
+          <div style="font-weight:700;">${formatCents(item.subtotalCents || 0)}</div>
+        </div>
+      `).join('') || '<div class="tracking-empty">No encontramos ítems para este pedido.</div>';
+    }
+
+    function copyReference(reference) {
+      if (!reference) return;
+      navigator.clipboard?.writeText(reference)
+        .then(() => showCartToast('Referencia copiada'))
+        .catch(() => showCartToast('No pudimos copiar la referencia'));
+    }
+
     function cartTotal() {
       return cart.reduce((sum, item) => sum + (Number(item.price) || 0) * item.quantity, 0);
     }
@@ -1923,7 +2148,13 @@
       const title = document.getElementById('checkoutResultTitle');
       const copy = document.getElementById('checkoutResultCopy');
       const meta = document.getElementById('checkoutResultMeta');
-      if (!result || !badge || !title || !copy || !meta) return;
+      const referenceTag = document.getElementById('checkoutResultReference');
+      const details = document.getElementById('checkoutResultDetails');
+      const items = document.getElementById('checkoutResultItems');
+      const nextStep = document.getElementById('checkoutResultNextStep');
+      const copyBtn = document.getElementById('checkoutCopyReferenceBtn');
+      const trackBtn = document.getElementById('checkoutTrackBtn');
+      if (!result || !badge || !title || !copy || !meta || !referenceTag || !details || !items || !nextStep) return;
 
       result.classList.add('visible');
       const status = (order?.status || 'PENDING').toUpperCase();
@@ -1933,34 +2164,56 @@
         APPROVED: {
           badge: 'Pago aprobado',
           title: 'Tu pago fue confirmado',
-          copy: `El pedido quedó validado en ${providerLabel}. Ya puedes continuar con la experiencia post-compra o preparar la siguiente pantalla de confirmación.`,
+          copy: `El pedido quedó validado en ${providerLabel}. Guarda tu referencia para revisar el estado del despacho cuando quieras.`,
+          nextStep: 'Tu pedido ya quedó registrado. Usa esta referencia en la sección de seguimiento para ver pago, alistamiento y entrega.',
         },
         DECLINED: {
           badge: 'Pago rechazado',
           title: 'El pago no fue aprobado',
           copy: `Puedes volver a intentar con otro método desde ${providerLabel} o revisar los datos ingresados.`,
+          nextStep: 'Puedes volver al carrito e intentar otra vez con una pasarela distinta.',
         },
         ERROR: {
           badge: 'Error de pago',
           title: 'Ocurrió un error durante el cobro',
           copy: 'No marcamos el pedido como exitoso. Vuelve a intentarlo o revisa el estado más tarde.',
+          nextStep: 'Conserva la referencia si el pago alcanzó a crearse y consulta su estado más abajo.',
         },
         CHECKOUT_CREATED: {
           badge: 'Checkout creado',
           title: 'Abrimos el checkout seguro',
           copy: `Cuando ${providerLabel} redirija al usuario, aquí mostraremos el resultado final del pedido.`,
+          nextStep: 'Todavía estamos esperando confirmación de la pasarela.',
         },
         PENDING: {
           badge: 'Pago en proceso',
           title: 'Estamos esperando confirmación',
           copy: `${providerLabel} ya recibió la operación. El webhook o la consulta de estado terminarán de confirmar el resultado.`,
+          nextStep: 'Usa la referencia para consultar el estado hasta que pase a aprobado o rechazado.',
         }
       };
       const ui = statusMap[status] || statusMap.PENDING;
       badge.textContent = ui.badge;
       title.textContent = ui.title;
       copy.textContent = ui.copy;
+      nextStep.textContent = ui.nextStep || 'Usa la referencia para consultar el estado del pedido.';
       meta.textContent = `Referencia: ${order?.reference || '—'}${transactionId ? ' · Transacción: ' + transactionId : ''}`;
+      referenceTag.style.display = order?.reference ? 'inline-flex' : 'none';
+      referenceTag.textContent = order?.reference ? `Etiqueta de seguimiento: ${order.reference}` : '';
+      details.style.display = order?.reference ? 'grid' : 'none';
+      items.innerHTML = orderItemsHtml(order);
+      if (copyBtn) {
+        copyBtn.onclick = () => copyReference(order?.reference || '');
+      }
+      if (trackBtn) {
+        trackBtn.onclick = () => {
+          if (!order?.reference) return;
+          const input = document.getElementById('trackingReferenceInput');
+          if (input) input.value = order.reference;
+          document.getElementById('rastrear-pedido')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+          lookupOrderByReference(order.reference);
+        };
+      }
 
       if (status === 'APPROVED') {
         cart = [];
@@ -1968,6 +2221,46 @@
         localStorage.removeItem(CHECKOUT_REFERENCE_STORAGE_KEY);
         updateCartCount();
         renderCart();
+      }
+    }
+
+    async function lookupOrderByReference(reference) {
+      const normalized = (reference || '').trim().toUpperCase();
+      const result = document.getElementById('trackingResult');
+      const badge = document.getElementById('trackingResultBadge');
+      const title = document.getElementById('trackingResultTitle');
+      const copy = document.getElementById('trackingResultCopy');
+      if (!normalized || !result || !badge || !title || !copy) return;
+
+      result.classList.add('visible');
+      badge.textContent = 'Buscando pedido';
+      title.textContent = 'Consultando estado';
+      copy.textContent = 'Estamos revisando la referencia en backend.';
+
+      try {
+        const res = await fetch(`/api/checkout/orders/${encodeURIComponent(normalized)}?_t=${Date.now()}`);
+        const data = await res.json();
+        if (!res.ok) {
+          throw new Error(data.error || 'No encontramos ese pedido.');
+        }
+        const order = data.order || {};
+        badge.textContent = humanizeStatus(order.status);
+        title.textContent = `Pedido ${order.reference || normalized}`;
+        copy.textContent = `Pago: ${humanizeStatus(order.status)} · Despacho: ${humanizeStatus(order.fulfillmentStatus)}`;
+        document.getElementById('trackingReferenceValue').textContent = order.reference || normalized;
+        document.getElementById('trackingPaymentStatusValue').textContent = humanizeStatus(order.status);
+        document.getElementById('trackingFulfillmentStatusValue').textContent = humanizeStatus(order.fulfillmentStatus);
+        document.getElementById('trackingGuideValue').textContent = order.trackingNumber || 'Aún sin guía';
+        document.getElementById('trackingItems').innerHTML = orderItemsHtml(order);
+      } catch (err) {
+        badge.textContent = 'Sin resultado';
+        title.textContent = 'No encontramos ese pedido';
+        copy.textContent = err.message || 'Verifica la referencia e intenta de nuevo.';
+        document.getElementById('trackingReferenceValue').textContent = normalized;
+        document.getElementById('trackingPaymentStatusValue').textContent = '—';
+        document.getElementById('trackingFulfillmentStatusValue').textContent = '—';
+        document.getElementById('trackingGuideValue').textContent = '—';
+        document.getElementById('trackingItems').innerHTML = '<div class="tracking-empty">No pudimos recuperar un resumen para esta referencia.</div>';
       }
     }
 
@@ -2170,6 +2463,10 @@
       });
       document.getElementById('checkoutForm')?.addEventListener('submit', submitCheckout);
       document.getElementById('checkoutBtn')?.addEventListener('click', goToCheckout);
+      document.getElementById('trackingForm')?.addEventListener('submit', (e) => {
+        e.preventDefault();
+        lookupOrderByReference(document.getElementById('trackingReferenceInput')?.value || '');
+      });
       updateCartCount();
       syncCheckoutProviderUI();
       syncReturnedCheckout();
