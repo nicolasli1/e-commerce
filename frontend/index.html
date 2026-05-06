@@ -751,15 +751,15 @@
       overflow: hidden;
     }
     .checkout-modal {
-      width: min(100%, 1120px);
-      max-height: min(92vh, 860px);
+      width: min(100%, 980px);
+      max-height: min(90vh, 820px);
       padding: clamp(20px, 3vw, 32px);
       overflow: hidden auto;
     }
     .checkout-shell {
       display: grid;
-      grid-template-columns: minmax(0, 1.2fr) minmax(320px, 0.8fr);
-      gap: clamp(18px, 2.4vw, 28px);
+      grid-template-columns: minmax(0, 1.1fr) minmax(280px, 0.75fr);
+      gap: clamp(16px, 2vw, 24px);
       align-items: start;
     }
     .checkout-panel {
@@ -784,15 +784,28 @@
     }
     .checkout-lead {
       color: #9ca3af;
-      font-size: 0.9375rem;
-      margin-bottom: 18px;
-      max-width: 60ch;
+      font-size: 0.875rem;
+      margin-bottom: 14px;
+      max-width: 54ch;
+    }
+    .checkout-trust {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 8px 12px;
+      border-radius: 9999px;
+      background: rgba(34, 197, 94, 0.1);
+      border: 1px solid rgba(34, 197, 94, 0.2);
+      color: #bbf7d0;
+      font-size: 0.78rem;
+      font-weight: 600;
+      margin-bottom: 16px;
     }
     .checkout-meta-strip {
       display: grid;
-      grid-template-columns: repeat(3, minmax(0, 1fr));
+      grid-template-columns: repeat(2, minmax(0, 1fr));
       gap: 10px;
-      margin-bottom: 20px;
+      margin-bottom: 18px;
     }
     .checkout-meta-card {
       border-radius: 18px;
@@ -877,8 +890,8 @@
     .checkout-summary-list {
       display: grid;
       gap: 12px;
-      margin-bottom: 20px;
-      max-height: min(42vh, 420px);
+      margin-bottom: 14px;
+      max-height: min(38vh, 360px);
       overflow-y: auto;
       padding-right: 6px;
     }
@@ -902,24 +915,13 @@
       font-size: 0.8rem;
       margin-top: 4px;
     }
-    .checkout-points {
-      display: grid;
-      gap: 10px;
-      margin-top: 16px;
-      color: #d1d5db;
-      font-size: 0.875rem;
-    }
-    .checkout-points li {
-      display: flex;
-      align-items: flex-start;
-      gap: 10px;
-    }
-    .checkout-points li::before {
-      content: '•';
-      color: #22c55e;
-      font-size: 1.125rem;
-      line-height: 1;
-      margin-top: 2px;
+    .checkout-summary-note {
+      margin-top: 10px;
+      padding-top: 14px;
+      border-top: 1px solid rgba(255,255,255,0.06);
+      color: #cbd5e1;
+      font-size: 0.82rem;
+      line-height: 1.55;
     }
     .checkout-consent {
       display: grid;
@@ -1171,7 +1173,7 @@
        CTA / CONTACT
     ============================== */
     .cta {
-      padding: 120px 0;
+      padding: 92px 0 72px;
       text-align: center;
       position: relative;
       overflow: hidden;
@@ -1195,22 +1197,19 @@
     }
     .cta p {
       color: #86868b;
-      font-size: 1.125rem;
-      max-width: 480px;
-      margin: 0 auto 36px;
+      font-size: 1rem;
+      max-width: 620px;
+      margin: 0 auto 28px;
     }
     .cta-form {
-      display: flex;
+      display: grid;
       gap: 12px;
-      max-width: 480px;
+      max-width: 640px;
       margin: 0 auto;
-      flex-wrap: wrap;
-      justify-content: center;
     }
     .cta-form input,
     .cta-form textarea {
-      flex: 1;
-      min-width: 220px;
+      min-width: 0;
       padding: 14px 20px;
       border-radius: 20px;
       border: 1px solid rgba(255, 255, 255, 0.1);
@@ -1818,20 +1817,17 @@
       <div class="checkout-shell">
         <div class="checkout-panel">
           <div id="checkoutStatus" class="checkout-status"></div>
-          <p class="checkout-lead">Elige la pasarela, confirma tus datos y deja que el backend construya el cobro con la referencia y los montos reales del carrito. Esta capa ya nos sirve para conectar hoy Wompi o Mercado Pago, y mañana una pasarela adicional sin romper el flujo.</p>
+          <div class="checkout-trust">🔒 Pago seguro y confirmación por correo al aprobarse la compra</div>
+          <p class="checkout-lead">Confirma tus datos, revisa tu pedido y elige el medio de pago. Tu compra quedará asociada a una referencia única para seguimiento.</p>
 
           <div class="checkout-meta-strip">
             <div class="checkout-meta-card">
-              <strong>Monto protegido</strong>
-              <span>El total final se recalcula en backend usando el carrito real.</span>
+              <strong>Pago seguro</strong>
+              <span>Procesamos el cobro en una pasarela confiable y te notificamos cuando el pago quede confirmado.</span>
             </div>
             <div class="checkout-meta-card">
-              <strong>Referencia única</strong>
-              <span>Cada intento de pago queda ligado al pedido para trazabilidad.</span>
-            </div>
-            <div class="checkout-meta-card">
-              <strong>Estado confiable</strong>
-              <span>El webhook de la pasarela confirma si el pago fue aprobado o no.</span>
+              <strong>Seguimiento del pedido</strong>
+              <span>Recibirás una referencia para consultar estado de pago, alistamiento y despacho.</span>
             </div>
           </div>
 
@@ -1845,8 +1841,8 @@
                     <span>Wompi</span>
                     <span class="checkout-provider-tag">Widget</span>
                   </div>
-                  <div class="checkout-provider-copy">Abre un checkout embebido y firmado desde backend. Ideal para una experiencia más integrada.</div>
-                  <div class="checkout-provider-foot">PSE, Nequi, tarjetas y métodos soportados por Wompi.</div>
+                  <div class="checkout-provider-copy">Paga con tarjeta, PSE, Nequi y otros métodos disponibles en Wompi.</div>
+                  <div class="checkout-provider-foot">Aprobación segura y confirmación automática del pedido.</div>
                 </div>
               </label>
               <label class="checkout-provider">
@@ -1856,8 +1852,8 @@
                     <span>Mercado Pago</span>
                     <span class="checkout-provider-tag">Checkout Pro</span>
                   </div>
-                  <div class="checkout-provider-copy">Genera una preferencia en backend y redirige al comprador al entorno seguro de Mercado Pago.</div>
-                  <div class="checkout-provider-foot">Útil para sumar PSE, cuenta Mercado Pago y métodos disponibles en Colombia.</div>
+                  <div class="checkout-provider-copy">Paga en el entorno seguro de Mercado Pago con métodos disponibles en Colombia.</div>
+                  <div class="checkout-provider-foot">Ideal si prefieres completar el pago fuera del sitio.</div>
                 </div>
               </label>
             </div>
@@ -1955,12 +1951,7 @@
           </div>
 
           <div id="checkoutSummaryList" class="checkout-summary-list"></div>
-
-          <ul class="checkout-points">
-            <li>La referencia del pedido se genera en backend y queda asociada al carrito real.</li>
-            <li>Si el usuario vuelve desde la pasarela, consultamos el estado del pedido por referencia y webhook.</li>
-            <li>Más adelante podemos sumar otra pasarela o un checkout más avanzado sin reescribir toda la arquitectura.</li>
-          </ul>
+          <p class="checkout-summary-note">Verifica cantidades, correo y total antes de continuar. Cuando el pago quede aprobado, te mostraremos la referencia para rastrear el pedido.</p>
         </div>
       </div>
     </div>
