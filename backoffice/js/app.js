@@ -8,6 +8,20 @@
 const App = (() => {
   'use strict';
 
+  const PRODUCT_CATEGORY_OPTIONS = [
+    { value: 'pantallas', label: 'Pantallas' },
+    { value: 'baterias', label: 'Baterías' },
+    { value: 'flex-y-conectores', label: 'Flex y conectores' },
+    { value: 'camaras-y-modulos', label: 'Cámaras y módulos' },
+    { value: 'tapas-y-carcasa', label: 'Tapas y carcasa' },
+    { value: 'herramientas-diy', label: 'Herramientas DIY' },
+  ];
+
+  function getCategoryLabel(value) {
+    const match = PRODUCT_CATEGORY_OPTIONS.find((option) => option.value === value);
+    return match ? match.label : (value || '—');
+  }
+
   /* ---- DOM references (cached after DOMContentLoaded) ---- */
   let $main, $sidebar, $overlay, $sidebarToggle, $toastContainer;
 
@@ -277,10 +291,11 @@ const App = (() => {
       <div class="page-header">
         <div>
           <h1 class="page-title">Productos</h1>
-          <p class="page-subtitle">Gestiona el catálogo de componentes</p>
+          <p class="page-subtitle">Gestiona el catálogo de repuestos y herramientas</p>
         </div>
         <div style="display:flex;gap:8px;">
           <button class="btn btn-secondary" id="refreshProductsBtn">🔄 Actualizar</button>
+          <button class="btn btn-secondary" id="seedProductsBtn">🧪 Poblar ejemplos</button>
           <button class="btn btn-gradient" id="newProductBtn">+ Nuevo Producto</button>
         </div>
       </div>
@@ -327,8 +342,8 @@ const App = (() => {
             </div>
             <div class="form-row">
               <div class="form-group">
-                <label class="form-label">Precio (USD)</label>
-                <input class="form-input" type="number" step="0.01" id="pPrice" required placeholder="479.00" />
+                <label class="form-label">Precio (COP)</label>
+                <input class="form-input" type="number" step="1" id="pPrice" required placeholder="289000" />
               </div>
               <div class="form-group">
                 <label class="form-label">Stock</label>
@@ -338,7 +353,7 @@ const App = (() => {
             <div class="form-row">
               <div class="form-group">
                 <label class="form-label">Categoría</label>
-                <input class="form-input" id="pCategory" placeholder="Ej: procesadores" />
+                <select class="form-select" id="pCategory"></select>
               </div>
               <div class="form-group">
                 <label class="form-label">URL de Imagen</label>
@@ -360,7 +375,7 @@ const App = (() => {
     // Collect unique categories
     const categories = [...new Set(products.map((p) => p.category).filter(Boolean))];
     categories.sort().forEach((cat) => {
-      const opt = $el('option', { value: cat }, [cat]);
+      const opt = $el('option', { value: cat }, [getCategoryLabel(cat)]);
       filter.appendChild(opt);
     });
 
@@ -378,7 +393,7 @@ const App = (() => {
         tr.innerHTML = `
           <td><strong>${esc(p.name)}</strong></td>
           <td>$${Number(p.price).toLocaleString('en-US', { minimumFractionDigits: 2 })}</td>
-          <td>${esc(p.category || '—')}</td>
+          <td>${esc(getCategoryLabel(p.category))}</td>
           <td>${p.stock ?? 0}</td>
           <td><span class="badge ${statusClass}">${esc(p.status || 'active')}</span></td>
           <td>
@@ -405,6 +420,10 @@ const App = (() => {
     const pCategory = document.getElementById('pCategory');
     const pImage = document.getElementById('pImage');
 
+    pCategory.innerHTML = PRODUCT_CATEGORY_OPTIONS.map((option) => (
+      `<option value="${option.value}">${option.label}</option>`
+    )).join('');
+
     let editingId = null;
 
     function openModal(product = null) {
@@ -416,7 +435,7 @@ const App = (() => {
       pDesc.value = product ? (product.description || '') : '';
       pPrice.value = product ? product.price : '';
       pStock.value = product ? product.stock : '';
-      pCategory.value = product ? (product.category || '') : '';
+      pCategory.value = product ? (product.category || 'pantallas') : 'pantallas';
       pImage.value = product ? (product.imageUrl || '') : '';
 
       modal.classList.add('open');
@@ -430,6 +449,16 @@ const App = (() => {
 
     document.getElementById('newProductBtn').addEventListener('click', () => openModal());
     document.getElementById('refreshProductsBtn').addEventListener('click', () => renderProducts());
+    document.getElementById('seedProductsBtn').addEventListener('click', async () => {
+      if (!confirm('Esto poblará productos de ejemplo para el catálogo. ¿Continuar?')) return;
+      try {
+        const result = await Api.post('/api/admin/products/seed', {});
+        showToast(`Catálogo de ejemplo listo (${result.seeded || 0} productos)`);
+        renderProducts();
+      } catch (err) {
+        showToast(err.message, 'error');
+      }
+    });
 
     document.getElementById('modalCloseBtn').addEventListener('click', closeModal);
     document.getElementById('modalCancelBtn').addEventListener('click', closeModal);
@@ -442,7 +471,7 @@ const App = (() => {
         description: pDesc.value.trim(),
         price: parseFloat(pPrice.value),
         stock: parseInt(pStock.value) || 0,
-        category: pCategory.value.trim().toLowerCase() || 'general',
+        category: pCategory.value,
         imageUrl: pImage.value.trim(),
       };
 

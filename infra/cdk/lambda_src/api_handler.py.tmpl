@@ -36,6 +36,100 @@ ORDER_NOTIFICATIONS_FROM_EMAIL_PARAM = os.environ.get("ORDER_NOTIFICATIONS_FROM_
 ORDER_ALERTS_TO_EMAIL_PARAM = os.environ.get("ORDER_ALERTS_TO_EMAIL_PARAM", "")
 
 _param_cache = {}
+PRODUCT_CATEGORIES = {
+    "pantallas",
+    "baterias",
+    "flex-y-conectores",
+    "camaras-y-modulos",
+    "tapas-y-carcasa",
+    "herramientas-diy",
+}
+SAMPLE_PRODUCTS = [
+    {
+        "name": "Pantalla OLED iPhone 11",
+        "description": "Módulo OLED con touch y brillo estable para cambio de pantalla en iPhone 11.",
+        "price": Decimal("289000"),
+        "category": "pantallas",
+        "stock": 12,
+    },
+    {
+        "name": "Pantalla AMOLED Samsung A54",
+        "description": "Pantalla AMOLED con marco para reparaciones de alta rotación en Samsung serie A.",
+        "price": Decimal("325000"),
+        "category": "pantallas",
+        "stock": 8,
+    },
+    {
+        "name": "Batería Xiaomi Redmi Note 11",
+        "description": "Batería de reemplazo con protección y rendimiento estable para uso diario.",
+        "price": Decimal("89000"),
+        "category": "baterias",
+        "stock": 18,
+    },
+    {
+        "name": "Batería iPhone XR alta capacidad",
+        "description": "Reemplazo premium para restaurar autonomía y ciclos de carga confiables.",
+        "price": Decimal("119000"),
+        "category": "baterias",
+        "stock": 15,
+    },
+    {
+        "name": "Flex de carga Samsung A14",
+        "description": "Puerto de carga con flex integrado para reparación de conexión y energía.",
+        "price": Decimal("54000"),
+        "category": "flex-y-conectores",
+        "stock": 24,
+    },
+    {
+        "name": "Flex botón power Motorola G84",
+        "description": "Flex de encendido y volumen para recuperación rápida de botones laterales.",
+        "price": Decimal("47000"),
+        "category": "flex-y-conectores",
+        "stock": 10,
+    },
+    {
+        "name": "Cámara trasera iPhone 12",
+        "description": "Módulo de cámara principal listo para reemplazo con enfoque y sensores integrados.",
+        "price": Decimal("199000"),
+        "category": "camaras-y-modulos",
+        "stock": 6,
+    },
+    {
+        "name": "Parlante auricular Samsung S21 FE",
+        "description": "Módulo auricular para fallas de audio en llamadas y mensajes de voz.",
+        "price": Decimal("63000"),
+        "category": "camaras-y-modulos",
+        "stock": 11,
+    },
+    {
+        "name": "Tapa trasera Huawei P30",
+        "description": "Tapa trasera con acabado brillante para devolver presentación al equipo.",
+        "price": Decimal("76000"),
+        "category": "tapas-y-carcasa",
+        "stock": 14,
+    },
+    {
+        "name": "Marco intermedio Samsung A34",
+        "description": "Carcasa media para equipos con golpes o deformación estructural.",
+        "price": Decimal("98000"),
+        "category": "tapas-y-carcasa",
+        "stock": 9,
+    },
+    {
+        "name": "Kit de apertura 8 piezas",
+        "description": "Espátulas, púas, ventosa y pinzas para empezar a abrir equipos con seguridad.",
+        "price": Decimal("45000"),
+        "category": "herramientas-diy",
+        "stock": 20,
+    },
+    {
+        "name": "Pack adhesivo + alcohol isopropílico",
+        "description": "Consumibles esenciales para limpieza, cierre y montaje de repuestos.",
+        "price": Decimal("39000"),
+        "category": "herramientas-diy",
+        "stock": 16,
+    },
+]
 
 
 class DecimalEncoder(json.JSONEncoder):
@@ -66,6 +160,18 @@ def safe_int(value, default=0):
         return int(value)
     except Exception:
         return default
+
+
+def slugify(value):
+    cleaned = "".join(ch.lower() if ch.isalnum() else "-" for ch in (value or "").strip())
+    while "--" in cleaned:
+        cleaned = cleaned.replace("--", "-")
+    return cleaned.strip("-")
+
+
+def normalize_category(value):
+    category = slugify(value or "")
+    return category if category in PRODUCT_CATEGORIES else "herramientas-diy"
 
 
 def cents_to_cop_units(amount_in_cents):
@@ -273,7 +379,7 @@ def create_product(body):
         "name": body["name"].strip(),
         "description": (body.get("description") or "").strip(),
         "price": Decimal(str(body["price"])),
-        "category": (body.get("category") or "general").strip(),
+        "category": normalize_category(body.get("category")),
         "imageUrl": (body.get("imageUrl") or "").strip(),
         "stock": int(body.get("stock", 0)),
         "status": body.get("status", "active").strip(),
@@ -291,9 +397,11 @@ def update_product(product_id, body):
     if not existing:
         return response(404, {"error": "not_found"})
     updates = {}
-    for field in ["name", "description", "category", "imageUrl", "status"]:
+    for field in ["name", "description", "imageUrl", "status"]:
         if field in body:
             updates[field] = body[field]
+    if "category" in body:
+        updates["category"] = normalize_category(body.get("category"))
     if "price" in body:
         updates["price"] = Decimal(str(body["price"]))
     if "stock" in body:
@@ -324,6 +432,29 @@ def delete_product(product_id):
         ExpressionAttributeValues={":st": "deleted", ":ut": now_iso()},
     )
     return response(200, {"ok": True, "deleted": product_id})
+
+
+def seed_products():
+    created = []
+    existing_items = products_table.scan().get("Items", [])
+    existing_by_name = {item.get("name", "").strip().lower(): item for item in existing_items}
+    for sample in SAMPLE_PRODUCTS:
+        existing = existing_by_name.get(sample["name"].strip().lower())
+        item = {
+            "productId": existing.get("productId") if existing else str(uuid.uuid4()),
+            "name": sample["name"],
+            "description": sample["description"],
+            "price": sample["price"],
+            "category": sample["category"],
+            "imageUrl": sample.get("imageUrl", ""),
+            "stock": sample["stock"],
+            "status": "active",
+            "createdAt": existing.get("createdAt", now_iso()) if existing else now_iso(),
+            "updatedAt": now_iso(),
+        }
+        products_table.put_item(Item=item)
+        created.append(item)
+    return response(200, {"ok": True, "products": created, "seeded": len(created)})
 
 
 def list_leads():
@@ -460,6 +591,7 @@ def update_order_admin(reference, body):
         ReturnValues="ALL_NEW",
     )
     updated = orders_table.get_item(Key={"reference": reference}).get("Item")
+    updated = sync_order_notifications(updated, previous_order=existing)
     return response(200, {"ok": True, "order": updated})
 
 
@@ -532,41 +664,87 @@ def build_order_summary_lines(order):
     return "\n".join(lines) if lines else "- Sin items"
 
 
+def capture_notification_result(notifications, key, result):
+    entry = dict(notifications.get(key) or {})
+    if result.get("ok"):
+        entry["sentAt"] = now_iso()
+        entry["lastAttemptAt"] = entry["sentAt"]
+        entry["status"] = "SENT"
+        entry["messageId"] = result.get("messageId", "")
+        entry.pop("error", None)
+    else:
+        entry["lastAttemptAt"] = now_iso()
+        entry["status"] = "FAILED"
+        entry["error"] = result.get("error", "unknown_error")
+    notifications[key] = entry
+
+
 def send_email(recipient, subject, text_body, html_body):
     sender = get_order_notifications_from_email()
     if not sender or not recipient:
-        return False
-    ses.send_email(
-        FromEmailAddress=sender,
-        Destination={"ToAddresses": [recipient]},
-        Content={
-            "Simple": {
-                "Subject": {"Data": subject, "Charset": "UTF-8"},
-                "Body": {
-                    "Text": {"Data": text_body, "Charset": "UTF-8"},
-                    "Html": {"Data": html_body, "Charset": "UTF-8"},
-                },
-            }
-        },
-    )
-    return True
+        return {
+            "ok": False,
+            "error": "missing_sender_or_recipient",
+        }
+    try:
+        result = ses.send_email(
+            FromEmailAddress=sender,
+            Destination={"ToAddresses": [recipient]},
+            Content={
+                "Simple": {
+                    "Subject": {"Data": subject, "Charset": "UTF-8"},
+                    "Body": {
+                        "Text": {"Data": text_body, "Charset": "UTF-8"},
+                        "Html": {"Data": html_body, "Charset": "UTF-8"},
+                    },
+                }
+            },
+        )
+        return {
+            "ok": True,
+            "messageId": result.get("MessageId", ""),
+        }
+    except Exception as exc:
+        print(f"SES send_email failed for {recipient}: {exc}")
+        return {
+            "ok": False,
+            "error": str(exc),
+        }
 
 
 def send_customer_confirmation(order):
     customer = order.get("customer") or {}
     recipient = customer.get("email", "")
     if not recipient:
-        return False
+        return {
+            "ok": False,
+            "error": "missing_customer_email",
+        }
     total = cents_to_cop_text(order.get("amountInCents", 0))
     reference = order.get("reference", "")
     items_text = build_order_summary_lines(order)
+    shipping = order.get("shippingAddress") or {}
+    shipping_lines = []
+    if shipping:
+        shipping_lines = [
+            shipping.get("name") or customer.get("fullName", ""),
+            shipping.get("addressLine1", ""),
+            shipping.get("addressLine2", ""),
+            f"{shipping.get('city', '')}, {shipping.get('region', '')}",
+            shipping.get("country", ""),
+            shipping.get("phoneNumber", ""),
+        ]
+    shipping_lines = [line for line in shipping_lines if line]
+    shipping_text = "\n".join(shipping_lines)
     text_body = (
         f"Hola {customer.get('fullName', '')},\n\n"
         f"Recibimos tu compra en NexCore.\n"
         f"Referencia: {reference}\n"
         f"Total: {total}\n\n"
         f"Productos:\n{items_text}\n\n"
-        f"Tu pedido ya quedó listo para preparación y despacho.\n"
+        + (f"Dirección de entrega:\n{shipping_text}\n\n" if shipping_text else "")
+        + "Tu pedido ya quedó listo para preparación y despacho.\n"
+        + "Te avisaremos cuando pase a la siguiente etapa logística.\n"
     )
     html_body = (
         f"<h2>Gracias por tu compra en NexCore</h2>"
@@ -574,6 +752,12 @@ def send_customer_confirmation(order):
         f"<p>Recibimos tu pago y tu pedido ya quedó listo para preparación.</p>"
         f"<p><strong>Referencia:</strong> {reference}<br><strong>Total:</strong> {total}</p>"
         f"<pre style='font-family:inherit;white-space:pre-wrap'>{items_text}</pre>"
+        + (
+            "<p><strong>Dirección de entrega:</strong><br>"
+            + "<br>".join(shipping_lines)
+            + "</p>"
+            if shipping_lines else ""
+        )
     )
     return send_email(recipient, f"NexCore: confirmación de pedido {reference}", text_body, html_body)
 
@@ -581,7 +765,10 @@ def send_customer_confirmation(order):
 def send_internal_order_alert(order):
     recipient = get_order_alerts_to_email()
     if not recipient:
-        return False
+        return {
+            "ok": False,
+            "error": "missing_internal_alert_recipient",
+        }
     customer = order.get("customer") or {}
     total = cents_to_cop_text(order.get("amountInCents", 0))
     reference = order.get("reference", "")
@@ -603,28 +790,149 @@ def send_internal_order_alert(order):
     return send_email(recipient, f"NexCore: nuevo pedido {reference}", text_body, html_body)
 
 
-def ensure_post_payment_side_effects(order):
-    if not order or order.get("status") != "APPROVED":
+def send_order_status_update(order, stage):
+    customer = order.get("customer") or {}
+    recipient = customer.get("email", "")
+    if not recipient:
+        return {
+            "ok": False,
+            "error": "missing_customer_email",
+        }
+    reference = order.get("reference", "")
+    total = cents_to_cop_text(order.get("amountInCents", 0))
+    shipping = order.get("shippingAddress") or {}
+    tracking_number = (order.get("trackingNumber") or "").strip()
+    courier = (order.get("courier") or "").strip()
+
+    stage_map = {
+        "shipped": {
+            "subject": f"NexCore: tu pedido {reference} fue despachado",
+            "title": "Tu pedido ya fue despachado",
+            "intro": "Tu compra ya salió a ruta y va en camino.",
+        },
+        "delivered": {
+            "subject": f"NexCore: tu pedido {reference} fue entregado",
+            "title": "Tu pedido fue entregado",
+            "intro": "El pedido figura como entregado. Gracias por comprar con NexCore.",
+        },
+        "cancelled": {
+            "subject": f"NexCore: actualización de tu pedido {reference}",
+            "title": "Tu pedido fue cancelado",
+            "intro": "El pedido fue cancelado. Si necesitas ayuda, responde a este correo.",
+        },
+        "refunded": {
+            "subject": f"NexCore: reembolso del pedido {reference}",
+            "title": "Tu reembolso fue procesado",
+            "intro": "Registramos el reembolso del pedido. La reversión puede tardar según tu medio de pago.",
+        },
+    }
+    meta = stage_map.get(stage)
+    if not meta:
+        return {
+            "ok": False,
+            "error": "unsupported_notification_stage",
+        }
+
+    extra_lines = []
+    extra_html = []
+    if courier:
+        extra_lines.append(f"Transportadora: {courier}")
+        extra_html.append(f"<strong>Transportadora:</strong> {courier}<br>")
+    if tracking_number:
+        extra_lines.append(f"Número de guía: {tracking_number}")
+        extra_html.append(f"<strong>Número de guía:</strong> {tracking_number}<br>")
+    if shipping.get("city") or shipping.get("region"):
+        destination = ", ".join(part for part in [shipping.get("city", ""), shipping.get("region", "")] if part)
+        if destination:
+            extra_lines.append(f"Destino: {destination}")
+            extra_html.append(f"<strong>Destino:</strong> {destination}<br>")
+
+    text_body = (
+        f"Hola {customer.get('fullName', '')},\n\n"
+        f"{meta['intro']}\n"
+        f"Referencia: {reference}\n"
+        f"Total: {total}\n"
+        + ("\n".join(extra_lines) + "\n" if extra_lines else "")
+        + "\nSi necesitas soporte, puedes responder a este correo.\n"
+    )
+    html_body = (
+        f"<h2>{meta['title']}</h2>"
+        f"<p>Hola {customer.get('fullName', '')},</p>"
+        f"<p>{meta['intro']}</p>"
+        f"<p><strong>Referencia:</strong> {reference}<br><strong>Total:</strong> {total}<br>"
+        + "".join(extra_html)
+        + "</p>"
+    )
+    return send_email(recipient, meta["subject"], text_body, html_body)
+
+
+def maybe_send_notification(notifications, key, send_result):
+    entry = dict(notifications.get(key) or {})
+    if entry.get("status") == "SENT":
+        return False
+    capture_notification_result(notifications, key, send_result)
+    return True
+
+
+def sync_order_notifications(order, previous_order=None):
+    if not order:
         return order
     notifications = dict(order.get("notifications") or {})
     updates = {}
+    previous_order = previous_order or {}
+    previous_status = previous_order.get("status")
+    previous_fulfillment = previous_order.get("fulfillmentStatus")
 
-    if order.get("fulfillmentStatus") in ("", "PENDING_PAYMENT", None):
-        updates["fulfillmentStatus"] = "READY_TO_FULFILL"
+    if order.get("status") == "APPROVED":
+        if order.get("fulfillmentStatus") in ("", "PENDING_PAYMENT", None):
+            updates["fulfillmentStatus"] = "READY_TO_FULFILL"
 
-    if not notifications.get("customerConfirmationSentAt"):
-        try:
-            if send_customer_confirmation(order):
-                notifications["customerConfirmationSentAt"] = now_iso()
-        except Exception:
-            pass
+        customer_confirmation = dict(notifications.get("customerConfirmation") or {})
+        if customer_confirmation.get("status") != "SENT":
+            maybe_send_notification(
+                notifications,
+                "customerConfirmation",
+                send_customer_confirmation(order),
+            )
 
-    if not notifications.get("internalAlertSentAt"):
-        try:
-            if send_internal_order_alert(order):
-                notifications["internalAlertSentAt"] = now_iso()
-        except Exception:
-            pass
+        internal_alert = dict(notifications.get("internalAlert") or {})
+        if internal_alert.get("status") != "SENT":
+            maybe_send_notification(
+                notifications,
+                "internalAlert",
+                send_internal_order_alert(order),
+            )
+
+    stage_notifications = [
+        (
+            order.get("fulfillmentStatus") == "SHIPPED" and previous_fulfillment != "SHIPPED",
+            "shipmentUpdate",
+            "shipped",
+        ),
+        (
+            order.get("fulfillmentStatus") == "DELIVERED" and previous_fulfillment != "DELIVERED",
+            "deliveryUpdate",
+            "delivered",
+        ),
+        (
+            order.get("fulfillmentStatus") == "CANCELLED" and previous_fulfillment != "CANCELLED",
+            "cancellationUpdate",
+            "cancelled",
+        ),
+        (
+            order.get("status") == "REFUNDED" and previous_status != "REFUNDED",
+            "refundUpdate",
+            "refunded",
+        ),
+    ]
+    for should_send, notification_key, stage in stage_notifications:
+        if not should_send:
+            continue
+        maybe_send_notification(
+            notifications,
+            notification_key,
+            send_order_status_update(order, stage),
+        )
 
     if notifications != dict(order.get("notifications") or {}):
         updates["notifications"] = notifications
@@ -643,6 +951,10 @@ def ensure_post_payment_side_effects(order):
         ExpressionAttributeValues=attr_values,
     )
     return orders_table.get_item(Key={"reference": order["reference"]}).get("Item") or order
+
+
+def ensure_post_payment_side_effects(order, previous_order=None):
+    return sync_order_notifications(order, previous_order=previous_order)
 
 
 def normalize_customer(body):
@@ -900,6 +1212,7 @@ def update_order_from_transaction(reference, transaction):
     if not transaction:
         return None
     status = transaction.get("status", "PENDING")
+    previous_order = orders_table.get_item(Key={"reference": reference}).get("Item")
     orders_table.update_item(
         Key={"reference": reference},
         UpdateExpression="SET #status=:status, #statusMessage=:message, #updatedAt=:updatedAt, #wompi=:wompi, #fulfillmentStatus=if_not_exists(#fulfillmentStatus, :fulfillmentDefault)",
@@ -924,7 +1237,8 @@ def update_order_from_transaction(reference, transaction):
         },
     )
     return ensure_post_payment_side_effects(
-        orders_table.get_item(Key={"reference": reference}).get("Item")
+        orders_table.get_item(Key={"reference": reference}).get("Item"),
+        previous_order=previous_order,
     )
 
 
@@ -960,7 +1274,8 @@ def update_order_from_mercadopago_payment(reference, payment):
         },
     )
     return ensure_post_payment_side_effects(
-        orders_table.get_item(Key={"reference": reference}).get("Item")
+        orders_table.get_item(Key={"reference": reference}).get("Item"),
+        previous_order=current,
     )
 
 
@@ -1149,6 +1464,9 @@ def handler(event, context):
             return list_products()
         if method == "POST":
             return create_product(get_json_body(event))
+
+    if path == "/api/admin/products/seed" and method == "POST":
+        return seed_products()
 
     if path.startswith("/api/admin/products/"):
         product_id = path.replace("/api/admin/products/", "").split("/")[0]

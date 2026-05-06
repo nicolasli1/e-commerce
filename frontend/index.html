@@ -446,6 +446,41 @@
       grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
       gap: 24px;
     }
+    .products-filter-bar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 16px;
+      margin-bottom: 28px;
+      flex-wrap: wrap;
+    }
+    .products-filter-info {
+      color: #9ca3af;
+      font-size: 0.875rem;
+    }
+    .products-filter-actions {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      flex-wrap: wrap;
+    }
+    .filter-chip {
+      padding: 10px 16px;
+      border-radius: 9999px;
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      background: rgba(255, 255, 255, 0.04);
+      color: #f5f5f7;
+      cursor: pointer;
+      font: inherit;
+      font-size: 0.8125rem;
+      transition: all 0.25s ease;
+    }
+    .filter-chip:hover,
+    .filter-chip.active {
+      background: rgba(99, 102, 241, 0.16);
+      border-color: rgba(99, 102, 241, 0.3);
+      color: #c4b5fd;
+    }
     .product-card {
       border-radius: 24px;
       overflow: hidden;
@@ -1222,7 +1257,7 @@
         <a href="#categorias">Categorías</a>
         <a href="#productos">Productos</a>
         <a href="#testimonios">Testimonios</a>
-        <a href="#precios">Planes</a>
+        <a href="#precios">Kits DIY</a>
         <a href="#contacto">Contacto</a>
       </div>
       <div class="nav-actions">
@@ -1246,16 +1281,17 @@
         <div class="reveal visible">
           <div class="hero-badge">
             <span class="hero-badge-dot"></span>
-            🇨🇴 Envíos a Colombia
+            🇨🇴 Repuestos para reparación en Colombia
           </div>
           <h1>
-            El futuro del<br/>
-            <span class="gradient-text">rendimiento técnico</span>
+            Repara mejor.<br/>
+            <span class="gradient-text">Compra como técnico</span>
           </h1>
           <p>
-            Componentes de última generación para creadores, gamers y profesionales.
-            Desde procesadores hasta refrigeración líquida — todo lo que necesitas
-            para construir la máquina de tus sueños.
+            Repuestos para celulares, piezas de reemplazo y kits de trabajo para
+            quienes prefieren hacerlo por su cuenta. Desde pantallas y baterías
+            hasta flex, tapas y herramientas: un catálogo pensado para reparación
+            real, no para vitrina genérica.
           </p>
           <div class="hero-actions">
             <a href="#productos" class="btn btn-primary">
@@ -1297,38 +1333,38 @@
     <div class="container">
       <div class="section-header reveal">
         <h2 class="section-title">Categorías</h2>
-        <p class="section-subtitle">Explora por tipo de componente y encuentra exactamente lo que buscas.</p>
+        <p class="section-subtitle">Explora por tipo de reparación y encuentra el repuesto correcto para cada intervención.</p>
       </div>
       <div class="categories-grid">
-        <div class="category-card reveal reveal-delay-1">
+        <div class="category-card reveal reveal-delay-1" data-category="pantallas">
           <div class="category-icon" style="background:rgba(99,102,241,0.12);color:#818cf8;">⚡</div>
-          <h3>Procesadores</h3>
-          <p>AMOLED, LCD, OLED. Calidad original y compatibles.</p>
+          <h3>Pantallas</h3>
+          <p>Módulos AMOLED, OLED, LCD y touch para cambios rápidos y limpios.</p>
         </div>
-        <div class="category-card reveal reveal-delay-2">
+        <div class="category-card reveal reveal-delay-2" data-category="baterias">
           <div class="category-icon" style="background:rgba(236,72,153,0.12);color:#f472b6;">🎮</div>
-          <h3>Tarjetas Gráficas</h3>
-          <p>Originales y de alta capacidad. Todas las marcas.</p>
+          <h3>Baterías</h3>
+          <p>Reemplazos de alta capacidad y opciones OEM para más modelos.</p>
         </div>
-        <div class="category-card reveal reveal-delay-3">
+        <div class="category-card reveal reveal-delay-3" data-category="flex-y-conectores">
           <div class="category-icon" style="background:rgba(34,197,94,0.12);color:#4ade80;">🧠</div>
-          <h3>Memorias RAM</h3>
-          <p>Flex de carga, audífonos, encendido y más.</p>
+          <h3>Flex y conectores</h3>
+          <p>Flex de carga, encendido, volumen, audio y sensores para reparación fina.</p>
         </div>
-        <div class="category-card reveal reveal-delay-1">
+        <div class="category-card reveal reveal-delay-1" data-category="camaras-y-modulos">
           <div class="category-icon" style="background:rgba(251,191,36,0.12);color:#fbbf24;">💾</div>
-          <h3>Almacenamiento</h3>
-          <p>Kits de apertura, estaciones de calor, pinzas y más.</p>
+          <h3>Cámaras y módulos</h3>
+          <p>Cámaras frontal y trasera, parlantes, vibradores y piezas internas clave.</p>
         </div>
-        <div class="category-card reveal reveal-delay-2">
+        <div class="category-card reveal reveal-delay-2" data-category="tapas-y-carcasa">
           <div class="category-icon" style="background:rgba(168,85,247,0.12);color:#c084fc;">🔌</div>
-          <h3>Módulos</h3>
-          <p>PSU modulares, 80+ Gold/Platinum. 650W–1600W.</p>
+          <h3>Tapas y carcasa</h3>
+          <p>Tapas traseras, marcos y piezas externas para dejar el equipo presentable.</p>
         </div>
-        <div class="category-card reveal reveal-delay-3">
+        <div class="category-card reveal reveal-delay-3" data-category="herramientas-diy">
           <div class="category-icon" style="background:rgba(6,182,212,0.12);color:#22d3ee;">❄️</div>
-          <h3>Refrigeración</h3>
-          <p>Aire, líquida AIO, thermal paste. Mantén tu sistema frío.</p>
+          <h3>Herramientas DIY</h3>
+          <p>Kits de apertura, pinzas, adhesivos y consumibles para trabajar con confianza.</p>
         </div>
       </div>
     </div>
@@ -1343,6 +1379,10 @@
         <h2 class="section-title">Más Vendidos</h2>
         <p class="section-subtitle">Los repuestos preferidos por los técnicos en Colombia. Calidad original, AAA y OEM.</p>
       </div>
+      <div class="products-filter-bar">
+        <div class="products-filter-info" id="productsFilterInfo">Mostrando todo el catálogo disponible.</div>
+        <div class="products-filter-actions" id="productsFilterActions"></div>
+      </div>
       <div class="products-grid" id="productsGrid">
         <!-- Los productos se cargan desde /api/products -->
       </div>
@@ -1356,7 +1396,7 @@
     <div class="container">
       <div class="section-header reveal">
         <h2 class="section-title">Lo Que Dicen</h2>
-        <p class="section-subtitle">Más de 5,000 técnicos confían en NexCore para sus reparaciones.</p>
+        <p class="section-subtitle">Técnicos, talleres pequeños y usuarios que prefieren reparar en vez de reemplazar.</p>
       </div>
       <div class="testimonials-grid">
         <div class="testimonial-card reveal reveal-delay-1">
@@ -1366,7 +1406,7 @@
             <div class="testimonial-avatar">CA</div>
             <div>
               <h4>Carlos A.</h4>
-              <p>Ingeniero de Sistemas</p>
+              <p>Técnico independiente</p>
             </div>
           </div>
         </div>
@@ -1402,21 +1442,21 @@
   <section class="pricing" id="precios">
     <div class="container">
       <div class="section-header reveal">
-        <h2 class="section-title">Kits para tu Taller</h2>
-        <p class="section-subtitle">Ahorra con nuestros kits. Desde básico hasta profesional.</p>
+        <h2 class="section-title">Kits para Reparar</h2>
+        <p class="section-subtitle">Arma tu mesa de trabajo o abastece tu taller con paquetes listos para intervenir equipos de forma práctica.</p>
       </div>
       <div class="pricing-grid">
         <div class="pricing-card reveal reveal-delay-1">
-          <h3>Kit Básico</h3>
-          <p>Perfecto para empezar a reparar.</p>
+          <h3>Kit Primer Cambio</h3>
+          <p>Ideal para empezar en reparación DIY con piezas y herramientas esenciales.</p>
           <div class="pricing-amount">$120,000 <span>COP</span></div>
           <div class="pricing-period">kit de inicio</div>
           <ul class="pricing-features">
-            <li>5 pantallas compatibles</li>
-            <li>5 baterías de alta capacidad</li>
-            <li>10 flex de carga varios modelos</li>
-            <li>Kit de herramientas básico</li>
-            <li>Guía de instalación</li>
+            <li>3 pantallas de alta rotación</li>
+            <li>3 baterías compatibles</li>
+            <li>6 flex de carga multi-modelo</li>
+            <li>Kit básico de apertura</li>
+            <li>Adhesivo y consumibles de montaje</li>
             <li>Garantía de 3 meses</li>
           </ul>
           <a href="#contacto" class="btn btn-secondary" style="width:100%;justify-content:center;">Cotizar</a>
@@ -1424,36 +1464,36 @@
 
         <div class="pricing-card featured reveal reveal-delay-2">
           <span class="pricing-popular">Más vendido</span>
-          <h3>Kit Profesional</h3>
-          <p>Para talleres con alto volumen.</p>
+          <h3>Kit Mesa Técnica</h3>
+          <p>Para técnicos que reparan seguido y quieren stock mínimo de trabajo.</p>
           <div class="pricing-amount">$450,000 <span>COP</span></div>
           <div class="pricing-period">kit completo</div>
           <ul class="pricing-features">
-            <li>15 pantallas alta calidad</li>
-            <li>10 baterías originales</li>
-            <li>20 flex de carga universales</li>
-            <li>Estación de calor + pinzas</li>
-            <li>Pegamento y cinta adhesiva</li>
-            <li>Micas templadas (10 u.)</li>
-            <li>Kit herramientas 15 piezas</li>
+            <li>12 pantallas alta calidad</li>
+            <li>8 baterías OEM</li>
+            <li>15 flex y conectores frecuentes</li>
+            <li>Set de destornilladores y pinzas</li>
+            <li>Herramientas de apertura y adhesivos</li>
+            <li>Módulos complementarios de alta rotación</li>
+            <li>Checklist de instalación segura</li>
             <li>Garantía de 6 meses</li>
           </ul>
           <a href="#contacto" class="btn btn-gradient" style="width:100%;justify-content:center;">Cotizar kit</a>
         </div>
 
         <div class="pricing-card reveal reveal-delay-3">
-          <h3>Kit Taller Completo</h3>
-          <p>Abastecimiento para taller profesional.</p>
+          <h3>Kit Taller Activo</h3>
+          <p>Abastecimiento pensado para talleres que no quieren detener reparaciones.</p>
           <div class="pricing-amount">$890,000 <span>COP</span></div>
           <div class="pricing-period">abastecimiento completo</div>
           <ul class="pricing-features">
-            <li>30 pantallas alta calidad</li>
-            <li>20 baterías originales</li>
-            <li>30 flex de carga universales</li>
-            <li>Estación de calor profesional</li>
-            <li>Microscopio digital</li>
-            <li>Alcohol isopropílico 1L</li>
-            <li>Micas templadas (20 u.)</li>
+            <li>25 pantallas de modelos de alta salida</li>
+            <li>15 baterías premium</li>
+            <li>25 flex y módulos frecuentes</li>
+            <li>Herramienta técnica para trabajo continuo</li>
+            <li>Consumibles para limpieza y montaje</li>
+            <li>Piezas de respaldo para servicios urgentes</li>
+            <li>Soporte para reposición recurrente</li>
             <li>Garantía de 12 meses</li>
           </ul>
           <a href="#contacto" class="btn btn-secondary" style="width:100%;justify-content:center;">Cotizar</a>
@@ -1469,11 +1509,11 @@
     <div class="cta-glow"></div>
     <div class="container">
       <div class="reveal">
-        <h2>¿Listo para tu próxima build?</h2>
-        <p>Déjanos tu correo y te contactamos con una cotización personalizada en menos de 2 horas.</p>
+        <h2>¿Listo para tu próxima reparación?</h2>
+        <p>Cuéntanos qué modelo estás trabajando, qué repuesto buscas o si necesitas armar un kit. Te respondemos con una recomendación útil y una cotización aterrizada.</p>
         <form class="cta-form" id="contactForm">
           <input type="email" id="emailInput" placeholder="tu@correo.com" required />
-          <textarea id="messageInput" placeholder="Cuéntanos qué necesitas o revisa aquí el resumen de tu carrito." style="min-height:120px;resize:vertical;padding:16px 20px;border-radius:20px;border:1px solid rgba(255,255,255,0.08);background:rgba(255,255,255,0.04);color:#f5f5f7;font-family:inherit;font-size:0.9375rem;line-height:1.5;"></textarea>
+          <textarea id="messageInput" placeholder="Ejemplo: necesito pantalla y batería para iPhone 11, o un kit para empezar a reparar Samsung gama media." style="min-height:120px;resize:vertical;padding:16px 20px;border-radius:20px;border:1px solid rgba(255,255,255,0.08);background:rgba(255,255,255,0.04);color:#f5f5f7;font-family:inherit;font-size:0.9375rem;line-height:1.5;"></textarea>
           <button type="submit" class="btn btn-gradient">Cotizar ahora</button>
         </form>
         <p id="formFeedback" style="margin-top:16px;font-size:0.875rem;color:#22c55e;display:none;">✅ Recibimos tu solicitud. Te escribimos pronto.</p>
@@ -1498,10 +1538,10 @@
         </div>
         <div class="footer-col">
           <h4>Empresa</h4>
-          <a href="#">Sobre Nosotros</a>
-          <a href="#">Blog</a>
-          <a href="#">Trabaja con Nosotros</a>
-          <a href="#">Prensa</a>
+          <a href="#">Sobre NexCore</a>
+          <a href="#">Compra para taller</a>
+          <a href="#">Reposición por volumen</a>
+          <a href="#">Atención técnica</a>
         </div>
         <div class="footer-col">
           <h4>Soporte</h4>
@@ -2129,59 +2169,124 @@
     // ==============================
     // PRODUCTOS DESDE LA API
     // ==============================
+    const PRODUCT_CATEGORY_LABELS = {
+      'pantallas': 'Pantallas',
+      'baterias': 'Baterías',
+      'flex-y-conectores': 'Flex y conectores',
+      'camaras-y-modulos': 'Cámaras y módulos',
+      'tapas-y-carcasa': 'Tapas y carcasa',
+      'herramientas-diy': 'Herramientas DIY',
+    };
+    let storefrontProducts = [];
+    let activeProductCategory = '';
+
+    function getCategoryLabel(category) {
+      return PRODUCT_CATEGORY_LABELS[category] || category || 'Catálogo';
+    }
+
+    function renderProductFilters(products) {
+      const actions = document.getElementById('productsFilterActions');
+      if (!actions) return;
+      const categories = [...new Set(products.map((product) => product.category).filter(Boolean))];
+      actions.innerHTML = '';
+      if (categories.length === 0) return;
+
+      const allChip = document.createElement('button');
+      allChip.className = `filter-chip ${activeProductCategory ? '' : 'active'}`;
+      allChip.type = 'button';
+      allChip.textContent = 'Todo';
+      allChip.addEventListener('click', () => {
+        activeProductCategory = '';
+        renderStorefrontProducts();
+      });
+      actions.appendChild(allChip);
+
+      categories.sort().forEach((category) => {
+        const chip = document.createElement('button');
+        chip.className = `filter-chip ${activeProductCategory === category ? 'active' : ''}`;
+        chip.type = 'button';
+        chip.textContent = getCategoryLabel(category);
+        chip.addEventListener('click', () => {
+          activeProductCategory = category;
+          renderStorefrontProducts();
+        });
+        actions.appendChild(chip);
+      });
+    }
+
+    function renderStorefrontProducts() {
+      const grid = document.getElementById('productsGrid');
+      const info = document.getElementById('productsFilterInfo');
+      if (!grid) return;
+
+      const products = activeProductCategory
+        ? storefrontProducts.filter((product) => product.category === activeProductCategory)
+        : storefrontProducts.slice();
+
+      if (info) {
+        info.textContent = activeProductCategory
+          ? `Mostrando ${getCategoryLabel(activeProductCategory).toLowerCase()} del catálogo.`
+          : 'Mostrando todo el catálogo disponible.';
+      }
+
+      renderProductFilters(storefrontProducts);
+
+      if (products.length === 0) {
+        grid.innerHTML = '<p style="grid-column:1/-1;text-align:center;color:#86868b;">No hay productos cargados para esta categoría todavía.</p>';
+        return;
+      }
+
+      const gradients = [
+        'linear-gradient(135deg,#1e1b4b,#312e81)',
+        'linear-gradient(135deg,#1c1917,#292524)',
+        'linear-gradient(135deg,#0f172a,#1e293b)',
+        'linear-gradient(135deg,#0d1117,#161b22)',
+        'linear-gradient(135deg,#1a0a2e,#16213e)',
+        'linear-gradient(135deg,#0b0f19,#1a1f2e)',
+        'linear-gradient(135deg,#1a1a2e,#16213e)',
+        'linear-gradient(135deg,#0d0d2b,#1a1a3e)',
+      ];
+      const emojis = ['📱','🔋','🔌','📷','🧩','🛠️','⚙️','📦'];
+      const badges = ['🔥 Más vendido','Nuevo','⭐ Destacado','💥 Oferta','🔥 Popular','Nuevo','💎 Premium','⚡'];
+
+      grid.innerHTML = products.slice(0, 12).map((p, i) => {
+        const delay = (i % 4) + 1;
+        const gradient = gradients[i % gradients.length];
+        const emoji = emojis[i % emojis.length];
+        const badge = badges[i % badges.length];
+        const priceStr = '$' + Number(p.price).toLocaleString('es-CO', {minimumFractionDigits: 0});
+        return `
+          <div class="product-card reveal reveal-delay-${delay}">
+            <div class="product-image" style="background:${gradient};">
+              <span class="product-badge">${badge}</span>
+              ${emoji}
+            </div>
+            <div class="product-body">
+              <h3>${p.name}</h3>
+              <p>${p.description || getCategoryLabel(p.category) || ''}</p>
+              <div class="product-footer">
+                <span class="product-price">${priceStr} <span>COP</span></span>
+                <button class="btn btn-gradient btn-sm" onclick='addToCart({productId:"${p.productId}",name:${JSON.stringify(p.name)},price:${p.price}})'>🛒 Agregar</button>
+              </div>
+            </div>
+          </div>
+        `;
+      }).join('');
+
+      const newReveals = document.querySelectorAll('.reveal:not(.visible)');
+      newReveals.forEach(el => observer.observe(el));
+    }
+
     async function loadProducts() {
       try {
         const res = await fetch('/api/products?_t=' + Date.now());
         const data = await res.json();
-        const grid = document.getElementById('productsGrid');
-        if (!grid) return;
-        
-        const products = data.products || [];
-        if (products.length === 0) {
-          grid.innerHTML = '<p style="grid-column:1/-1;text-align:center;color:#86868b;">Próximamente — nuevos componentes en camino.</p>';
+        storefrontProducts = data.products || [];
+        if (storefrontProducts.length === 0) {
+          document.getElementById('productsGrid').innerHTML = '<p style="grid-column:1/-1;text-align:center;color:#86868b;">Próximamente — nuevos componentes en camino.</p>';
           return;
         }
-        
-        const gradients = [
-          'linear-gradient(135deg,#1e1b4b,#312e81)',
-          'linear-gradient(135deg,#1c1917,#292524)',
-          'linear-gradient(135deg,#0f172a,#1e293b)',
-          'linear-gradient(135deg,#0d1117,#161b22)',
-          'linear-gradient(135deg,#1a0a2e,#16213e)',
-          'linear-gradient(135deg,#0b0f19,#1a1f2e)',
-          'linear-gradient(135deg,#1a1a2e,#16213e)',
-          'linear-gradient(135deg,#0d0d2b,#1a1a3e)',
-        ];
-        const emojis = ['⚡','🎮','🧠','💾','🔌','❄️','🖥️','🔧'];
-        const badges = ['🔥 Más vendido','Nuevo','⭐ Destacado','💥 Oferta','🔥 Popular','Nuevo','💎 Premium','⚡'];
-        
-        grid.innerHTML = products.slice(0, 8).map((p, i) => {
-          const delay = (i % 4) + 1;
-          const gradient = gradients[i % gradients.length];
-          const emoji = emojis[i % emojis.length];
-          const badge = badges[i % badges.length];
-          const priceStr = '$' + Number(p.price).toLocaleString('es-CO', {minimumFractionDigits: 0});
-          return `
-            <div class="product-card reveal reveal-delay-${delay}">
-              <div class="product-image" style="background:${gradient};">
-                <span class="product-badge">${badge}</span>
-                ${emoji}
-              </div>
-              <div class="product-body">
-                <h3>${p.name}</h3>
-                <p>${p.description || p.category || ''}</p>
-                <div class="product-footer">
-                  <span class="product-price">${priceStr} <span>COP</span></span>
-                  <button class="btn btn-gradient btn-sm" onclick='addToCart({productId:"${p.productId}",name:${JSON.stringify(p.name)},price:${p.price}})'>🛒 Agregar</button>
-                </div>
-              </div>
-            </div>
-          `;
-        }).join('');
-        
-        // Re-inicializar scroll reveal para los nuevos elementos
-        const newReveals = document.querySelectorAll('.reveal:not(.visible)');
-        newReveals.forEach(el => observer.observe(el));
+        renderStorefrontProducts();
       } catch (err) {
         console.log('Error cargando productos:', err);
         document.getElementById('productsGrid').innerHTML = '<p style="grid-column:1/-1;text-align:center;color:#86868b;">Próximamente — nuevos componentes en camino.</p>';
@@ -2189,6 +2294,14 @@
     }
     
     loadProducts();
+
+    document.querySelectorAll('.category-card[data-category]').forEach((card) => {
+      card.addEventListener('click', () => {
+        activeProductCategory = card.dataset.category || '';
+        renderStorefrontProducts();
+        document.getElementById('productos')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      });
+    });
 
     // ==============================
     // SCROLL REVEAL (Intersection Observer)
