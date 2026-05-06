@@ -1,0 +1,10 @@
+.git
+.github
+.pytest_cache
+**/__pycache__
+**/*.pyc
+.DS_Store
+infra/cdk/.venv
+infra/cdk/cdk.out
+node_modules
+memory

@@ -1,16 +1,12 @@
 {
   "name": "Sales Website – CDK Python",
-  "image": "mcr.microsoft.com/devcontainers/python:3.12-bookworm",
-  "features": {
-    "ghcr.io/devcontainers/features/aws-cli:1": {},
-    "ghcr.io/devcontainers/features/node:1": {
-      "version": "20"
-    }
+  "build": {
+    "dockerfile": "Dockerfile",
+    "context": ".."
   },
   "containerEnv": {
     "CDK_DIR": "${containerWorkspaceFolder}/infra/cdk"
   },
-  "postCreateCommand": "pip install --upgrade pip && pip install -r ${containerWorkspaceFolder}/infra/cdk/requirements.txt",
   "customizations": {
     "vscode": {
       "extensions": [
@@ -31,7 +27,5 @@
       }
     }
   },
-  "mounts": [
-    "source=${env:HOME}${env:USERPROFILE}/.aws,target=/home/vscode/.aws,type=bind,consistency=cached"
-  ]
+  "remoteUser": "root"
 }
