@@ -874,6 +874,52 @@ def maybe_send_notification(notifications, key, send_result):
     return True
 
 
+def sync_order_inventory(order, previous_order=None):
+    if not order or order.get("status") != "APPROVED":
+        return order, {}
+
+    previous_order = previous_order or {}
+    inventory = dict(order.get("inventory") or {})
+    if inventory.get("stockDeductedAt"):
+        return order, {}
+    if previous_order.get("status") == "APPROVED":
+        return order, {}
+
+    errors = []
+    for item in order.get("items", []):
+        product_id = item.get("productId")
+        quantity = max(1, safe_int(item.get("quantity"), 1))
+        if not product_id:
+            continue
+        try:
+            products_table.update_item(
+                Key={"productId": product_id},
+                UpdateExpression="SET #stock = #stock - :qty, #updatedAt = :updatedAt",
+                ConditionExpression="attribute_exists(productId) AND #stock >= :qty",
+                ExpressionAttributeNames={
+                    "#stock": "stock",
+                    "#updatedAt": "updatedAt",
+                },
+                ExpressionAttributeValues={
+                    ":qty": quantity,
+                    ":updatedAt": now_iso(),
+                },
+            )
+        except Exception as exc:
+            errors.append(f"{product_id}: {exc}")
+
+    if errors:
+        inventory["status"] = "FAILED"
+        inventory["lastAttemptAt"] = now_iso()
+        inventory["error"] = "; ".join(errors)
+    else:
+        inventory["status"] = "DEDUCTED"
+        inventory["stockDeductedAt"] = now_iso()
+        inventory["lastAttemptAt"] = inventory["stockDeductedAt"]
+        inventory.pop("error", None)
+    return order, {"inventory": inventory}
+
+
 def sync_order_notifications(order, previous_order=None):
     if not order:
         return order
@@ -882,6 +928,9 @@ def sync_order_notifications(order, previous_order=None):
     previous_order = previous_order or {}
     previous_status = previous_order.get("status")
     previous_fulfillment = previous_order.get("fulfillmentStatus")
+
+    order, inventory_updates = sync_order_inventory(order, previous_order=previous_order)
+    updates.update(inventory_updates)
 
     if order.get("status") == "APPROVED":
         if order.get("fulfillmentStatus") in ("", "PENDING_PAYMENT", None):

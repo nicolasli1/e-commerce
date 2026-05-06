@@ -2142,6 +2142,27 @@
       el.className = 'checkout-status visible' + (type ? ' ' + type : '');
     }
 
+    function setCheckoutMode(mode) {
+      const form = document.getElementById('checkoutForm');
+      const providerWrap = document.querySelector('.checkout-provider-wrap');
+      const note = document.getElementById('checkoutInlineNote');
+      const modalTitle = document.querySelector('#checkoutModal .modal-title');
+      if (!form || !providerWrap || !note || !modalTitle) return;
+
+      if (mode === 'confirmed') {
+        form.style.display = 'none';
+        providerWrap.style.display = 'none';
+        note.style.display = 'none';
+        modalTitle.textContent = 'Pedido confirmado';
+        return;
+      }
+
+      form.style.display = '';
+      providerWrap.style.display = '';
+      note.style.display = '';
+      modalTitle.textContent = 'Finaliza tu pedido';
+    }
+
     function showCheckoutResult(order, transactionId) {
       const result = document.getElementById('checkoutResult');
       const badge = document.getElementById('checkoutResultBadge');
@@ -2214,6 +2235,8 @@
           lookupOrderByReference(order.reference);
         };
       }
+
+      setCheckoutMode(status === 'APPROVED' ? 'confirmed' : 'active');
 
       if (status === 'APPROVED') {
         cart = [];
@@ -2309,6 +2332,7 @@
         showCartToast('Tu carrito está vacío');
         return;
       }
+      setCheckoutMode('active');
       closeCart();
       const emailInput = document.getElementById('emailInput');
       const checkoutEmail = document.getElementById('checkoutEmail');
