@@ -648,6 +648,7 @@ def build_order_items(cart_items):
             "productId": product_id,
             "name": product.get("name", ""),
             "category": product.get("category", "general"),
+            "imageUrl": product.get("imageUrl", ""),
             "quantity": quantity,
             "unitPriceCents": unit_price_cents,
             "subtotalCents": subtotal_cents,
