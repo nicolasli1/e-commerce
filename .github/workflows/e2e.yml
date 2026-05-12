@@ -11,6 +11,8 @@ on:
       - 'backoffice/**'
       - 'infra/cdk/lambda_src/**'
       - 'tests/e2e/**'
+      - 'tests/requirements-e2e.txt'
+      - '.github/workflows/e2e.yml'
   pull_request:
     branches: [main, master]
   schedule:
