@@ -21,11 +21,15 @@ leads_table = dynamodb.Table("__LEADS_TABLE_NAME__")
 products_table = dynamodb.Table("__PRODUCTS_TABLE_NAME__")
 quotes_table = dynamodb.Table("__QUOTES_TABLE_NAME__")
 orders_table = dynamodb.Table("__ORDERS_TABLE_NAME__")
+users_table = dynamodb.Table("__USERS_TABLE_NAME__")
+users_table = dynamodb.Table("__USERS_TABLE_NAME__")
 
 ADMIN_USER_PARAM = os.environ.get("ADMIN_USER_PARAM", "")
 ADMIN_PASSWORD_PARAM = os.environ.get("ADMIN_PASSWORD_PARAM", "")
 ADMIN_SESSION_SECRET_PARAM = os.environ.get("ADMIN_SESSION_SECRET_PARAM", "")
 API_KEY_PARAM = os.environ.get("API_KEY_PARAM", "")
+USERS_TABLE_NAME = os.environ.get("USERS_TABLE_NAME", "")
+USERS_TABLE_ENV = os.environ.get("USERS_TABLE", "")
 
 WOMPI_PUBLIC_KEY_PARAM = os.environ.get("WOMPI_PUBLIC_KEY_PARAM", "")
 WOMPI_INTEGRITY_SECRET_PARAM = os.environ.get("WOMPI_INTEGRITY_SECRET_PARAM", "")
@@ -327,12 +331,14 @@ def http_json(method, url, headers=None, body=None):
         return err.code, data
 
 
-def generate_token(username):
+def generate_token(user_id, ttl_days=30):
+    """Generate a signed token with expiration for the given user_id."""
     session_secret = get_session_secret()
     if not session_secret:
-        raise RuntimeError("admin_session_secret_not_configured")
+        raise RuntimeError("session_secret_not_configured")
+    exp_ts = int(time.time()) + (ttl_days * 86400)
     payload = base64.b64encode(
-        json.dumps({"user": username, "iat": now_iso()}).encode()
+        json.dumps({"sub": user_id, "iat": now_iso(), "exp": exp_ts}).encode()
     ).decode()
     sig = hmac.new(
         session_secret.encode(),
@@ -343,6 +349,7 @@ def generate_token(username):
 
 
 def verify_token(token):
+    """Verify a token and return the subject (user_id) if valid and not expired."""
     try:
         session_secret = get_session_secret()
         if not session_secret:
@@ -359,7 +366,11 @@ def verify_token(token):
         if not hmac.compare_digest(sig, expected):
             return None
         decoded = json.loads(base64.b64decode(payload).decode())
-        return decoded.get("user")
+        # Check expiration
+        exp = decoded.get("exp", 0)
+        if exp and int(time.time()) > exp:
+            return None
+        return decoded.get("sub")
     except Exception:
         return None
 
@@ -376,8 +387,121 @@ def handle_login(event):
     user = (body.get("username") or "").strip()
     pwd = (body.get("password") or "").strip()
     if user == admin_user and hashlib.sha256(pwd.encode()).hexdigest() == admin_pass_hash:
-        return response(200, {"ok": True, "token": generate_token(user)})
+        token = generate_token("admin:" + user, ttl_days=1)
+        return response(200, {"ok": True, "token": token})
     return response(401, {"error": "invalid_credentials"})
+
+
+def register_user(event):
+    """POST /api/auth/register — Create a new customer account."""
+    body = get_json_body(event)
+    if not body:
+        return response(400, {"error": "invalid_json"})
+    name = (body.get("name") or "").strip()
+    email = (body.get("email") or "").strip().lower()
+    phone = (body.get("phone") or "").strip()
+    password = (body.get("password") or "").strip()
+    if not name or not email or not password:
+        return response(400, {"error": "name_email_password_required"})
+    if len(password) < 6:
+        return response(400, {"error": "password_too_short"})
+    # Check duplicate email
+    existing = users_table.query(
+        IndexName="EmailIndex",
+        KeyConditionExpression="email = :e",
+        ExpressionAttributeValues={":e": email},
+    ).get("Items", [])
+    if existing:
+        return response(409, {"error": "email_already_registered"})
+    user_id = str(uuid.uuid4())
+    now = now_iso()
+    item = {
+        "userId": user_id,
+        "email": email,
+        "name": name,
+        "phone": phone,
+        "passwordHash": hashlib.sha256(password.encode()).hexdigest(),
+        "createdAt": now,
+        "updatedAt": now,
+    }
+    users_table.put_item(Item=item)
+    token = generate_token(user_id, ttl_days=30)
+    return response(201, {
+        "ok": True,
+        "userId": user_id,
+        "token": token,
+        "user": {"name": name, "email": email},
+    })
+
+
+def login_user(event):
+    """POST /api/auth/login — Authenticate a customer."""
+    body = get_json_body(event)
+    if not body:
+        return response(400, {"error": "invalid_json"})
+    email = (body.get("email") or "").strip().lower()
+    password = (body.get("password") or "").strip()
+    if not email or not password:
+        return response(400, {"error": "email_and_password_required"})
+    existing = users_table.query(
+        IndexName="EmailIndex",
+        KeyConditionExpression="email = :e",
+        ExpressionAttributeValues={":e": email},
+    ).get("Items", [])
+    if not existing:
+        return response(401, {"error": "invalid_credentials"})
+    user = existing[0]
+    if user.get("passwordHash") != hashlib.sha256(password.encode()).hexdigest():
+        return response(401, {"error": "invalid_credentials"})
+    token = generate_token(user["userId"], ttl_days=30)
+    return response(200, {
+        "ok": True,
+        "token": token,
+        "user": {"name": user.get("name", ""), "email": user.get("email", "")},
+    })
+
+
+def auth_required(event):
+    """Extract authenticated user ID from Authorization header.
+    Returns userId string or None."""
+    headers = event.get("headers", {}) or {}
+    auth = headers.get("authorization", "") or headers.get("Authorization", "")
+    if auth.startswith("Bearer "):
+        return verify_token(auth[7:])
+    return None
+
+
+def get_user_orders(event):
+    """GET /api/orders — List orders for the authenticated user."""
+    user_id = auth_required(event)
+    if not user_id:
+        return response(401, {"error": "unauthorized"})
+    # Scan orders and filter by customer email (linked via userId or email)
+    user_item = users_table.get_item(Key={"userId": user_id}).get("Item")
+    if not user_item:
+        return response(404, {"error": "user_not_found"})
+    user_email = user_item.get("email", "")
+    all_orders = orders_table.scan().get("Items", [])
+    # Match by customer email
+    user_orders = [
+        o for o in all_orders
+        if (o.get("customer") or {}).get("email", "").lower() == user_email
+    ]
+    user_orders.sort(key=lambda x: x.get("createdAt", ""), reverse=True)
+    safe = [{
+        "reference": o.get("reference", ""),
+        "status": o.get("status", ""),
+        "fulfillmentStatus": o.get("fulfillmentStatus", ""),
+        "amountInCents": o.get("amountInCents", 0),
+        "items": o.get("items", []),
+        "customer": o.get("customer", {}),
+        "shippingAddress": o.get("shippingAddress", {}),
+        "trackingNumber": o.get("trackingNumber", ""),
+        "courier": o.get("courier", ""),
+        "createdAt": o.get("createdAt", ""),
+        "updatedAt": o.get("updatedAt", ""),
+    } for o in user_orders]
+    return response(200, {"ok": True, "orders": safe})
 
 
 def admin_auth_required(event):
@@ -1561,6 +1685,36 @@ def handler(event, context):
     if method == "POST" and path == "/api/webhooks/mercadopago":
         return handle_mercadopago_webhook(event)
 
+    # --- Auth endpoints (no API key required — user-facing) ---
+    if method == "POST" and path == "/api/auth/register":
+        return register_user(event)
+
+    if method == "POST" and path == "/api/auth/login":
+        return login_user(event)
+
+    if method == "GET" and path == "/api/auth/me":
+        user_id = auth_required(event)
+        if not user_id:
+            return response(401, {"error": "unauthorized"})
+        user_item = users_table.get_item(Key={"userId": user_id}).get("Item")
+        if not user_item:
+            return response(404, {"error": "user_not_found"})
+        return response(200, {
+            "ok": True,
+            "user": {
+                "userId": user_item["userId"],
+                "name": user_item.get("name", ""),
+                "email": user_item.get("email", ""),
+                "phone": user_item.get("phone", ""),
+                "createdAt": user_item.get("createdAt", ""),
+            }
+        })
+
+    # --- User orders (authenticated) ---
+    if method == "GET" and path == "/api/orders":
+        return get_user_orders(event)
+
+    # --- Public order tracking (no auth — by reference) ---
     if path.startswith("/api/checkout/orders/") and method == "GET":
         reference = path.replace("/api/checkout/orders/", "").split("/")[0]
         if not reference:

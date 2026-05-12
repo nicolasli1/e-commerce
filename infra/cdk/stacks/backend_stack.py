@@ -106,6 +106,28 @@ class BackendStack(Stack):
             encryption=dynamodb.TableEncryption.AWS_MANAGED,
         )
 
+        # Users table (auth — for user registration and management)
+        users_table = dynamodb.Table(
+            self,
+            "UsersTable",
+            table_name=f"{project_name}-{environment}-users",
+            partition_key=dynamodb.Attribute(
+                name="userId",
+                type=dynamodb.AttributeType.STRING,
+            ),
+            billing_mode=dynamodb.BillingMode.PAY_PER_REQUEST,
+            removal_policy=RemovalPolicy.RETAIN,
+            point_in_time_recovery=True,
+            encryption=dynamodb.TableEncryption.AWS_MANAGED,
+        )
+        users_table.add_global_secondary_index(
+            index_name="email-index",
+            partition_key=dynamodb.Attribute(
+                name="email",
+                type=dynamodb.AttributeType.STRING,
+            ),
+        )
+
         # ------------------------------------------------------------------
         # 2. Lambda function – API handler (leads + admin CRUD)
         # ------------------------------------------------------------------
@@ -120,6 +142,7 @@ class BackendStack(Stack):
                 products_table.table_name,
                 quotes_table.table_name,
                 orders_table.table_name,
+                users_table.table_name,
             ),
             timeout=Duration.seconds(30),
             memory_size=256,
@@ -128,6 +151,7 @@ class BackendStack(Stack):
                 "PRODUCTS_TABLE": products_table.table_name,
                 "QUOTES_TABLE": quotes_table.table_name,
                 "ORDERS_TABLE": orders_table.table_name,
+                "USERS_TABLE": users_table.table_name,
                 "ENVIRONMENT": environment,
                 "ADMIN_USER_PARAM": f"/{project_name}/{environment}/admin-user",
                 "ADMIN_PASSWORD_PARAM": f"/{project_name}/{environment}/admin-password",
@@ -149,6 +173,7 @@ class BackendStack(Stack):
         products_table.grant_read_write_data(api_lambda)
         quotes_table.grant_read_write_data(api_lambda)
         orders_table.grant_read_write_data(api_lambda)
+        users_table.grant_read_write_data(api_lambda)
         api_lambda.add_to_role_policy(
             iam.PolicyStatement(
                 actions=["ssm:GetParameter"],
@@ -296,6 +321,7 @@ class BackendStack(Stack):
         CfnOutput(self, "ProductsTableName", value=products_table.table_name)
         CfnOutput(self, "QuotesTableName", value=quotes_table.table_name)
         CfnOutput(self, "OrdersTableName", value=orders_table.table_name)
+        CfnOutput(self, "UsersTableName", value=users_table.table_name)
         CfnOutput(self, "LambdaFunctionName", value=api_lambda.function_name)
         CfnOutput(self, "WompiWebhookUrl", value=f"{http_api.api_endpoint}/api/webhooks/wompi")
         CfnOutput(self, "MercadoPagoWebhookUrl", value=f"{http_api.api_endpoint}/api/webhooks/mercadopago")
@@ -307,6 +333,7 @@ class BackendStack(Stack):
         products_table_name: str,
         quotes_table_name: str,
         orders_table_name: str,
+        users_table_name: str,
     ) -> lambda_.InlineCode:
         """
         Returns the inline Lambda handler code from the local template.
@@ -319,5 +346,6 @@ class BackendStack(Stack):
             .replace("__PRODUCTS_TABLE_NAME__", products_table_name)
             .replace("__QUOTES_TABLE_NAME__", quotes_table_name)
             .replace("__ORDERS_TABLE_NAME__", orders_table_name)
+            .replace("__USERS_TABLE_NAME__", users_table_name)
         )
         return lambda_.InlineCode(code)

@@ -1,0 +1,6 @@
+User-agent: *
+Allow: /
+Disallow: /admin/
+Disallow: /api/
+
+Sitemap: https://d1ag0uf6e1dp20.cloudfront.net/sitemap.xml
