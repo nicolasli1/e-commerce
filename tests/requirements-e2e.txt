@@ -1,0 +1,27 @@
+# ──────────────────────────────────────────────────────────────
+# NexCore E2E Testing Stack
+# ──────────────────────────────────────────────────────────────
+# Core
+pytest>=8.0,<9.0
+pytest-xdist>=3.5        # Ejecución paralela
+pytest-html>=4.0         # Reportes HTML
+pytest-retry>=1.6         # Reintentos automáticos
+pytest-timeout>=2.0       # Timeout por test
+
+# Browser automation
+playwright>=1.48,<2.0
+
+# HTTP client (API directa sin navegador)
+requests>=2.31
+
+# ─── Development ────────────────────
+# Linting
+ruff>=0.4
+mypy>=1.8
+
+# Type hints
+typing-extensions>=4.9
+
+# ─── CI/CD ──────────────────────────
+# JSON output for CI tools
+pytest-json-report>=1.5

@@ -1,0 +1,198 @@
+# GitHub Actions — E2E Tests Pipeline
+# Ejecuta tests automatizados contra el e-commerce NexCore.
+name: E2E Tests
+
+on:
+  # Triggers automáticos
+  push:
+    branches: [main, master]
+    paths:
+      - 'frontend/**'
+      - 'backoffice/**'
+      - 'infra/cdk/lambda_src/**'
+      - 'tests/e2e/**'
+  pull_request:
+    branches: [main, master]
+  schedule:
+    # Smoke test cada 4h en horario laboral Colombia
+    - cron: '0 10,14,18,22 * * 1-5'
+  workflow_dispatch:
+    inputs:
+      base_url:
+        description: 'URL base para tests'
+        required: false
+        default: ''
+      tags:
+        description: 'Tags de pytest a ejecutar'
+        required: false
+        default: 'not slow and not wip'
+      environment:
+        description: 'Entorno'
+        required: true
+        default: 'dev'
+        type: choice
+        options:
+          - dev
+          - stage
+          - prod
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  PYTHON_VERSION: '3.12'
+  E2E_BASE_URL: ${{ inputs.base_url || 'https://d1ag0uf6e1dp20.cloudfront.net' }}
+  E2E_TIMEOUT: 30
+  E2E_HEADLESS: 'true'
+  E2E_RETRIES: 2
+  E2E_WORKERS: 4
+
+jobs:
+  # ════════════════════════════════════════════════════════════
+  # SMOKE — Rápidos, pre-ejecución
+  # ════════════════════════════════════════════════════════════
+  smoke:
+    name: 🔥 Smoke Tests
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    outputs:
+      status: ${{ steps.smoke.outputs.status }}
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+
+      - name: Install dependencies
+        run: |
+          pip install pytest requests
+          pip install -r tests/requirements-e2e.txt
+
+      - name: Run smoke tests
+        id: smoke
+        continue-on-error: false
+        run: |
+          python -m pytest tests/e2e/test_smoke.py \
+            -v \
+            --tb=short \
+            --junitxml=report/smoke-results.xml \
+            -k "not skip"
+
+      - name: Upload smoke results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: smoke-results
+          path: report/
+          retention-days: 7
+
+  # ════════════════════════════════════════════════════════════
+  # E2E — Tests completos con Playwright
+  # ════════════════════════════════════════════════════════════
+  e2e:
+    name: 🧪 E2E Tests
+    needs: [smoke]
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+
+    strategy:
+      fail-fast: false
+      matrix:
+        shard: [1, 2, 3]
+        # Distribución de tests entre shards:
+        # shard 1: smoke + homepage + navigation
+        # shard 2: cart + checkout
+        # shard 3: mobile + auth + security
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+          cache: 'pip'
+          cache-dependency-path: tests/requirements-e2e.txt
+
+      - name: Install dependencies
+        run: |
+          pip install -r tests/requirements-e2e.txt
+
+      - name: Install Playwright browsers
+        run: |
+          python -m playwright install chromium
+          python -m playwright install-deps chromium
+
+      - name: Run E2E tests (shard ${{ matrix.shard }})
+        id: e2e-tests
+        continue-on-error: ${{ github.event_name == 'schedule' }}
+        env:
+          E2E_ADMIN_USER: ${{ secrets.E2E_ADMIN_USER }}
+          E2E_ADMIN_PASS: ${{ secrets.E2E_ADMIN_PASS }}
+          E2E_API_KEY: ${{ secrets.E2E_API_KEY }}
+        run: |
+          python -m pytest tests/e2e/ \
+            -v \
+            --tb=short \
+            --splits=3 \
+            --group=${{ matrix.shard }} \
+            --durations=10 \
+            --junitxml=report/e2e-results-shard${{ matrix.shard }}.xml \
+            --html=report/e2e-report-shard${{ matrix.shard }}.html \
+            --self-contained-html \
+            -m "not wip" \
+            -k "${{ inputs.tags || 'not slow and not wip' }}" \
+            --base-url=${{ env.E2E_BASE_URL }}
+
+      - name: Upload screenshots (if failed)
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: e2e-screenshots-shard${{ matrix.shard }}
+          path: tests/e2e/screenshots/
+          retention-days: 14
+
+      - name: Upload test report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: e2e-report-shard${{ matrix.shard }}
+          path: |
+            report/
+            tests/e2e/report/
+          retention-days: 30
+
+  # ════════════════════════════════════════════════════════════
+  # REPORT — Consolidar resultados
+  # ════════════════════════════════════════════════════════════
+  report:
+    name: 📊 Consolidar Reporte
+    needs: [e2e]
+    runs-on: ubuntu-latest
+    if: always()
+
+    steps:
+      - name: Download all artifacts
+        uses: actions/download-artifact@v4
+
+      - name: Consolidate results
+        run: |
+          echo "📊 E2E Test Run Complete"
+          echo "URL: ${{ env.E2E_BASE_URL }}"
+          echo "Fecha: $(date -u '+%Y-%m-%d %H:%M UTC')"
+          echo ""
+          # Contar JUnit XML results
+          for f in report/*.xml; do
+            if [ -f "$f" ]; then
+              echo "Resultados: $f"
+            fi
+          done
+
+      - name: Deploy report to S3 (opt-in)
+        if: false  # Habilitar cuando se configure bucket de reports
+        run: |
+          echo "Reportes disponibles en: s3://nexcore-reports/e2e/"
