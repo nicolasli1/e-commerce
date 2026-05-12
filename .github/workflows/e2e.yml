@@ -75,11 +75,19 @@ jobs:
         id: smoke
         continue-on-error: false
         run: |
-          python -m pytest tests/e2e/test_smoke.py \
-            -v \
-            --tb=short \
-            --junitxml=report/smoke-results.xml \
-            -k "not skip"
+          # Reintentar hasta 3 veces por si el deploy está en progreso
+          for i in 1 2 3; do
+            echo "🧪 Smoke test attempt $i/3..."
+            python -m pytest tests/e2e/test_smoke.py \
+              -v \
+              --tb=short \
+              --junitxml=report/smoke-results.xml \
+              -k "not skip" && echo "✅ Smoke tests passed" && exit 0
+            echo "❌ Attempt $i/3 failed. Retrying in 10s..."
+            sleep 10
+          done
+          echo "❌ All smoke test attempts failed"
+          exit 1
 
       - name: Upload smoke results
         if: always()
