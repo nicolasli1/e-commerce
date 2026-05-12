@@ -140,6 +140,7 @@ class BackendStack(Stack):
                 "MERCADOPAGO_WEBHOOK_SECRET_PARAM": f"/{project_name}/{environment}/mercadopago-webhook-secret",
                 "ORDER_NOTIFICATIONS_FROM_EMAIL_PARAM": f"/{project_name}/{environment}/order-notifications-from-email",
                 "ORDER_ALERTS_TO_EMAIL_PARAM": f"/{project_name}/{environment}/order-alerts-to-email",
+                "API_KEY_PARAM": f"/{project_name}/{environment}/api-key",
             },
         )
 

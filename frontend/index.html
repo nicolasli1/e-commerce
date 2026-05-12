@@ -1799,7 +1799,7 @@
           <button class="btn btn-gradient" id="checkoutBtn" style="width:100%;justify-content:center;">
             Continuar al pago
           </button>
-          <p style="font-size:0.75rem;color:#86868b;text-align:center;margin-top:8px;">Checkout seguro con Wompi o Mercado Pago. El backend firma la referencia y valida el estado final con webhook.</p>
+          <p style="font-size:0.75rem;color:#86868b;text-align:center;margin-top:8px;">Checkout seguro con Mercado Pago. El backend firma la referencia y valida el estado final con webhook.</p>
         </div>
       </div>
     </div>
@@ -1836,24 +1836,13 @@
             <span class="checkout-label">Pasarela de pago</span>
             <div class="checkout-provider-grid">
               <label class="checkout-provider">
-                <input type="radio" name="checkoutProvider" value="wompi" checked />
-                <div class="checkout-provider-card">
-                  <div class="checkout-provider-title">
-                    <span>Wompi</span>
-                    <span class="checkout-provider-tag">Widget</span>
-                  </div>
-                  <div class="checkout-provider-copy">Paga con tarjeta, PSE, Nequi y otros métodos disponibles en Wompi.</div>
-                  <div class="checkout-provider-foot">Aprobación segura y confirmación automática del pedido.</div>
-                </div>
-              </label>
-              <label class="checkout-provider">
-                <input type="radio" name="checkoutProvider" value="mercadopago" />
+                <input type="radio" name="checkoutProvider" value="mercadopago" checked />
                 <div class="checkout-provider-card">
                   <div class="checkout-provider-title">
                     <span>Mercado Pago</span>
                     <span class="checkout-provider-tag">Checkout Pro</span>
                   </div>
-                  <div class="checkout-provider-copy">Paga en el entorno seguro de Mercado Pago con métodos disponibles en Colombia.</div>
+                  <div class="checkout-provider-copy">Paga en el entorno seguro de Mercado Pago con tarjeta, PSE, Nequi y otros métodos disponibles en Colombia.</div>
                   <div class="checkout-provider-foot">Ideal si prefieres completar el pago fuera del sitio.</div>
                 </div>
               </label>
@@ -1910,7 +1899,7 @@
             <p class="checkout-inline-note" id="checkoutInlineNote">Este checkout crea la sesión en backend y nunca confía en precios enviados por el navegador. Cada pasarela se conecta con su propio webhook para cerrar el estado real del pedido.</p>
 
             <div class="checkout-actions">
-              <button type="submit" class="btn btn-gradient" id="checkoutPayBtn">Pagar con Wompi</button>
+              <button type="submit" class="btn btn-gradient" id="checkoutPayBtn">Pagar con Mercado Pago</button>
               <button type="button" class="btn btn-secondary" id="checkoutBackBtn">Volver al carrito</button>
             </div>
           </form>
@@ -1964,8 +1953,9 @@
     // ==============================
     let cart = JSON.parse(localStorage.getItem('nexcore_cart') || '[]');
     const CHECKOUT_REFERENCE_STORAGE_KEY = 'nexcore_checkout_reference';
-    let wompiScriptPromise = null;
-    
+    // API Key for backend auth — injected by CDK during deploy
+    // In dev, this can be empty (backend allows requests without key)
+    const API_KEY = '__API_KEY__';
     function addToCart(product) {
       const existing = cart.find(c => c.productId === product.productId);
       if (existing) {
@@ -2155,20 +2145,14 @@
     }
 
     function selectedCheckoutProvider() {
-      return document.querySelector('input[name="checkoutProvider"]:checked')?.value || 'wompi';
+      return 'mercadopago';
     }
 
     function syncCheckoutProviderUI() {
-      const provider = selectedCheckoutProvider();
-      const button = document.getElementById('checkoutPayBtn');
+      // Siempre Mercado Pago — Wompi temporalmente deshabilitado
       const note = document.getElementById('checkoutInlineNote');
-      if (button) {
-        button.textContent = provider === 'mercadopago' ? 'Pagar con Mercado Pago' : 'Pagar con Wompi';
-      }
       if (note) {
-        note.textContent = provider === 'mercadopago'
-          ? 'Mercado Pago usa Checkout Pro: el backend crea una preferencia y el comprador es redirigido al entorno seguro de Mercado Pago. El webhook completa el estado final del pedido.'
-          : 'Wompi usa un checkout firmado desde backend para que el total, la referencia y la trazabilidad del pedido no dependan del navegador.';
+        note.textContent = 'Mercado Pago usa Checkout Pro: el backend crea una preferencia y el comprador es redirigido al entorno seguro de Mercado Pago. El webhook completa el estado final del pedido.';
       }
     }
 
@@ -2217,7 +2201,7 @@
       result.classList.add('visible');
       const status = (order?.status || 'PENDING').toUpperCase();
       const provider = (order?.provider || selectedCheckoutProvider()).toLowerCase();
-      const providerLabel = provider === 'mercadopago' ? 'Mercado Pago' : 'Wompi';
+      const providerLabel = 'Mercado Pago';
       const statusMap = {
         APPROVED: {
           badge: 'Pago aprobado',
@@ -2325,20 +2309,6 @@
       }
     }
 
-    function loadWompiScript() {
-      if (window.WidgetCheckout) return Promise.resolve();
-      if (wompiScriptPromise) return wompiScriptPromise;
-      wompiScriptPromise = new Promise((resolve, reject) => {
-        const script = document.createElement('script');
-        script.src = 'https://checkout.wompi.co/widget.js';
-        script.async = true;
-        script.onload = () => resolve();
-        script.onerror = () => reject(new Error('No pudimos cargar Wompi.'));
-        document.head.appendChild(script);
-      });
-      return wompiScriptPromise;
-    }
-
     function checkoutPayload() {
       const fullName = document.getElementById('checkoutFullName').value.trim();
       const email = document.getElementById('checkoutEmail').value.trim();
@@ -2380,23 +2350,6 @@
       openCheckout();
     }
 
-    async function launchWompi(session) {
-      await loadWompiScript();
-      if (!window.WidgetCheckout) {
-        throw new Error('Wompi no quedó disponible en el navegador.');
-      }
-
-      const checkout = new WidgetCheckout(session.wompi);
-      checkout.open(function (result) {
-        if (result && result.transaction) {
-          showCheckoutResult({
-            reference: session.reference,
-            status: result.transaction.status || 'PENDING'
-          }, result.transaction.id);
-        }
-      });
-    }
-
     async function launchMercadoPago(session) {
       const targetUrl = session?.mercadopago?.initPoint || session?.mercadopago?.sandboxInitPoint || '';
       if (!targetUrl) {
@@ -2423,7 +2376,10 @@
       try {
         const res = await fetch('/api/checkout/session', {
           method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
+          headers: {
+            'Content-Type': 'application/json',
+            ...(API_KEY ? { 'x-api-key': API_KEY } : {})
+          },
           body: JSON.stringify(checkoutPayload())
         });
         const data = await res.json();
@@ -2434,17 +2390,11 @@
         localStorage.setItem(CHECKOUT_REFERENCE_STORAGE_KEY, data.reference);
         const provider = data.order?.provider || selectedCheckoutProvider();
         setCheckoutStatus(
-          provider === 'mercadopago'
-            ? 'Preferencia creada. Te vamos a redirigir a Mercado Pago con la referencia real del pedido.'
-            : 'Checkout firmado. Estamos abriendo Wompi con el total calculado por backend.',
+          'Preferencia creada. Te vamos a redirigir a Mercado Pago con la referencia real del pedido.',
           'success'
         );
         showCheckoutResult(data.order);
-        if (provider === 'mercadopago') {
-          await launchMercadoPago(data);
-        } else {
-          await launchWompi(data);
-        }
+        await launchMercadoPago(data);
       } catch (err) {
         setCheckoutStatus(err.message || 'No pudimos iniciar el pago.', 'error');
       } finally {
@@ -2705,7 +2655,10 @@
       try {
         const res = await fetch('/api/leads', {
           method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
+          headers: {
+            'Content-Type': 'application/json',
+            ...(API_KEY ? { 'x-api-key': API_KEY } : {})
+          },
           body: JSON.stringify({
             name: email.split('@')[0],
             email,

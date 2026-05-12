@@ -25,6 +25,7 @@ orders_table = dynamodb.Table("__ORDERS_TABLE_NAME__")
 ADMIN_USER_PARAM = os.environ.get("ADMIN_USER_PARAM", "")
 ADMIN_PASSWORD_PARAM = os.environ.get("ADMIN_PASSWORD_PARAM", "")
 ADMIN_SESSION_SECRET_PARAM = os.environ.get("ADMIN_SESSION_SECRET_PARAM", "")
+API_KEY_PARAM = os.environ.get("API_KEY_PARAM", "")
 
 WOMPI_PUBLIC_KEY_PARAM = os.environ.get("WOMPI_PUBLIC_KEY_PARAM", "")
 WOMPI_INTEGRITY_SECRET_PARAM = os.environ.get("WOMPI_INTEGRITY_SECRET_PARAM", "")
@@ -224,6 +225,14 @@ def get_admin_password_hash():
 def get_session_secret():
     try:
         return get_parameter(ADMIN_SESSION_SECRET_PARAM, decrypt=True)
+
+
+def get_api_key():
+    """Retrieve the shared API key for frontend-to-backend auth from SSM."""
+    try:
+        return get_parameter(API_KEY_PARAM, decrypt=True)
+    except Exception:
+        return ""
     except Exception:
         return ""
 
@@ -377,6 +386,22 @@ def admin_auth_required(event):
     if auth.startswith("Bearer "):
         return verify_token(auth[7:])
     return None
+
+
+def require_api_key(event):
+    """
+    Validates x-api-key header for non-admin endpoints (checkout, leads).
+    The frontend includes this key to prevent direct API abuse.
+    """
+    headers = event.get("headers", {}) or {}
+    provided = headers.get("x-api-key", "") or headers.get("X-Api-Key", "") or ""
+    expected = get_api_key()
+    if not expected:
+        # No key configured — allow (dev mode). Should be set in production.
+        return True
+    if provided == expected:
+        return True
+    return False
 
 
 def list_products():
@@ -674,6 +699,10 @@ def build_order_items(cart_items):
         product = products_table.get_item(Key={"productId": product_id}).get("Item")
         if not product or product.get("status", "active") == "deleted":
             raise ValueError(f"product_not_found:{product_id}")
+        # Internal convention: prices stored in DB as COP (e.g. 39000 = $39,000).
+        # We multiply by 100 for the internal "cents" format (compatible with Wompi).
+        # Mercado Pago receives pesos (÷100 back) via cents_to_cop_units() in build_mercadopago_preference().
+        # Any new gateway consumer must understand: display = amountInCents / 100.
         unit_price_cents = int(Decimal(str(product.get("price", 0))) * 100)
         subtotal_cents = unit_price_cents * quantity
         total += subtotal_cents
@@ -1196,7 +1225,7 @@ def create_checkout_session(event):
     body = get_json_body(event)
     if not body:
         return response(400, {"error": "invalid_json"})
-    provider = (body.get("provider") or "wompi").strip().lower()
+    provider = (body.get("provider") or "mercadopago").strip().lower()
     if provider not in ("wompi", "mercadopago"):
         return response(400, {"error": "unsupported_provider"})
     if provider == "wompi" and not wompi_enabled():
@@ -1496,6 +1525,11 @@ def handler(event, context):
 
     if method == "GET" and path == "/api/products":
         return list_public_products()
+
+    # --- API Key protected POST endpoints (frontend sends x-api-key) ---
+    if method == "POST" and path in ("/api/leads", "/api/checkout/session"):
+        if not require_api_key(event):
+            return response(401, {"error": "unauthorized", "message": "API key inválida o faltante."})
 
     if method == "POST" and path == "/api/leads":
         try:
