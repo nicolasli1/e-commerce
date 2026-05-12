@@ -71,6 +71,7 @@ jobs:
         run: |
           pip install pytest requests
           pip install -r tests/requirements-e2e.txt
+          python -m playwright install chromium --with-deps
 
       - name: Run smoke tests
         id: smoke
