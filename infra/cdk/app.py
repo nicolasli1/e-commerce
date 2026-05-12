@@ -58,6 +58,8 @@ backend = BackendStack(
 # CloudFront + WAF need to be in us-east-1.
 # ------------------------------------------------------------------
 api_endpoint = backend.api_endpoint if enable_backend_bool else None
+images_bucket_domain = backend.images_bucket_domain if enable_backend_bool else None
+images_bucket_name = backend.images_bucket_name if enable_backend_bool else None
 
 frontend = FrontendStack(
     app,
@@ -66,6 +68,8 @@ frontend = FrontendStack(
     environment=environment,
     price_class=price_class,
     api_endpoint=api_endpoint,
+    images_bucket_domain=images_bucket_domain,
+    images_bucket_name=images_bucket_name,
     cross_region_references=True,
     description=f"Sales website frontend – {project_name} {environment}",
     env=cdk.Environment(
