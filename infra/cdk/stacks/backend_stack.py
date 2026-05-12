@@ -28,6 +28,16 @@ class BackendStack(Stack):
         """The HTTP API endpoint URL (used by FrontendStack for cross-stack ref)."""
         return self._api_endpoint
 
+    @property
+    def images_bucket_domain(self) -> Optional[str]:
+        """The S3 bucket regional domain name for product images."""
+        return getattr(self, '_images_bucket_domain', None)
+
+    @property
+    def images_bucket_name(self) -> Optional[str]:
+        """The S3 bucket name for product images."""
+        return getattr(self, '_images_bucket_name', None)
+
     def __init__(
         self,
         scope: Construct,
