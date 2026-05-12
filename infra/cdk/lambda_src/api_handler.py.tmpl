@@ -1869,7 +1869,17 @@ def handle_mercadopago_webhook(event):
     return response(200, {"ok": True, "order": updated})
 
 
+# Auto-seed on cold start (once per Lambda container lifecycle)
+_seeded = False
+
 def handler(event, context):
+    global _seeded
+    if not _seeded:
+        try:
+            seed_products()
+            _seeded = True
+        except Exception:
+            pass
     method = event.get("requestContext", {}).get("http", {}).get("method", "")
     path = event.get("rawPath", "").rstrip("/")
     body = event.get("body")
