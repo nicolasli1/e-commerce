@@ -28,7 +28,6 @@ ADMIN_USER_PARAM = os.environ.get("ADMIN_USER_PARAM", "")
 ADMIN_PASSWORD_PARAM = os.environ.get("ADMIN_PASSWORD_PARAM", "")
 ADMIN_SESSION_SECRET_PARAM = os.environ.get("ADMIN_SESSION_SECRET_PARAM", "")
 API_KEY_PARAM = os.environ.get("API_KEY_PARAM", "")
-USERS_TABLE_NAME = os.environ.get("USERS_TABLE_NAME", "")
 USERS_TABLE_ENV = os.environ.get("USERS_TABLE", "")
 
 WOMPI_PUBLIC_KEY_PARAM = os.environ.get("WOMPI_PUBLIC_KEY_PARAM", "")
@@ -1394,6 +1393,14 @@ def create_checkout_session(event):
             "paymentId": "",
             "initPoint": preference.get("init_point", ""),
         }
+    # Optionally link to user account
+    user_id = (body.get("userId") or "").strip()
+    if user_id:
+        # Verify the user exists
+        user_item = users_table.get_item(Key={"userId": user_id}).get("Item")
+        if not user_item:
+            user_id = ""  # Invalid userId, ignore
+
     order = {
         "reference": reference,
         "orderId": str(uuid.uuid4()),
@@ -1413,6 +1420,7 @@ def create_checkout_session(event):
         "courier": "",
         "fulfillmentNotes": "",
         "notifications": {},
+        "userId": user_id if user_id else None,
         "createdAt": now_iso(),
         "updatedAt": now_iso(),
     }
