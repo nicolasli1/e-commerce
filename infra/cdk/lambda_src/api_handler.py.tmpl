@@ -22,13 +22,11 @@ products_table = dynamodb.Table("__PRODUCTS_TABLE_NAME__")
 quotes_table = dynamodb.Table("__QUOTES_TABLE_NAME__")
 orders_table = dynamodb.Table("__ORDERS_TABLE_NAME__")
 users_table = dynamodb.Table("__USERS_TABLE_NAME__")
-users_table = dynamodb.Table("__USERS_TABLE_NAME__")
 
 ADMIN_USER_PARAM = os.environ.get("ADMIN_USER_PARAM", "")
 ADMIN_PASSWORD_PARAM = os.environ.get("ADMIN_PASSWORD_PARAM", "")
 ADMIN_SESSION_SECRET_PARAM = os.environ.get("ADMIN_SESSION_SECRET_PARAM", "")
 API_KEY_PARAM = os.environ.get("API_KEY_PARAM", "")
-USERS_TABLE_ENV = os.environ.get("USERS_TABLE", "")
 
 WOMPI_PUBLIC_KEY_PARAM = os.environ.get("WOMPI_PUBLIC_KEY_PARAM", "")
 WOMPI_INTEGRITY_SECRET_PARAM = os.environ.get("WOMPI_INTEGRITY_SECRET_PARAM", "")
@@ -406,7 +404,7 @@ def register_user(event):
         return response(400, {"error": "password_too_short"})
     # Check duplicate email
     existing = users_table.query(
-        IndexName="EmailIndex",
+        IndexName="email-index",
         KeyConditionExpression="email = :e",
         ExpressionAttributeValues={":e": email},
     ).get("Items", [])
@@ -443,7 +441,7 @@ def login_user(event):
     if not email or not password:
         return response(400, {"error": "email_and_password_required"})
     existing = users_table.query(
-        IndexName="EmailIndex",
+        IndexName="email-index",
         KeyConditionExpression="email = :e",
         ExpressionAttributeValues={":e": email},
     ).get("Items", [])
