@@ -110,10 +110,10 @@ jobs:
       fail-fast: false
       matrix:
         shard: [1, 2, 3]
-        # Distribución de tests entre shards:
-        # shard 1: smoke + homepage + navigation
+        # Distribución manual de tests entre shards
+        # shard 1: homepage + navigation
         # shard 2: cart + checkout
-        # shard 3: mobile + auth + security
+        # shard 3: mobile + auth
 
     steps:
       - uses: actions/checkout@v4
@@ -142,17 +142,26 @@ jobs:
           E2E_ADMIN_PASS: ${{ secrets.E2E_ADMIN_PASS }}
           E2E_API_KEY: ${{ secrets.E2E_API_KEY }}
         run: |
-          python -m pytest tests/e2e/ \
+          # Shard 1: homepage + navigation
+          if [ "${{ matrix.shard }}" = "1" ]; then
+            FILES="tests/e2e/test_homepage.py tests/e2e/test_navigation.py"
+          # Shard 2: cart + checkout
+          elif [ "${{ matrix.shard }}" = "2" ]; then
+            FILES="tests/e2e/test_cart.py tests/e2e/test_checkout.py"
+          # Shard 3: mobile + smoke
+          else
+            FILES="tests/e2e/test_mobile.py"
+          fi
+          python -m pytest \
+            \$FILES \
             -v \
             --tb=short \
-            --splits=3 \
-            --group=${{ matrix.shard }} \
             --durations=10 \
+            -n auto \
             --junitxml=report/e2e-results-shard${{ matrix.shard }}.xml \
             --html=report/e2e-report-shard${{ matrix.shard }}.html \
             --self-contained-html \
             -m "not wip" \
-            -k "${{ inputs.tags || 'not slow and not wip' }}" \
             --base-url=${{ env.E2E_BASE_URL }}
 
       - name: Upload screenshots (if failed)
