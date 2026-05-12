@@ -225,14 +225,14 @@ def get_admin_password_hash():
 def get_session_secret():
     try:
         return get_parameter(ADMIN_SESSION_SECRET_PARAM, decrypt=True)
+    except Exception:
+        return ""
 
 
 def get_api_key():
     """Retrieve the shared API key for frontend-to-backend auth from SSM."""
     try:
         return get_parameter(API_KEY_PARAM, decrypt=True)
-    except Exception:
-        return ""
     except Exception:
         return ""
 
