@@ -1428,12 +1428,13 @@
         <a href="#testimonios">Testimonios</a>
         <a href="#precios">Kits DIY</a>
         <a href="#rastrear-pedido">Rastrea tu pedido</a>
+        <a href="#mis-pedidos" id="navOrders">Mis pedidos</a>
         <a href="#contacto">Contacto</a>
       </div>
       <div class="nav-actions">
         <a href="#carrito" id="cartNavBtn" class="cart-trigger" title="Carrito" aria-label="Abrir carrito">🛒<span id="cartCount" style="position:absolute;top:-8px;right:-6px;background:#ef4444;color:#fff;font-size:0.625rem;width:18px;height:18px;border-radius:50%;display:none;align-items:center;justify-content:center;font-weight:700;">0</span></a>
         <div class="nav-cta">
-          <a href="#contacto" class="btn btn-gradient btn-sm">Cotizar</a>
+          <a href="#" id="authBtn" class="btn btn-gradient btn-sm">Ingresar</a>
         </div>
       </div>
       <button class="hamburger" onclick="document.getElementById('navLinks').classList.toggle('open')">☰</button>
@@ -1687,6 +1688,28 @@
           <button type="submit" class="btn btn-gradient">Cotizar ahora</button>
         </form>
         <p id="formFeedback" style="margin-top:16px;font-size:0.875rem;color:#22c55e;display:none;">✅ Recibimos tu solicitud. Te escribimos pronto.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============================
+       MIS PEDIDOS
+  ============================ -->
+  <section class="tracking" id="mis-pedidos" style="display:none;">
+    <div class="container">
+      <div class="tracking-shell reveal">
+        <div class="section-header">
+          <span class="checkout-kicker">Pedidos</span>
+          <h2 class="section-title">Mis pedidos</h2>
+          <p class="section-subtitle" id="ordersGreeting">Tus compras registradas.</p>
+        </div>
+        <div id="ordersList">
+          <p style="text-align:center;color:#86868b;padding:40px 0;">Cargando tus pedidos...</p>
+        </div>
+        <div style="text-align:center;margin-top:24px;">
+          <button class="btn btn-secondary" onclick="closeOrders();">Cerrar</button>
+          <button class="btn btn-secondary" onclick="logoutUser();" style="margin-left:8px;">Cerrar sesión</button>
+        </div>
       </div>
     </div>
   </section>
@@ -2331,7 +2354,8 @@
           legalIdType,
           legalId
         },
-        notes
+        notes,
+        userId: isLoggedIn() ? getUserToken() : ''  // Will be resolved server-side
       };
     }
 
@@ -2709,6 +2733,279 @@
         document.getElementById('navLinks').classList.remove('open');
       });
     });
+
+    // ==============================
+    // USER AUTH STATE
+    // ==============================
+    const AUTH_TOKEN_KEY = 'nexcore_auth_token';
+    const AUTH_USER_KEY = 'nexcore_auth_user';
+    let currentUser = JSON.parse(localStorage.getItem(AUTH_USER_KEY) || 'null');
+
+    function isLoggedIn() {
+      return !!localStorage.getItem(AUTH_TOKEN_KEY);
+    }
+
+    function getUserToken() {
+      return localStorage.getItem(AUTH_TOKEN_KEY) || '';
+    }
+
+    function updateAuthUI() {
+      const btn = document.getElementById('authBtn');
+      const ordersLink = document.getElementById('navOrders');
+      if (!btn) return;
+      if (isLoggedIn() && currentUser) {
+        btn.textContent = currentUser.name?.split(' ')[0] || 'Cuenta';
+        btn.href = '#';
+        btn.onclick = function(e) { e.preventDefault(); openOrders(); };
+        if (ordersLink) ordersLink.style.display = '';
+      } else {
+        btn.textContent = 'Ingresar';
+        btn.href = '#';
+        btn.onclick = function(e) { e.preventDefault(); openAuthModal(); };
+        if (ordersLink) ordersLink.style.display = 'none';
+      }
+    }
+
+    function openAuthModal() {
+      document.getElementById('authModal').classList.add('open');
+      document.body.classList.add('modal-open');
+    }
+
+    function closeAuthModal() {
+      document.getElementById('authModal').classList.remove('open');
+      document.body.classList.remove('modal-open');
+      document.getElementById('authStatus').className = 'checkout-status';
+      document.getElementById('authStatus').textContent = '';
+    }
+
+    function setAuthStatus(msg, type) {
+      const el = document.getElementById('authStatus');
+      el.textContent = msg;
+      el.className = 'checkout-status visible' + (type ? ' ' + type : '');
+    }
+
+    function showRegisterForm() {
+      document.getElementById('loginForm').style.display = 'none';
+      document.getElementById('registerForm').style.display = 'block';
+      document.getElementById('authTitle').textContent = 'Crear cuenta';
+    }
+
+    function showLoginForm() {
+      document.getElementById('loginForm').style.display = 'block';
+      document.getElementById('registerForm').style.display = 'none';
+      document.getElementById('authTitle').textContent = 'Ingresar';
+    }
+
+    // Login form submit
+    document.getElementById('loginForm').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const email = document.getElementById('loginEmail').value.trim();
+      const password = document.getElementById('loginPassword').value;
+      const btn = document.getElementById('loginBtn');
+      btn.disabled = true;
+      btn.textContent = 'Ingresando...';
+      try {
+        const res = await fetch('/api/auth/login', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            ...(API_KEY ? { 'x-api-key': API_KEY } : {})
+          },
+          body: JSON.stringify({ email, password })
+        });
+        const data = await res.json();
+        if (!res.ok) {
+          setAuthStatus(data.error === 'invalid_credentials' ? 'Correo o contraseña incorrectos.' : (data.message || 'Error al ingresar.'), 'error');
+          return;
+        }
+        localStorage.setItem(AUTH_TOKEN_KEY, data.token);
+        localStorage.setItem(AUTH_USER_KEY, JSON.stringify(data.user));
+        currentUser = data.user;
+        closeAuthModal();
+        updateAuthUI();
+      } catch (err) {
+        setAuthStatus('Error de conexión. Intenta de nuevo.', 'error');
+      } finally {
+        btn.disabled = false;
+        btn.textContent = 'Ingresar';
+      }
+    });
+
+    // Register form submit
+    document.getElementById('registerForm').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const name = document.getElementById('registerName').value.trim();
+      const email = document.getElementById('registerEmail').value.trim();
+      const phone = document.getElementById('registerPhone').value.trim();
+      const password = document.getElementById('registerPassword').value;
+      const btn = document.getElementById('registerBtn');
+
+      if (password.length < 6) {
+        setAuthStatus('La contraseña debe tener al menos 6 caracteres.', 'error');
+        return;
+      }
+
+      btn.disabled = true;
+      btn.textContent = 'Creando cuenta...';
+      try {
+        const res = await fetch('/api/auth/register', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            ...(API_KEY ? { 'x-api-key': API_KEY } : {})
+          },
+          body: JSON.stringify({ name, email, phone, password })
+        });
+        const data = await res.json();
+        if (!res.ok) {
+          const msg = data.error === 'email_already_registered' ? 'Este correo ya está registrado. Intenta ingresar.' : (data.message || 'Error al registrarte.');
+          setAuthStatus(msg, 'error');
+          return;
+        }
+        localStorage.setItem(AUTH_TOKEN_KEY, data.token);
+        localStorage.setItem(AUTH_USER_KEY, JSON.stringify(data.user));
+        localStorage.setItem(AUTH_USERID_KEY, data.userId || '');
+        currentUser = data.user;
+        closeAuthModal();
+        updateAuthUI();
+      } catch (err) {
+        setAuthStatus('Error de conexión. Intenta de nuevo.', 'error');
+      } finally {
+        btn.disabled = false;
+        btn.textContent = 'Crear cuenta';
+      }
+    });
+
+    // ==============================
+    // MIS PEDIDOS
+    // ==============================
+    async function openOrders() {
+      const section = document.getElementById('mis-pedidos');
+      const list = document.getElementById('ordersList');
+      if (!section || !list) return;
+
+      section.style.display = '';
+      document.getElementById('ordersGreeting').textContent = currentUser ? `Tus compras, ${currentUser.name?.split(' ')[0] || ''}.` : 'Tus compras registradas.';
+      list.innerHTML = '<p style="text-align:center;color:#86868b;padding:40px 0;">Cargando tus pedidos...</p>';
+
+      try {
+        const res = await fetch('/api/orders', {
+          headers: {
+            'Authorization': 'Bearer ' + getUserToken(),
+            ...(API_KEY ? { 'x-api-key': API_KEY } : {})
+          }
+        });
+        const data = await res.json();
+        if (!res.ok) {
+          list.innerHTML = '<p style="text-align:center;color:#ef4444;padding:40px 0;">No pudimos cargar tus pedidos.</p>';
+          return;
+        }
+        const orders = data.orders || [];
+        if (orders.length === 0) {
+          list.innerHTML = '<p style="text-align:center;color:#86868b;padding:40px 0;">No tienes pedidos registrados todavía.</p>';
+          return;
+        }
+        list.innerHTML = orders.map(o => `
+          <div style="background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.06);border-radius:16px;padding:16px;margin-bottom:12px;">
+            <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px;">
+              <div>
+                <strong style="font-size:0.875rem;">${o.reference || '—'}</strong>
+                <span style="color:#86868b;font-size:0.75rem;margin-left:8px;">${humanizeStatus(o.status)}</span>
+              </div>
+              <div style="text-align:right;">
+                <div style="font-weight:600;">${formatCents(o.amountInCents || 0)}</div>
+                <span style="color:#86868b;font-size:0.7rem;">${o.createdAt ? new Date(o.createdAt).toLocaleDateString('es-CO') : '—'}</span>
+              </div>
+            </div>
+            <div style="margin-top:8px;font-size:0.75rem;color:#86868b;">
+              ${o.items?.length || 0} ítems · Despacho: ${humanizeStatus(o.fulfillmentStatus)}
+            </div>
+            ${o.trackingNumber ? `<div style="margin-top:6px;font-size:0.75rem;color:#a5b4fc;">🔗 Guía: ${o.trackingNumber}${o.courier ? ' (' + o.courier + ')' : ''}</div>` : ''}
+          </div>
+        `).join('');
+        section.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      } catch (err) {
+        list.innerHTML = '<p style="text-align:center;color:#ef4444;padding:40px 0;">Error de conexión.</p>';
+      }
+    }
+
+    function closeOrders() {
+      const section = document.getElementById('mis-pedidos');
+      if (section) section.style.display = 'none';
+    }
+
+    function logoutUser() {
+      localStorage.removeItem(AUTH_TOKEN_KEY);
+      localStorage.removeItem(AUTH_USER_KEY);
+      localStorage.removeItem(AUTH_USERID_KEY);
+      currentUser = null;
+      updateAuthUI();
+      closeOrders();
+    }
+
+    // Init auth UI
+    updateAuthUI();
   </script>
+  <!-- ============================
+       AUTH MODAL
+  ============================ -->
+  <div class="modal-overlay" id="authModal">
+    <div class="modal checkout-modal" style="max-width:420px;">
+      <div class="modal-header">
+        <div>
+          <span class="checkout-kicker">Cuenta</span>
+          <h2 class="modal-title" id="authTitle">Ingresar</h2>
+        </div>
+        <button class="modal-close" onclick="closeAuthModal();">✕</button>
+      </div>
+      <div class="checkout-panel" style="border:none;padding:0;">
+        <div id="authStatus" class="checkout-status"></div>
+
+        <!-- Login form -->
+        <form id="loginForm" style="display:block;">
+          <div class="checkout-field checkout-field-wide">
+            <label class="checkout-label">Correo electrónico</label>
+            <input class="checkout-input" id="loginEmail" type="email" placeholder="tu@correo.com" required />
+          </div>
+          <div class="checkout-field checkout-field-wide">
+            <label class="checkout-label">Contraseña</label>
+            <input class="checkout-input" id="loginPassword" type="password" placeholder="••••••••" required />
+          </div>
+          <div class="checkout-actions">
+            <button type="submit" class="btn btn-gradient" id="loginBtn" style="width:100%;justify-content:center;">Ingresar</button>
+          </div>
+          <p style="text-align:center;margin-top:12px;font-size:0.8125rem;color:#86868b;">
+            ¿No tienes cuenta? <a href="#" onclick="showRegisterForm();return false;" style="color:#a5b4fc;">Regístrate</a>
+          </p>
+        </form>
+
+        <!-- Register form -->
+        <form id="registerForm" style="display:none;">
+          <div class="checkout-field checkout-field-wide">
+            <label class="checkout-label">Nombre completo</label>
+            <input class="checkout-input" id="registerName" placeholder="Nicolas Perez" required />
+          </div>
+          <div class="checkout-field checkout-field-wide">
+            <label class="checkout-label">Correo electrónico</label>
+            <input class="checkout-input" id="registerEmail" type="email" placeholder="tu@correo.com" required />
+          </div>
+          <div class="checkout-field checkout-field-wide">
+            <label class="checkout-label">Celular</label>
+            <input class="checkout-input" id="registerPhone" placeholder="3001234567" />
+          </div>
+          <div class="checkout-field checkout-field-wide">
+            <label class="checkout-label">Contraseña (mín. 6 caracteres)</label>
+            <input class="checkout-input" id="registerPassword" type="password" placeholder="••••••••" required />
+          </div>
+          <div class="checkout-actions">
+            <button type="submit" class="btn btn-gradient" id="registerBtn" style="width:100%;justify-content:center;">Crear cuenta</button>
+          </div>
+          <p style="text-align:center;margin-top:12px;font-size:0.8125rem;color:#86868b;">
+            ¿Ya tienes cuenta? <a href="#" onclick="showLoginForm();return false;" style="color:#a5b4fc;">Ingresa</a>
+          </p>
+        </form>
+      </div>
+    </div>
+  </div>
 </body>
 </html>

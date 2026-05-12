@@ -747,6 +747,19 @@ def list_orders():
     return response(200, {"ok": True, "orders": items})
 
 
+def list_users():
+    items = users_table.scan().get("Items", [])
+    items.sort(key=lambda x: x.get("createdAt", ""), reverse=True)
+    safe = [{
+        "userId": u.get("userId", ""),
+        "email": u.get("email", ""),
+        "name": u.get("name", ""),
+        "phone": u.get("phone", ""),
+        "createdAt": u.get("createdAt", ""),
+    } for u in items]
+    return response(200, {"ok": True, "users": safe})
+
+
 def update_order_admin(reference, body):
     if not body:
         return response(400, {"error": "invalid_json"})
@@ -1785,5 +1798,8 @@ def handler(event, context):
         if not reference:
             return response(400, {"error": "missing_reference"})
         return update_order_admin(reference, get_json_body(event))
+
+    if path == "/api/admin/users" and method == "GET":
+        return list_users()
 
     return response(404, {"error": "not_found"})

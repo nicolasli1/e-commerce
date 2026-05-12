@@ -205,7 +205,7 @@ class BackendStack(Stack):
                     apigwv2.CorsHttpMethod.DELETE,
                     apigwv2.CorsHttpMethod.OPTIONS,
                 ],
-                allow_headers=["Content-Type", "Authorization"],
+                allow_headers=["Content-Type", "Authorization", "x-api-key"],
                 max_age=Duration.days(1),
             ),
         )
@@ -250,6 +250,30 @@ class BackendStack(Stack):
         http_api.add_routes(
             path="/api/webhooks/mercadopago",
             methods=[apigwv2.HttpMethod.POST],
+            integration=lambda_integration,
+        )
+
+        # ── Auth routes (user registration + login) ──
+        http_api.add_routes(
+            path="/api/auth/register",
+            methods=[apigwv2.HttpMethod.POST],
+            integration=lambda_integration,
+        )
+        http_api.add_routes(
+            path="/api/auth/login",
+            methods=[apigwv2.HttpMethod.POST],
+            integration=lambda_integration,
+        )
+        http_api.add_routes(
+            path="/api/auth/me",
+            methods=[apigwv2.HttpMethod.GET],
+            integration=lambda_integration,
+        )
+
+        # ── User orders (authenticated) ──
+        http_api.add_routes(
+            path="/api/orders",
+            methods=[apigwv2.HttpMethod.GET],
             integration=lambda_integration,
         )
 
@@ -307,6 +331,11 @@ class BackendStack(Stack):
         http_api.add_routes(
             path="/api/admin/orders/{reference}",
             methods=[apigwv2.HttpMethod.PUT],
+            integration=lambda_integration,
+        )
+        http_api.add_routes(
+            path="/api/admin/users",
+            methods=[apigwv2.HttpMethod.GET],
             integration=lambda_integration,
         )
 
