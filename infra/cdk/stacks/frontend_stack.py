@@ -32,6 +32,8 @@ class FrontendStack(Stack):
         environment: str = "dev",
         price_class: str = "PriceClass_100",
         api_endpoint: Optional[str] = None,
+        images_bucket_domain: Optional[str] = None,
+        images_bucket_name: Optional[str] = None,
         **kwargs,
     ) -> None:
         super().__init__(scope, id, **kwargs)
@@ -244,9 +246,28 @@ class FrontendStack(Stack):
         # )
 
         # ------------------------------------------------------------------
+        # 4b. CloudFront Function — Rate limiting for /api/*
+        # ------------------------------------------------------------------
+        rate_limit_func = cloudfront.CfnFunction(
+            self,
+            "RateLimitFunction",
+            name=f"{project_name}-{environment}-rate-limit",
+            auto_publish=True,
+            function_code=(
+                pathlib.Path(__file__).parent.parent
+                / "cloudfront-functions"
+                / "rate-limit.js"
+            ).read_text(),
+            function_config=cloudfront.CfnFunction.FunctionConfigProperty(
+                comment="Rate limit /api/* to 100 req/min, /api/auth/login to 10 req/min",
+                runtime="cloudfront-js-2.0",
+            ),
+        )
+
+        # ------------------------------------------------------------------
         # 5. CloudFront distribution
         # ------------------------------------------------------------------
-        # Build origins list: always the S3 origin, optionally the API origin
+        # Build origins list: always the S3 origin, optionally the API + images origins
         origins = [
             cloudfront.CfnDistribution.OriginProperty(
                 id="S3Origin",
@@ -255,6 +276,19 @@ class FrontendStack(Stack):
                 s3_origin_config=cloudfront.CfnDistribution.S3OriginConfigProperty(),
             )
         ]
+
+        # S3 origin for product images (cross-region bucket)
+        if images_bucket_domain:
+            origins.append(
+                cloudfront.CfnDistribution.OriginProperty(
+                    id="ImagesOrigin",
+                    domain_name=images_bucket_domain,
+                    s3_origin_config=cloudfront.CfnDistribution.S3OriginConfigProperty(
+                        origin_access_identity=None,
+                    ),
+                    origin_access_control_id=oac.ref,
+                )
+            )
 
         # Default cache behavior – static assets from S3
         default_cache_behavior = (
@@ -312,6 +346,12 @@ class FrontendStack(Stack):
                     ],
                     cached_methods=["GET", "HEAD"],
                     response_headers_policy_id=security_headers.ref,
+                    function_associations=[
+                        cloudfront.CfnDistribution.FunctionAssociationProperty(
+                            event_type="viewer-request",
+                            function_arn=rate_limit_func.attr_function_arn,
+                        )
+                    ],
                     forwarded_values=cloudfront.CfnDistribution.ForwardedValuesProperty(
                         query_string=True,
                         headers=[
@@ -347,6 +387,29 @@ class FrontendStack(Stack):
                         query_string=True,
                         cookies=cloudfront.CfnDistribution.CookiesProperty(
                             forward="all"
+                        ),
+                    ),
+                )
+            )
+
+        # Images cache behavior — long cache, no query strings
+        if images_bucket_domain:
+            cache_behaviors.append(
+                cloudfront.CfnDistribution.CacheBehaviorProperty(
+                    path_pattern="images/*",
+                    target_origin_id="ImagesOrigin",
+                    viewer_protocol_policy="redirect-to-https",
+                    compress=True,
+                    allowed_methods=["GET", "HEAD", "OPTIONS"],
+                    cached_methods=["GET", "HEAD"],
+                    response_headers_policy_id=security_headers.ref,
+                    default_ttl=86400,
+                    max_ttl=31536000,
+                    min_ttl=86400,
+                    forwarded_values=cloudfront.CfnDistribution.ForwardedValuesProperty(
+                        query_string=False,
+                        cookies=cloudfront.CfnDistribution.CookiesProperty(
+                            forward="none"
                         ),
                     ),
                 )

@@ -190,6 +190,63 @@ class BackendStack(Stack):
         )
 
         # ------------------------------------------------------------------
+        # 2b. S3 bucket for product images + image processing Lambda
+        # ------------------------------------------------------------------
+        images_bucket = s3.Bucket(
+            self,
+            "ImagesBucket",
+            bucket_name=f"{project_name}-{environment}-{self.account}-{self.region}-images",
+            encryption=s3.BucketEncryption.S3_MANAGED,
+            block_public_access=s3.BlockPublicAccess.BLOCK_ALL,
+            versioned=True,
+            removal_policy=RemovalPolicy.RETAIN,
+        )
+
+        # Pillow Lambda Layer
+        pillow_layer_dir = pathlib.Path(__file__).parent.parent / "lambda_src" / "layers" / "pillow"
+        pillow_layer = lambda_.LayerVersion(
+            self,
+            "PillowLayer",
+            code=lambda_.Code.from_asset(str(pillow_layer_dir)),
+            compatible_runtimes=[lambda_.Runtime.PYTHON_3_12],
+            description="Pillow image processing library",
+        )
+
+        # Image processing Lambda
+        image_handler = lambda_.Function(
+            self,
+            "ImageHandler",
+            function_name=f"{project_name}-{environment}-image-processor",
+            runtime=lambda_.Runtime.PYTHON_3_12,
+            handler="handler.handler",
+            code=lambda_.Code.from_asset(
+                str(pathlib.Path(__file__).parent.parent / "lambda_src" / "image_handler")
+            ),
+            layers=[pillow_layer],
+            timeout=Duration.seconds(30),
+            memory_size=512,
+            environment={
+                "IMAGES_BUCKET": images_bucket.bucket_name,
+                "ADMIN_SESSION_SECRET_PARAM": f"/{project_name}/{environment}/admin-session-secret",
+            },
+        )
+
+        # Grant image handler access to S3 images bucket
+        images_bucket.grant_read_write(image_handler)
+        image_handler.add_to_role_policy(
+            iam.PolicyStatement(
+                actions=["ssm:GetParameter"],
+                resources=[
+                    f"arn:aws:ssm:{self.region}:{self.account}:parameter/{project_name}/{environment}/admin-session-secret"
+                ],
+            )
+        )
+
+        # Store for cross-stack reference
+        self._images_bucket_domain = images_bucket.bucket_regional_domain_name
+        self._images_bucket_name = images_bucket.bucket_name
+
+        # ------------------------------------------------------------------
         # 3. HTTP API (API Gateway v2)
         # ------------------------------------------------------------------
         http_api = apigwv2.HttpApi(
@@ -277,6 +334,16 @@ class BackendStack(Stack):
             integration=lambda_integration,
         )
 
+        # ── Image processing route ──
+        http_api.add_routes(
+            path="/api/admin/products/image",
+            methods=[apigwv2.HttpMethod.POST],
+            integration=integrations.HttpLambdaIntegration(
+                "ImageHandlerIntegration",
+                handler=image_handler,
+            ),
+        )
+
         # ── Admin/Backoffice routes ──
         http_api.add_routes(
             path="/api/admin/login",
@@ -351,6 +418,9 @@ class BackendStack(Stack):
         CfnOutput(self, "QuotesTableName", value=quotes_table.table_name)
         CfnOutput(self, "OrdersTableName", value=orders_table.table_name)
         CfnOutput(self, "UsersTableName", value=users_table.table_name)
+        CfnOutput(self, "ImagesBucketName", value=images_bucket.bucket_name)
+        CfnOutput(self, "ImagesBucketDomain", value=images_bucket.bucket_regional_domain_name)
+        CfnOutput(self, "ImageHandlerFunctionName", value=image_handler.function_name)
         CfnOutput(self, "LambdaFunctionName", value=api_lambda.function_name)
         CfnOutput(self, "WompiWebhookUrl", value=f"{http_api.api_endpoint}/api/webhooks/wompi")
         CfnOutput(self, "MercadoPagoWebhookUrl", value=f"{http_api.api_endpoint}/api/webhooks/mercadopago")
