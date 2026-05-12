@@ -6,6 +6,7 @@ from aws_cdk import (
     aws_apigatewayv2 as apigwv2,
     aws_apigatewayv2_integrations as integrations,
     aws_iam as iam,
+    aws_s3 as s3,
     CfnOutput,
     Stack,
     RemovalPolicy,
