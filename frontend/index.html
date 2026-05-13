@@ -2768,6 +2768,46 @@
       setTimeout(() => t.remove(), 3000);
     }
 
+    // Search bar toggle + live filtering
+    var searchVisible = false;
+    function toggleSearch() {
+      var bar = document.getElementById('searchBar');
+      var input = document.getElementById('searchInput');
+      if (!bar) return;
+      searchVisible = !searchVisible;
+      bar.classList.toggle('visible', searchVisible);
+      if (searchVisible && input) { input.focus(); input.select(); }
+      else if (input) { input.value = ''; filterProducts(''); }
+    }
+    function clearSearch() {
+      var input = document.getElementById('searchInput');
+      if (input) { input.value = ''; input.focus(); filterProducts(''); }
+    }
+    function filterProducts(query) {
+      var grid = document.getElementById('productsGrid');
+      if (!grid) return;
+      var cards = grid.querySelectorAll('.product-card');
+      var q = query.toLowerCase().trim();
+      cards.forEach(function(card) {
+        var name = (card.querySelector('h3') || {}).textContent || '';
+        card.style.display = (!q || name.toLowerCase().includes(q)) ? '' : 'none';
+      });
+      var info = document.getElementById('productsFilterInfo');
+      if (info) {
+        var visible = grid.querySelectorAll('.product-card[style*="display: none"]');
+        var total = cards.length;
+        var shown = total - visible.length;
+        info.textContent = q ? shown + ' de ' + total + ' productos para "' + q + '"' : 'Mostrando todo el catálogo disponible.';
+      }
+    }
+    // Wire search input
+    document.addEventListener('DOMContentLoaded', function() {
+      var input = document.getElementById('searchInput');
+      if (input) {
+        input.addEventListener('input', function() { filterProducts(this.value); });
+      }
+    });
+
     // Mobile nav slide-in panel
     function openMobileNav() {
       document.getElementById('mobileNavPanel')?.classList.add('open');
