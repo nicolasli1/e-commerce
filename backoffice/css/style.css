@@ -981,6 +981,347 @@ tbody tr.deleted {
 }
 
 /* ===========================================================
+   DASHBOARD — Premium Redesign (Today Widget, Sparkline, Animations)
+   =========================================================== */
+
+/* ── Today Widget ── */
+.today-widget {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 28px;
+  padding: 20px 24px;
+  background: var(--bg-glass);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border: 1px solid var(--border-glass);
+  border-radius: var(--radius-lg);
+  transition: border-color 0.3s ease;
+}
+
+.today-widget:hover {
+  border-color: var(--border-hover);
+}
+
+.today-greeting {
+  font-size: 1.25rem;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  background: var(--accent-gradient);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+.today-date {
+  font-size: 0.8125rem;
+  color: var(--text-secondary);
+  margin-top: 2px;
+  text-transform: capitalize;
+}
+
+.today-stat {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 0.875rem;
+  color: var(--text-secondary);
+  padding: 8px 16px;
+  background: rgba(255,255,255,0.04);
+  border-radius: var(--radius-pill);
+  border: 1px solid var(--border-glass);
+  white-space: nowrap;
+}
+
+/* ── Pulse Dot ── */
+.pulse-dot {
+  display: inline-block;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--text-muted);
+}
+
+.pulse-dot.active {
+  background: var(--success);
+  box-shadow: 0 0 0 0 rgba(34, 197, 94, 0.6);
+  animation: pulse-dot 2s infinite;
+}
+
+@keyframes pulse-dot {
+  0% { box-shadow: 0 0 0 0 rgba(34, 197, 94, 0.6); }
+  70% { box-shadow: 0 0 0 8px rgba(34, 197, 94, 0); }
+  100% { box-shadow: 0 0 0 0 rgba(34, 197, 94, 0); }
+}
+
+/* ── Hero Cards — Glassmorphism Enhancement ── */
+.dash-hero-card {
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid rgba(255,255,255,0.08);
+  border-radius: var(--radius-lg);
+  padding: 24px;
+  display: flex;
+  align-items: flex-start;
+  gap: 16px;
+  position: relative;
+  overflow: hidden;
+  transition: transform 0.3s ease, box-shadow 0.3s ease;
+  cursor: default;
+}
+
+.dash-hero-card:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 16px 48px rgba(0,0,0,0.3);
+}
+
+/* Glow orb pseudo-element (stronger than before) */
+.dash-hero-glow {
+  position: absolute;
+  top: -60%;
+  right: -40%;
+  width: 280px;
+  height: 280px;
+  border-radius: 50%;
+  opacity: 0.08;
+  pointer-events: none;
+  transition: opacity 0.4s ease, transform 0.4s ease;
+}
+
+.dash-hero-card:hover .dash-hero-glow {
+  opacity: 0.14;
+  transform: scale(1.15);
+}
+
+.dash-hero-revenue .dash-hero-glow {
+  background: radial-gradient(circle, #6366f1, #a855f7, transparent 70%);
+}
+
+.dash-hero-orders .dash-hero-glow {
+  background: radial-gradient(circle, #22c55e, transparent 70%);
+}
+
+.dash-hero-products .dash-hero-glow {
+  background: radial-gradient(circle, #ec4899, transparent 70%);
+}
+
+/* Hero value fade-in-up animation */
+.dash-hero-value {
+  font-size: 1.75rem;
+  font-weight: 700;
+  letter-spacing: -0.03em;
+  line-height: 1.2;
+  opacity: 0;
+  transform: translateY(12px);
+  transition: opacity 0.6s cubic-bezier(0.34, 1.56, 0.64, 1), transform 0.6s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+.dash-hero-value.num-visible {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+/* ── Sparkline (CSS bars) ── */
+.sparkline {
+  display: flex;
+  align-items: flex-end;
+  gap: 3px;
+  height: 40px;
+  padding-top: 8px;
+  position: relative;
+  flex: 1 1 100%;
+  margin-top: 8px;
+}
+
+.sparkline-bar {
+  width: 4px;
+  min-height: 2px;
+  border-radius: 2px;
+  background: linear-gradient(to top, rgba(99,102,241,0.3), rgba(168,85,247,0.6));
+  transition: height 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
+  flex-shrink: 0;
+}
+
+.dash-hero-revenue .sparkline-bar {
+  background: linear-gradient(to top, rgba(99,102,241,0.3), rgba(168,85,247,0.6));
+}
+
+.sparkline-label {
+  position: absolute;
+  bottom: -4px;
+  right: 0;
+  font-size: 0.625rem;
+  color: var(--text-muted);
+  letter-spacing: 0.03em;
+}
+
+/* ── Status bars with gradient fills ── */
+.status-bar-fill {
+  height: 100%;
+  border-radius: 9999px;
+  transition: width 0.8s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+/* Gradient fills for status types */
+.status-fill-approved {
+  background: linear-gradient(90deg, #22c55e, #16a34a);
+}
+
+.status-fill-checkout_created {
+  background: linear-gradient(90deg, #f59e0b, #d97706);
+}
+
+.status-fill-pending {
+  background: linear-gradient(90deg, #f59e0b, #d97706);
+}
+
+.status-fill-declined {
+  background: linear-gradient(90deg, #ef4444, #dc2626);
+}
+
+.status-fill-cancelled {
+  background: linear-gradient(90deg, #6b7280, #4b5563);
+}
+
+.status-fill-chargedback {
+  background: linear-gradient(90deg, #ef4444, #dc2626);
+}
+
+.status-fill-refunded {
+  background: linear-gradient(90deg, #a855f7, #7c3aed);
+}
+
+.status-fill-pending_payment {
+  background: linear-gradient(90deg, #f59e0b, #d97706);
+}
+
+.status-fill-ready_to_fulfill {
+  background: linear-gradient(90deg, #3b82f6, #2563eb);
+}
+
+.status-fill-processing {
+  background: linear-gradient(90deg, #6366f1, #4f46e5);
+}
+
+.status-fill-shipped {
+  background: linear-gradient(90deg, #a855f7, #7c3aed);
+}
+
+.status-fill-delivered {
+  background: linear-gradient(90deg, #22c55e, #16a34a);
+}
+
+.status-fill-returned {
+  background: linear-gradient(90deg, #ef4444, #dc2626);
+}
+
+.status-fill-unknown {
+  background: linear-gradient(90deg, #6b7280, #4b5563);
+}
+
+.status-bar-count {
+  width: 32px;
+  text-align: right;
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+/* ── Quick Action Chips (pill style) ── */
+.dash-action-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  padding: 12px 22px;
+  border-radius: var(--radius-pill);
+  background: linear-gradient(135deg, rgba(255,255,255,0.06), rgba(255,255,255,0.02));
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid var(--border-glass);
+  color: var(--text-primary);
+  font-size: 0.875rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.25s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+.dash-action-chip:hover {
+  transform: scale(1.05);
+  border-color: var(--border-hover);
+  box-shadow: 0 4px 20px rgba(99,102,241,0.15);
+  background: linear-gradient(135deg, rgba(255,255,255,0.10), rgba(255,255,255,0.04));
+}
+
+.dash-action-chip-icon {
+  font-size: 1.125rem;
+}
+
+/* ── Mobile Recent Orders Cards ── */
+.recent-orders-mobile {
+  display: none;
+  padding: 0 16px 16px;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.recent-orders-mobile-card {
+  background: rgba(255,255,255,0.03);
+  border: 1px solid var(--border-glass);
+  border-radius: var(--radius-md);
+  padding: 14px 16px;
+  transition: border-color 0.2s ease, background 0.2s ease;
+}
+
+.recent-orders-mobile-card:hover {
+  border-color: var(--border-hover);
+  background: rgba(255,255,255,0.05);
+}
+
+.romc-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 6px;
+}
+
+.romc-total {
+  font-weight: 700;
+  font-size: 0.9375rem;
+  letter-spacing: -0.02em;
+}
+
+.romc-customer {
+  font-size: 0.8125rem;
+  color: var(--text-secondary);
+  margin-bottom: 10px;
+}
+
+.romc-footer {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.romc-date {
+  font-size: 0.6875rem;
+  color: var(--text-muted);
+  margin-left: auto;
+  white-space: nowrap;
+}
+
+/* ── Fade-in-up animation ── */
+@keyframes fadeInUp {
+  from {
+    opacity: 0;
+    transform: translateY(16px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* ===========================================================
    RESPONSIVE — Dashboard
    =========================================================== */
 @media (max-width: 1024px) {
@@ -1027,6 +1368,40 @@ tbody tr.deleted {
     font-size: 0.8125rem;
     flex: 1;
     justify-content: center;
+  }
+  /* ── Premium mobile additions ── */
+  .today-widget {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 12px;
+    padding: 16px 18px;
+  }
+  .today-greeting {
+    font-size: 1.125rem;
+  }
+  .today-stat {
+    align-self: stretch;
+    justify-content: center;
+  }
+  .sparkline {
+    height: 30px;
+    margin-top: 4px;
+  }
+  .sparkline-bar {
+    width: 3px;
+  }
+  .dash-action-chip {
+    flex: 1;
+    justify-content: center;
+    padding: 10px 14px;
+    font-size: 0.8125rem;
+  }
+  /* Hide desktop table, show mobile cards */
+  .recent-orders-table {
+    display: none;
+  }
+  .recent-orders-mobile {
+    display: flex;
   }
 }
 

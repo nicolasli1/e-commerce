@@ -198,48 +198,89 @@ const App = (() => {
     const totalRevenueFormatted = fmtCOP(data.totalRevenueInCents || 0);
     const paidOrders = data.approvedOrders || 0;
     const pendingOrders = data.pendingOrders || 0;
+    const totalProducts = data.totalProducts || 0;
+    const totalLeads = data.totalLeads || 0;
+    const totalUsers = data.totalUsers || 0;
 
-    // Build status bars
+    // ── Today widget greeting ──
+    const hour = new Date().getHours();
+    let greeting = 'Buenas noches';
+    if (hour >= 5 && hour < 12) greeting = 'Buenos días';
+    else if (hour >= 12 && hour < 18) greeting = 'Buenas tardes';
+    const now = new Date();
+    const todayStr = now.toLocaleDateString('es-CO', {
+      weekday: 'long', year: 'numeric', month: 'long', day: 'numeric'
+    });
+    const todayOrders = (data.recentOrders || []).filter(o => {
+      if (!o.createdAt) return false;
+      return new Date(o.createdAt).toDateString() === now.toDateString();
+    }).length;
+
+    // ── Sparkline (mock last 7 days) ──
+    const sparklineData = [12, 19, 8, 15, 22, 18, 25];
+    const sparkMax = Math.max(...sparklineData, 1);
+
+    // ── Status bars builder ──
     const orderStatuses = data.orderStatuses || {};
     const fulfillmentStatuses = data.fulfillmentStatuses || {};
-    const maxStatus = Math.max(1, ...Object.values(orderStatuses));
+    const maxOrderVal = Math.max(1, ...Object.values(orderStatuses));
+    const maxFulfillVal = Math.max(1, ...Object.values(fulfillmentStatuses));
 
-    function statusBar(key, count, total) {
-      const pct = total > 0 ? Math.round((count / total) * 100) : 0;
+    function statusBar(key, count, maxVal) {
       const label = statusLabel(key);
-      const pctWidth = total > 0 ? (count / Math.max(...Object.values(orderStatuses))) * 100 : 0;
+      const pctWidth = maxVal > 0 ? (count / maxVal) * 100 : 0;
       return `
         <div class="status-bar-row">
           <span class="status-bar-label">${label}</span>
           <div class="status-bar-track">
-            <div class="status-bar-fill status-fill-${key.toLowerCase()}" style="width:${pctWidth}%"></div>
+            <div class="status-bar-fill status-fill-${key.toLowerCase()}" data-width="${pctWidth}" style="width:0%"></div>
           </div>
           <span class="status-bar-count">${count}</span>
-          <span class="status-bar-pct">${pct}%</span>
         </div>`;
     }
 
     const orderBars = Object.entries(orderStatuses)
       .sort((a, b) => b[1] - a[1])
-      .map(([k, v]) => statusBar(k, v, data.totalOrders || 0))
+      .map(([k, v]) => statusBar(k, v, maxOrderVal))
       .join('');
 
     const fulfillmentBars = Object.entries(fulfillmentStatuses)
       .sort((a, b) => b[1] - a[1])
-      .map(([k, v]) => statusBar(k, v, data.totalOrders || 0))
+      .map(([k, v]) => statusBar(k, v, maxFulfillVal))
       .join('');
 
+    // ── Build the template ──
     $main.innerHTML = `
-      <!-- Hero Cards -->
+      <!-- Today Widget -->
+      <div class="today-widget">
+        <div>
+          <div class="today-greeting">${greeting}, Admin</div>
+          <div class="today-date">${todayStr}</div>
+        </div>
+        <div class="today-stat">
+          <span class="pulse-dot ${todayOrders > 0 ? 'active' : ''}"></span>
+          📦 ${todayOrders} pedido${todayOrders !== 1 ? 's' : ''} hoy
+        </div>
+      </div>
+
+      <!-- Apple-style Hero Cards -->
       <div class="dash-hero">
         <div class="dash-hero-card dash-hero-revenue">
+          <div class="dash-hero-glow"></div>
           <div class="dash-hero-icon">💰</div>
           <div class="dash-hero-content">
             <div class="dash-hero-label">Ingresos (aprobados)</div>
             <div class="dash-hero-value">${totalRevenueFormatted}</div>
           </div>
+          <div class="sparkline">
+            ${sparklineData.map(v => `
+              <div class="sparkline-bar" style="height:${(v / sparkMax) * 100}%"></div>
+            `).join('')}
+            <span class="sparkline-label">Últimos 7 días</span>
+          </div>
         </div>
         <div class="dash-hero-card dash-hero-orders">
+          <div class="dash-hero-glow"></div>
           <div class="dash-hero-icon">🛒</div>
           <div class="dash-hero-content">
             <div class="dash-hero-label">Pedidos</div>
@@ -248,16 +289,17 @@ const App = (() => {
           </div>
         </div>
         <div class="dash-hero-card dash-hero-products">
+          <div class="dash-hero-glow"></div>
           <div class="dash-hero-icon">📦</div>
           <div class="dash-hero-content">
             <div class="dash-hero-label">Catálogo</div>
-            <div class="dash-hero-value">${data.totalProducts || 0} productos</div>
-            <div class="dash-hero-sub">${data.totalLeads || 0} leads · ${data.totalUsers || 0} usuarios</div>
+            <div class="dash-hero-value">${totalProducts} productos</div>
+            <div class="dash-hero-sub">${totalLeads} leads · ${totalUsers} usuarios</div>
           </div>
         </div>
       </div>
 
-      <!-- Status Breakdown -->
+      <!-- Status sections (side-by-side) -->
       <div class="dash-grid">
         <div class="dash-section card">
           <div class="dash-section-header">
@@ -277,33 +319,33 @@ const App = (() => {
         </div>
       </div>
 
-      <!-- Quick Actions -->
+      <!-- Quick Actions (pill chips) -->
       <div class="dash-actions">
-        <a class="dash-action-btn" href="#/orders">
-          <span class="dash-action-icon">📋</span>
+        <a class="dash-action-chip" href="#/orders">
+          <span class="dash-action-chip-icon">📋</span>
           <span>Ver pedidos</span>
         </a>
-        <a class="dash-action-btn" href="#/products">
-          <span class="dash-action-icon">➕</span>
+        <a class="dash-action-chip" href="#/products">
+          <span class="dash-action-chip-icon">➕</span>
           <span>Nuevo producto</span>
         </a>
-        <a class="dash-action-btn" href="#/leads">
-          <span class="dash-action-icon">👤</span>
+        <a class="dash-action-chip" href="#/leads">
+          <span class="dash-action-chip-icon">👤</span>
           <span>Ver leads</span>
         </a>
-        <a class="dash-action-btn" href="#/quotes">
-          <span class="dash-action-icon">📋</span>
+        <a class="dash-action-chip" href="#/quotes">
+          <span class="dash-action-chip-icon">📋</span>
           <span>Cotizaciones</span>
         </a>
       </div>
 
       <!-- Recent Orders -->
-      <div class="table-container">
+      <div class="table-container recent-orders-section">
         <div class="table-toolbar">
           <h3 style="font-size:0.9375rem;font-weight:600;">🕐 Últimos Pedidos</h3>
           <a href="#/orders" class="btn btn-secondary btn-sm">Ver todos →</a>
         </div>
-        <table>
+        <table class="recent-orders-table">
           <thead>
             <tr>
               <th>Referencia</th>
@@ -316,17 +358,32 @@ const App = (() => {
           </thead>
           <tbody id="recentOrdersBody"></tbody>
         </table>
+        <div id="recentOrdersMobile" class="recent-orders-mobile"></div>
       </div>`;
 
-    // Render recent orders
+    // ── Animate hero numbers & status bars ──
+    requestAnimationFrame(() => {
+      document.querySelectorAll('.dash-hero-value').forEach(el => el.classList.add('num-visible'));
+      document.querySelectorAll('.status-bar-fill').forEach(el => {
+        const w = parseFloat(el.dataset.width || 0);
+        el.style.width = w + '%';
+      });
+    });
+
+    // ── Render recent orders (desktop + mobile cards) ──
     const ordersTbody = document.getElementById('recentOrdersBody');
+    const mobileContainer = document.getElementById('recentOrdersMobile');
     const recentOrders = data.recentOrders || [];
+
     if (recentOrders.length === 0) {
       ordersTbody.innerHTML = '<tr><td colspan="6" style="text-align:center;padding:40px;color:var(--text-secondary);">Sin pedidos recientes</td></tr>';
+      if (mobileContainer) mobileContainer.innerHTML = '<div class="recent-orders-mobile-card" style="text-align:center;padding:40px;color:var(--text-secondary);">Sin pedidos recientes</div>';
     } else {
       recentOrders.forEach((o) => {
         const paymentCls = 'badge-' + (o.status === 'APPROVED' ? 'active' : o.status === 'DECLINED' || o.status === 'CANCELLED' ? 'inactive' : 'pending');
         const fulfillCls = o.fulfillmentStatus === 'DELIVERED' ? 'badge-active' : o.fulfillmentStatus === 'SHIPPED' ? 'badge-contacted' : 'badge-pending';
+
+        // Desktop row
         const tr = $el('tr');
         tr.innerHTML = `
           <td><span class="ref-badge">${esc(o.reference || '—')}</span></td>
@@ -336,6 +393,23 @@ const App = (() => {
           <td style="font-weight:600;">${fmtCOP(o.amountInCents || 0)}</td>
           <td style="color:var(--text-secondary);font-size:0.8125rem;white-space:nowrap;">${formatDate(o.createdAt)}</td>`;
         ordersTbody.appendChild(tr);
+
+        // Mobile card
+        if (mobileContainer) {
+          const card = $el('div', { className: 'recent-orders-mobile-card' });
+          card.innerHTML = `
+            <div class="romc-header">
+              <span class="ref-badge">${esc(o.reference || '—')}</span>
+              <span class="romc-total">${fmtCOP(o.amountInCents || 0)}</span>
+            </div>
+            <div class="romc-customer">${esc(o.customerName || '—')}</div>
+            <div class="romc-footer">
+              <span class="badge ${paymentCls}">${statusLabel(o.status)}</span>
+              <span class="badge ${fulfillCls}">${fulfillmentLabel(o.fulfillmentStatus)}</span>
+              <span class="romc-date">${formatDate(o.createdAt)}</span>
+            </div>`;
+          mobileContainer.appendChild(card);
+        }
       });
     }
   }
