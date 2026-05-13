@@ -87,6 +87,56 @@ jobs:
           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
           aws-region: ${{ env.AWS_REGION }}
 
+      # --- SSM Secrets (crear si no existen) ---
+      - name: Create SSM admin secrets if missing
+        run: |
+          SSM_PATH="/${{ env.PROJECT_NAME }}/${{ env.ENVIRONMENT }}"
+
+          # admin-user (String)
+          EXISTING_USER=$(aws ssm get-parameter --name "${SSM_PATH}/admin-user" --region ${{ env.BACKEND_REGION }} --query 'Parameter.Value' --output text 2>/dev/null || echo "")
+          if [ -z "$EXISTING_USER" ]; then
+            aws ssm put-parameter \
+              --name "${SSM_PATH}/admin-user" \
+              --value "admin" \
+              --type "String" \
+              --description "Admin username for backoffice login" \
+              --overwrite \
+              --region ${{ env.BACKEND_REGION }} > /dev/null
+            echo "   ✅ Created admin-user"
+          else
+            echo "   ✅ admin-user already exists"
+          fi
+
+          # admin-password (SecureString) — siempre rotar
+          PASSWORD=$(python3 -c "import secrets; print(secrets.token_urlsafe(16))")
+          aws ssm put-parameter \
+            --name "${SSM_PATH}/admin-password" \
+            --value "$PASSWORD" \
+            --type "SecureString" \
+            --description "Admin password for backoffice login" \
+            --overwrite \
+            --region ${{ env.BACKEND_REGION }} > /dev/null
+          echo "   ✅ admin-password rotated"
+
+          # admin-session-secret (SecureString) — siempre rotar
+          SESSION_SECRET=$(python3 -c "import secrets; print(secrets.token_hex(32))")
+          aws ssm put-parameter \
+            --name "${SSM_PATH}/admin-session-secret" \
+            --value "$SESSION_SECRET" \
+            --type "SecureString" \
+            --description "Secret key for signing admin session tokens" \
+            --overwrite \
+            --region ${{ env.BACKEND_REGION }} > /dev/null
+          echo "   ✅ admin-session-secret rotated"
+
+          echo ""
+          echo "═══════════════════════════════════════════════"
+          echo "  🔐 SSM Secrets for ${SSM_PATH}"
+          echo "  User:     admin"
+          echo "  Password: ${PASSWORD}"
+          echo "  ⚠️  GUARDA ESTE PASSWORD"
+          echo "═══════════════════════════════════════════════"
+
       # --- Setup ---
       - name: Setup Python ${{ env.PYTHON_VERSION }}
         uses: actions/setup-python@v5
