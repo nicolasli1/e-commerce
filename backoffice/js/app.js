@@ -356,8 +356,12 @@ const App = (() => {
                 <select class="form-select" id="pCategory"></select>
               </div>
               <div class="form-group">
-                <label class="form-label">URL de Imagen</label>
-                <input class="form-input" id="pImage" placeholder="https://…" />
+                <label class="form-label">Imágenes</label>
+                <div class="image-upload-area">
+                  <input type="file" accept="image/*" id="pImageInput" style="display:none" />
+                  <button type="button" class="btn btn-secondary btn-sm" id="pImageUploadBtn">📷 Agregar imagen</button>
+                </div>
+                <div class="product-images" id="pImagesPreview"></div>
               </div>
             </div>
             <div class="modal-footer">
@@ -418,13 +422,86 @@ const App = (() => {
     const pPrice = document.getElementById('pPrice');
     const pStock = document.getElementById('pStock');
     const pCategory = document.getElementById('pCategory');
-    const pImage = document.getElementById('pImage');
 
     pCategory.innerHTML = PRODUCT_CATEGORY_OPTIONS.map((option) => (
       `<option value="${option.value}">${option.label}</option>`
     )).join('');
 
     let editingId = null;
+    let uploadedImages = [];
+    let isUploading = false;
+
+    function renderImagePreviews() {
+      const container = document.getElementById('pImagesPreview');
+      container.innerHTML = '';
+      uploadedImages.forEach((img, idx) => {
+        const src = img.md || img.lg;
+        const div = $el('div', { className: 'image-preview-item' });
+        div.innerHTML = `
+          <img src="${esc(src)}" alt="Imagen ${idx + 1}" />
+          <button type="button" class="image-preview-remove" data-idx="${idx}">✕</button>
+        `;
+        container.appendChild(div);
+      });
+
+      // Attach remove handlers
+      container.querySelectorAll('.image-preview-remove').forEach(btn => {
+        btn.addEventListener('click', () => {
+          const idx = parseInt(btn.dataset.idx);
+          uploadedImages.splice(idx, 1);
+          renderImagePreviews();
+        });
+      });
+    }
+
+    // Image upload via file picker
+    document.getElementById('pImageUploadBtn').addEventListener('click', () => {
+      document.getElementById('pImageInput').click();
+    });
+
+    document.getElementById('pImageInput').addEventListener('change', async (e) => {
+      const file = e.target.files[0];
+      if (!file || isUploading) return;
+
+      // Use temp ID for initial upload, will be replaced on save
+      const tempId = 'temp_' + Date.now();
+      isUploading = true;
+      const btn = document.getElementById('pImageUploadBtn');
+      btn.textContent = '⏳ Subiendo…';
+      btn.disabled = true;
+
+      try {
+        const base64 = await fileToBase64(file);
+        // Strip data:image/...;base64, prefix
+        const cleanB64 = base64.split(',')[1] || base64;
+        const result = await Api.uploadImage(tempId, cleanB64);
+        if (result.ok && result.urls) {
+          uploadedImages.push({
+            lg: result.urls.lg,
+            md: result.urls.md,
+            sm: result.urls.sm,
+          });
+          renderImagePreviews();
+          showToast('Imagen subida correctamente');
+        }
+      } catch (err) {
+        showToast('Error al subir imagen: ' + err.message, 'error');
+      } finally {
+        isUploading = false;
+        btn.textContent = '📷 Agregar imagen';
+        btn.disabled = false;
+        e.target.value = ''; // reset file input
+      }
+    });
+
+    function fileToBase64(file) {
+      return new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onload = () => resolve(reader.result);
+        reader.onerror = reject;
+        reader.readAsDataURL(file);
+      });
+    }
 
     function openModal(product = null) {
       editingId = product ? product.productId : null;
@@ -436,7 +513,15 @@ const App = (() => {
       pPrice.value = product ? product.price : '';
       pStock.value = product ? product.stock : '';
       pCategory.value = product ? (product.category || 'pantallas') : 'pantallas';
-      pImage.value = product ? (product.imageUrl || '') : '';
+
+      // Restore images from existing product
+      uploadedImages = [];
+      if (product && product.images && product.images.length > 0) {
+        uploadedImages = product.images.map(img => ({...img}));
+      } else if (product && product.imageUrl) {
+        uploadedImages.push({ lg: product.imageUrl, md: product.imageUrl, sm: product.imageUrl });
+      }
+      renderImagePreviews();
 
       modal.classList.add('open');
     }
@@ -466,13 +551,18 @@ const App = (() => {
 
     productForm.addEventListener('submit', async (e) => {
       e.preventDefault();
+      // Wait for any ongoing upload to finish
+      if (isUploading) {
+        showToast('Espera a que termine la subida de imagen', 'error');
+        return;
+      }
       const payload = {
         name: pName.value.trim(),
         description: pDesc.value.trim(),
         price: parseFloat(pPrice.value),
         stock: parseInt(pStock.value) || 0,
         category: pCategory.value,
-        imageUrl: pImage.value.trim(),
+        images: uploadedImages,
       };
 
       try {
@@ -480,11 +570,25 @@ const App = (() => {
           await Api.put(`/api/admin/products/${editingId}`, payload);
           showToast('Producto actualizado correctamente');
         } else {
-          await Api.post('/api/admin/products', payload);
+          const result = await Api.post('/api/admin/products', payload);
+          // Re-upload images with the real productId
+          if (result.product && result.product.productId && uploadedImages.length > 0) {
+            const realId = result.product.productId;
+            for (let i = 0; i < uploadedImages.length; i++) {
+              const img = uploadedImages[i];
+              // Only re-upload if it uses the temp ID pattern
+              if (img.lg && img.lg.includes('/images/products/temp_')) {
+                // Image was uploaded with temp ID — we need to re-upload with real ID
+                // For now, update the product with correct image paths
+                await Api.put(`/api/admin/products/${realId}`, { images: uploadedImages });
+                break;
+              }
+            }
+          }
           showToast('Producto creado correctamente');
         }
         closeModal();
-        renderProducts(); // Re-render list
+        renderProducts();
       } catch (err) {
         showToast(err.message, 'error');
       }

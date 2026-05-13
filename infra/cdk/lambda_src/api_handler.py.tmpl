@@ -765,13 +765,24 @@ def create_product(body):
     for field in ["name", "price"]:
         if not body.get(field):
             return response(400, {"error": f"missing_field: {field}"})
+    images_raw = body.get("images") or []
+    images_parsed = []
+    for img in images_raw:
+        if isinstance(img, dict) and img.get("lg"):
+            images_parsed.append({"lg": img["lg"], "md": img.get("md", ""), "sm": img.get("sm", "")})
+    image_url = (body.get("imageUrl") or "").strip()
+    if image_url and not images_parsed:
+        images_parsed.append({"lg": image_url, "md": image_url, "sm": image_url})
+    elif not image_url and images_parsed:
+        image_url = images_parsed[0].get("lg", "")
     item = {
         "productId": str(uuid.uuid4()),
         "name": body["name"].strip(),
         "description": (body.get("description") or "").strip(),
         "price": Decimal(str(body["price"])),
         "category": normalize_category(body.get("category")),
-        "imageUrl": (body.get("imageUrl") or "").strip(),
+        "imageUrl": image_url,
+        "images": images_parsed,
         "stock": int(body.get("stock", 0)),
         "status": body.get("status", "active").strip(),
         "createdAt": now_iso(),
@@ -791,6 +802,20 @@ def update_product(product_id, body):
     for field in ["name", "description", "imageUrl", "status"]:
         if field in body:
             updates[field] = body[field]
+    if "images" in body:
+        images_raw = body["images"]
+        images_parsed = []
+        for img in images_raw:
+            if isinstance(img, dict) and img.get("lg"):
+                images_parsed.append({"lg": img["lg"], "md": img.get("md", ""), "sm": img.get("sm", "")})
+        updates["images"] = images_parsed
+        if images_parsed and "imageUrl" not in body:
+            updates["imageUrl"] = images_parsed[0].get("lg", existing.get("imageUrl", ""))
+    elif "imageUrl" in body:
+        existing_images = existing.get("images", [])
+        if existing_images:
+            existing_images[0]["lg"] = body["imageUrl"]
+            updates["images"] = existing_images
     if "category" in body:
         updates["category"] = normalize_category(body.get("category"))
     if "price" in body:

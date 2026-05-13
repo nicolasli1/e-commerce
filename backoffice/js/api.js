@@ -79,5 +79,39 @@ const Api = (() => {
     post:   (path, body)      => request('POST', path, body),
     put:    (path, body)      => request('PUT', path, body),
     delete: (path)            => request('DELETE', path),
+
+    /**
+     * Upload a product image via the image processing Lambda.
+     * @param {string} productId
+     * @param {string} base64Image — raw base64 string (no data URI prefix)
+     * @returns {Promise<object>} { ok, productId, urls: {lg, md, sm} }
+     */
+    async uploadImage(productId, base64Image) {
+      const url = BASE_URL + '/api/admin/products/image';
+      const headers = {
+        'Content-Type': 'application/json',
+        'x-api-key': CONFIG.API_KEY,
+      };
+      const token = getToken();
+      if (token) {
+        headers['Authorization'] = `Bearer ${token}`;
+      }
+      const res = await fetch(url, {
+        method: 'POST',
+        headers,
+        body: JSON.stringify({ productId, image: base64Image }),
+      });
+      if (res.status === 401) {
+        localStorage.removeItem('nexcore_admin_token');
+        window.location.hash = '#/login';
+        throw new Error('Sesión expirada. Redirigiendo al login…');
+      }
+      if (!res.ok) {
+        let err;
+        try { err = (await res.json()).error; } catch { err = `HTTP ${res.status}`; }
+        throw new Error(err || `Error ${res.status}`);
+      }
+      return res.json();
+    },
   };
 })();
