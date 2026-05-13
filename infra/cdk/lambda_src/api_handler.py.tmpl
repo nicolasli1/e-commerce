@@ -1491,13 +1491,22 @@ def mercadopago_base_url():
     return "https://api.mercadopago.com"
 
 
-def mercadopago_notification_url(origin):
-    if not origin:
-        return ""
-    return f"{origin}/api/webhooks/mercadopago?source=webhooks"
+def get_api_gateway_origin(event):
+    """
+    Get the API Gateway public URL for webhook notifications.
+    This should always point to the API Gateway (where the Lambda lives),
+    NOT the CloudFront frontend.
+    """
+    headers = event.get("headers", {}) or {}
+    host = headers.get("x-forwarded-host") or headers.get("X-Forwarded-Host") \
+           or headers.get("host") or headers.get("Host") or ""
+    if not host:
+        return FRONTEND_URL or ""
+    proto = headers.get("x-forwarded-proto") or headers.get("X-Forwarded-Proto") or "https"
+    return f"{proto}://{host}"
 
 
-def build_mercadopago_preference(reference, items, customer, shipping, origin):
+def build_mercadopago_preference(reference, items, customer, shipping, origin, api_gateway_origin=None):
     access_token = get_mercadopago_access_token()
     if not access_token:
         raise ValueError("mercadopago_not_configured")
@@ -1542,7 +1551,9 @@ def build_mercadopago_preference(reference, items, customer, shipping, origin):
                 "country_name": shipping.get("country", "CO"),
             }
         }
-    notification_url = mercadopago_notification_url(origin)
+    # Webhook notifications must go to the API Gateway, not CloudFront
+    webhook_origin = api_gateway_origin or origin
+    notification_url = f"{webhook_origin}/api/webhooks/mercadopago?source=webhooks" if webhook_origin else ""
     if notification_url:
         payload["notification_url"] = notification_url
 
@@ -1610,7 +1621,8 @@ def create_checkout_session(event):
             "transactionId": "",
         }
     else:
-        preference = build_mercadopago_preference(reference, items, customer, shipping, origin)
+        api_gateway_origin = get_api_gateway_origin(event)
+        preference = build_mercadopago_preference(reference, items, customer, shipping, origin, api_gateway_origin=api_gateway_origin)
         mercadopago_config = {
             "publicKey": get_mercadopago_public_key(),
             "preferenceId": preference.get("id", ""),
