@@ -37,6 +37,7 @@ MERCADOPAGO_ACCESS_TOKEN_PARAM = os.environ.get("MERCADOPAGO_ACCESS_TOKEN_PARAM"
 MERCADOPAGO_WEBHOOK_SECRET_PARAM = os.environ.get("MERCADOPAGO_WEBHOOK_SECRET_PARAM", "")
 ORDER_NOTIFICATIONS_FROM_EMAIL_PARAM = os.environ.get("ORDER_NOTIFICATIONS_FROM_EMAIL_PARAM", "")
 ORDER_ALERTS_TO_EMAIL_PARAM = os.environ.get("ORDER_ALERTS_TO_EMAIL_PARAM", "")
+FRONTEND_URL = os.environ.get("FRONTEND_URL", "").rstrip("/")
 
 _param_cache = {}
 PRODUCT_CATEGORIES = {
@@ -999,6 +1000,12 @@ def update_order_admin(reference, body):
 
 
 def get_origin(event):
+    """
+    Determine the public-facing origin URL for redirects and MP back_urls.
+    Uses FRONTEND_URL env var when set (preferred), otherwise falls back to request headers.
+    """
+    if FRONTEND_URL:
+        return FRONTEND_URL
     headers = event.get("headers", {}) or {}
     origin = headers.get("origin") or headers.get("Origin") or ""
     if origin:
