@@ -216,8 +216,12 @@ const App = (() => {
       return new Date(o.createdAt).toDateString() === now.toDateString();
     }).length;
 
+    // ── Sales chart data ──
+    const chartData = data.salesChart || { daily: { labels: [], values: [] }, hourly: { labels: [], values: [] }, monthly: { labels: [], values: [] } };
+    let activeChartView = 'daily';
+
     // ── Sparkline (mock last 7 days) ──
-    const sparklineData = [12, 19, 8, 15, 22, 18, 25];
+    const sparklineData = chartData.daily.values.length ? chartData.daily.values : [12, 19, 8, 15, 22, 18, 25];
     const sparkMax = Math.max(...sparklineData, 1);
 
     // ── Status bars builder ──
@@ -319,6 +323,21 @@ const App = (() => {
         </div>
       </div>
 
+      <!-- Sales Chart -->
+      <div class="dash-chart card">
+        <div class="dash-chart-header">
+          <h3>📈 Ventas</h3>
+          <div class="dash-chart-tabs" id="chartTabs">
+            <button class="chart-tab active" data-view="daily">Día</button>
+            <button class="chart-tab" data-view="hourly">Hora</button>
+            <button class="chart-tab" data-view="monthly">Mes</button>
+          </div>
+        </div>
+        <div class="chart-bars-wrap">
+          <div class="chart-bars" id="chartBars"></div>
+        </div>
+      </div>
+
       <!-- Quick Actions (pill chips) -->
       <div class="dash-actions">
         <a class="dash-action-chip" href="#/orders">
@@ -360,6 +379,47 @@ const App = (() => {
         </table>
         <div id="recentOrdersMobile" class="recent-orders-mobile"></div>
       </div>`;
+
+    // ── Render chart bars ──
+    function renderChart(view) {
+      activeChartView = view;
+      const data = chartData[view] || { labels: [], values: [] };
+      const labels = data.labels || [];
+      const values = data.values || [];
+      const maxVal = Math.max(...values, 1);
+      const container = document.getElementById('chartBars');
+      if (!container) return;
+      container.innerHTML = values.map((v, i) => {
+        const pct = (v / maxVal) * 100;
+        return `<div class="chart-col" title="${v.toLocaleString()}">
+          <div class="chart-bar-wrap">
+            <div class="chart-bar chart-bar-inner" data-pct="${pct}" style="height:0%"></div>
+          </div>
+          <span class="chart-label">${esc(labels[i] || '')}</span>
+        </div>`;
+      }).join('');
+      // Animate bars in next frame
+      requestAnimationFrame(() => {
+        container.querySelectorAll('.chart-bar-inner').forEach(el => {
+          el.style.height = parseFloat(el.dataset.pct || 0) + '%';
+        });
+      });
+    }
+
+    // ── Chart tab switching ──
+    const tabsContainer = document.getElementById('chartTabs');
+    if (tabsContainer) {
+      tabsContainer.addEventListener('click', (e) => {
+        const btn = e.target.closest('.chart-tab');
+        if (!btn) return;
+        tabsContainer.querySelectorAll('.chart-tab').forEach(t => t.classList.remove('active'));
+        btn.classList.add('active');
+        renderChart(btn.dataset.view);
+      });
+    }
+
+    // Render default chart
+    renderChart('daily');
 
     // ── Animate hero numbers & status bars ──
     requestAnimationFrame(() => {

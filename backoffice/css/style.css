@@ -878,7 +878,7 @@ tbody tr.deleted {
 .status-bar-row {
   display: flex;
   align-items: center;
-  gap: 12px;
+  gap: 10px;
   font-size: 0.8125rem;
 }
 
@@ -887,6 +887,9 @@ tbody tr.deleted {
   flex-shrink: 0;
   color: var(--text-secondary);
   font-weight: 500;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .status-bar-track {
@@ -1075,22 +1078,36 @@ tbody tr.deleted {
   box-shadow: 0 16px 48px rgba(0,0,0,0.3);
 }
 
-/* Glow orb pseudo-element (stronger than before) */
+/* Glow orb (positioned at top-right corner, no text overlap) */
 .dash-hero-glow {
   position: absolute;
-  top: -60%;
-  right: -40%;
-  width: 280px;
-  height: 280px;
+  top: -80px;
+  right: -80px;
+  width: 220px;
+  height: 220px;
   border-radius: 50%;
   opacity: 0.08;
   pointer-events: none;
   transition: opacity 0.4s ease, transform 0.4s ease;
+  z-index: 0;
+}
+
+.dash-hero-card {
+  position: relative;
+  overflow: hidden;
 }
 
 .dash-hero-card:hover .dash-hero-glow {
   opacity: 0.14;
   transform: scale(1.15);
+}
+
+/* Ensure content stays above glow */
+.dash-hero-content,
+.dash-hero-icon,
+.sparkline {
+  position: relative;
+  z-index: 1;
 }
 
 .dash-hero-revenue .dash-hero-glow {
@@ -1255,6 +1272,141 @@ tbody tr.deleted {
   font-size: 1.125rem;
 }
 
+/* ===========================================================
+   DASHBOARD — Sales Chart
+   =========================================================== */
+.dash-chart {
+  padding: 20px 24px;
+  margin-bottom: 24px;
+}
+
+.dash-chart-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 20px;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+
+.dash-chart-header h3 {
+  font-size: 0.9375rem;
+  font-weight: 600;
+  letter-spacing: -0.02em;
+}
+
+.dash-chart-tabs {
+  display: flex;
+  gap: 4px;
+  background: rgba(255,255,255,0.05);
+  padding: 3px;
+  border-radius: var(--radius-pill);
+  border: 1px solid var(--border-glass);
+}
+
+.chart-tab {
+  padding: 6px 16px;
+  border-radius: var(--radius-pill);
+  border: none;
+  background: transparent;
+  color: var(--text-secondary);
+  font-size: 0.75rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.25s ease;
+}
+
+.chart-tab.active {
+  background: rgba(99,102,241,0.2);
+  color: #c4b5fd;
+  border: 1px solid rgba(99,102,241,0.3);
+}
+
+.chart-tab:hover:not(.active) {
+  color: var(--text-primary);
+}
+
+.chart-bars-wrap {
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+  padding-bottom: 4px;
+}
+
+.chart-bars {
+  display: flex;
+  align-items: flex-end;
+  gap: 6px;
+  min-height: 120px;
+  padding: 0 4px;
+  min-width: 280px;
+}
+
+.chart-col {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  min-width: 28px;
+}
+
+.chart-bar-wrap {
+  flex: 1;
+  width: 100%;
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+}
+
+.chart-bar {
+  width: 100%;
+  max-width: 36px;
+  border-radius: 9999px 9999px 4px 4px;
+  transition: height 0.6s cubic-bezier(0.34, 1.56, 0.64, 1);
+  min-height: 2px;
+}
+
+.chart-bar-inner {
+  background: linear-gradient(to top, #6366f1, #a855f7);
+}
+
+.chart-label {
+  font-size: 0.625rem;
+  color: var(--text-muted);
+  text-align: center;
+  white-space: nowrap;
+  width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.chart-col:hover .chart-bar-inner {
+  opacity: 0.8;
+}
+
+@media (max-width: 768px) {
+  .dash-chart {
+    padding: 16px;
+  }
+  .dash-chart-header {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+  .chart-bars {
+    min-height: 100px;
+    gap: 4px;
+  }
+  .chart-col {
+    min-width: 24px;
+  }
+  .chart-bar {
+    max-width: 28px;
+  }
+  .chart-label {
+    font-size: 0.5625rem;
+  }
+}
+
 /* ── Mobile Recent Orders Cards ── */
 .recent-orders-mobile {
   display: none;
@@ -1353,8 +1505,24 @@ tbody tr.deleted {
   .dash-section {
     padding: 16px;
   }
+  .status-bar-row {
+    gap: 6px;
+  }
   .status-bar-label {
-    width: 90px;
+    width: auto;
+    min-width: 70px;
+    max-width: 80px;
+    font-size: 0.6875rem;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    flex-shrink: 0;
+  }
+  .status-bar-track {
+    height: 6px;
+  }
+  .status-bar-count {
+    width: 24px;
     font-size: 0.75rem;
   }
   .status-bar-pct {

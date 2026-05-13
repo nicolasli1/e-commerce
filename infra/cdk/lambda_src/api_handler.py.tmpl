@@ -964,6 +964,46 @@ def handle_dashboard():
     for o in orders:
         fs = o.get("fulfillmentStatus", "UNKNOWN")
         fulfillment_statuses[fs] = fulfillment_statuses.get(fs, 0) + 1
+    # ── Sales chart data (7 days) ──
+    from datetime import datetime as dt, timedelta
+    today = dt.now(timezone.utc).date()
+    daily_labels = []
+    daily_values = []
+    for i in range(6, -1, -1):
+        day = today - timedelta(days=i)
+        label = day.strftime("%a")  # Mon, Tue, Wed...
+        day_total = sum(
+            o.get("amountInCents", 0) for o in orders
+            if o.get("createdAt", "").startswith(day.isoformat())
+            and o.get("status") == "APPROVED"
+        )
+        daily_labels.append(label)
+        daily_values.append(day_total // 100)
+
+    # ── Hourly distribution (mock until real data builds) ──
+    hourly = []
+    for h in range(24):
+        hour_label = f"{h:02d}:00"
+        hour_total = sum(
+            o.get("amountInCents", 0) for o in orders
+            if o.get("status") == "APPROVED"
+            and o.get("createdAt", "")[11:13] == f"{h:02d}"
+        )
+        hourly.append(hour_total // 100)
+
+    # ── Monthly ──
+    months_map = {}
+    for o in orders:
+        if o.get("status") != "APPROVED":
+            continue
+        created = o.get("createdAt", "")
+        if not created:
+            continue
+        month_key = created[:7]  # "2026-05"
+        months_map[month_key] = months_map.get(month_key, 0) + (o.get("amountInCents", 0) // 100)
+    monthly_labels = sorted(months_map.keys())
+    monthly_values = [months_map[m] for m in monthly_labels]
+
     return response(200, {
         "ok": True,
         "totalProducts": len(active_products),
@@ -977,6 +1017,11 @@ def handle_dashboard():
         "totalRevenueInCents": total_revenue,
         "orderStatuses": order_statuses,
         "fulfillmentStatuses": fulfillment_statuses,
+        "salesChart": {
+            "daily": {"labels": daily_labels, "values": daily_values},
+            "hourly": {"labels": [f"{h:02d}" for h in range(24)], "values": hourly},
+            "monthly": {"labels": monthly_labels, "values": monthly_values},
+        },
         "recentQuotes": [{
             "name": q.get("name", ""),
             "email": q.get("email", ""),
