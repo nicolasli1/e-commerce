@@ -152,6 +152,38 @@ const App = (() => {
   }
 
   // ---- DASHBOARD ----
+  /* =========================================================
+     DASHBOARD HELPERS
+     ========================================================= */
+  function fmtCOP(cents) {
+    return '$' + Number(cents / 100).toLocaleString('es-CO', { minimumFractionDigits: 0, maximumFractionDigits: 0 });
+  }
+
+  function statusLabel(s) {
+    const labels = {
+      'CHECKOUT_CREATED': 'Creado',
+      'PENDING': 'Pendiente',
+      'APPROVED': 'Aprobado',
+      'DECLINED': 'Rechazado',
+      'CANCELLED': 'Cancelado',
+      'CHARGEDBACK': 'Contracargo',
+      'REFUNDED': 'Reembolsado',
+    };
+    return labels[s] || s;
+  }
+
+  function fulfillmentLabel(s) {
+    const labels = {
+      'PENDING_PAYMENT': '⏳ Pendiente pago',
+      'READY_TO_FULFILL': '📦 Listo',
+      'PROCESSING': '⚙️ Procesando',
+      'SHIPPED': '🚚 Enviado',
+      'DELIVERED': '✅ Entregado',
+      'RETURNED': '↩️ Devuelto',
+    };
+    return labels[s] || s;
+  }
+
   async function renderDashboard() {
     showLoading();
     try {
@@ -163,105 +195,147 @@ const App = (() => {
   }
 
   function renderDashboardContent(data) {
+    const totalRevenueFormatted = fmtCOP(data.totalRevenueInCents || 0);
+    const paidOrders = data.approvedOrders || 0;
+    const pendingOrders = data.pendingOrders || 0;
+
+    // Build status bars
+    const orderStatuses = data.orderStatuses || {};
+    const fulfillmentStatuses = data.fulfillmentStatuses || {};
+    const maxStatus = Math.max(1, ...Object.values(orderStatuses));
+
+    function statusBar(key, count, total) {
+      const pct = total > 0 ? Math.round((count / total) * 100) : 0;
+      const label = statusLabel(key);
+      const pctWidth = total > 0 ? (count / Math.max(...Object.values(orderStatuses))) * 100 : 0;
+      return `
+        <div class="status-bar-row">
+          <span class="status-bar-label">${label}</span>
+          <div class="status-bar-track">
+            <div class="status-bar-fill status-fill-${key.toLowerCase()}" style="width:${pctWidth}%"></div>
+          </div>
+          <span class="status-bar-count">${count}</span>
+          <span class="status-bar-pct">${pct}%</span>
+        </div>`;
+    }
+
+    const orderBars = Object.entries(orderStatuses)
+      .sort((a, b) => b[1] - a[1])
+      .map(([k, v]) => statusBar(k, v, data.totalOrders || 0))
+      .join('');
+
+    const fulfillmentBars = Object.entries(fulfillmentStatuses)
+      .sort((a, b) => b[1] - a[1])
+      .map(([k, v]) => statusBar(k, v, data.totalOrders || 0))
+      .join('');
+
     $main.innerHTML = `
-      <div class="page-header">
-        <div>
-          <h1 class="page-title">Dashboard</h1>
-          <p class="page-subtitle">Resumen del negocio NexCore</p>
-        </div>
-      </div>
-
-      <div class="card-grid">
-        <div class="card">
-          <div style="display:flex;justify-content:space-between;align-items:flex-start;">
-            <div>
-              <div class="card-title">Total Productos</div>
-              <div class="card-value">${data.totalProducts || 0}</div>
-            </div>
-            <div class="card-icon">📦</div>
+      <!-- Hero Cards -->
+      <div class="dash-hero">
+        <div class="dash-hero-card dash-hero-revenue">
+          <div class="dash-hero-icon">💰</div>
+          <div class="dash-hero-content">
+            <div class="dash-hero-label">Ingresos (aprobados)</div>
+            <div class="dash-hero-value">${totalRevenueFormatted}</div>
           </div>
         </div>
-        <div class="card">
-          <div style="display:flex;justify-content:space-between;align-items:flex-start;">
-            <div>
-              <div class="card-title">Total Leads</div>
-              <div class="card-value">${data.totalLeads || 0}</div>
-            </div>
-            <div class="card-icon">👤</div>
+        <div class="dash-hero-card dash-hero-orders">
+          <div class="dash-hero-icon">🛒</div>
+          <div class="dash-hero-content">
+            <div class="dash-hero-label">Pedidos</div>
+            <div class="dash-hero-value">${data.totalOrders || 0}</div>
+            <div class="dash-hero-sub">${paidOrders} pagados · ${pendingOrders} pendientes</div>
           </div>
         </div>
-        <div class="card">
-          <div style="display:flex;justify-content:space-between;align-items:flex-start;">
-            <div>
-              <div class="card-title">Total Cotizaciones</div>
-              <div class="card-value">${data.totalQuotes || 0}</div>
-            </div>
-            <div class="card-icon">📋</div>
-          </div>
-        </div>
-        <div class="card">
-          <div style="display:flex;justify-content:space-between;align-items:flex-start;">
-            <div>
-              <div class="card-title">Cotizaciones Recientes</div>
-              <div class="card-value">${(data.recentQuotes || []).length}</div>
-            </div>
-            <div class="card-icon">🕐</div>
-          </div>
-        </div>
-        <div class="card">
-          <div style="display:flex;justify-content:space-between;align-items:flex-start;">
-            <div>
-              <div class="card-title">Total Pedidos</div>
-              <div class="card-value">${data.totalOrders || 0}</div>
-            </div>
-            <div class="card-icon">🛒</div>
-          </div>
-        </div>
-        <div class="card">
-          <div style="display:flex;justify-content:space-between;align-items:flex-start;">
-            <div>
-              <div class="card-title">Listos para despachar</div>
-              <div class="card-value">${data.readyToFulfillOrders || 0}</div>
-            </div>
-            <div class="card-icon">🚚</div>
+        <div class="dash-hero-card dash-hero-products">
+          <div class="dash-hero-icon">📦</div>
+          <div class="dash-hero-content">
+            <div class="dash-hero-label">Catálogo</div>
+            <div class="dash-hero-value">${data.totalProducts || 0} productos</div>
+            <div class="dash-hero-sub">${data.totalLeads || 0} leads · ${data.totalUsers || 0} usuarios</div>
           </div>
         </div>
       </div>
 
+      <!-- Status Breakdown -->
+      <div class="dash-grid">
+        <div class="dash-section card">
+          <div class="dash-section-header">
+            <h3>📊 Estado de Pedidos</h3>
+          </div>
+          <div class="status-bar-list">
+            ${orderBars || '<div style="color:var(--text-muted);font-size:0.875rem;padding:8px 0;">Sin pedidos aún</div>'}
+          </div>
+        </div>
+        <div class="dash-section card">
+          <div class="dash-section-header">
+            <h3>🚚 Estado de Despacho</h3>
+          </div>
+          <div class="status-bar-list">
+            ${fulfillmentBars || '<div style="color:var(--text-muted);font-size:0.875rem;padding:8px 0;">Sin pedidos aún</div>'}
+          </div>
+        </div>
+      </div>
+
+      <!-- Quick Actions -->
+      <div class="dash-actions">
+        <a class="dash-action-btn" href="#/orders">
+          <span class="dash-action-icon">📋</span>
+          <span>Ver pedidos</span>
+        </a>
+        <a class="dash-action-btn" href="#/products">
+          <span class="dash-action-icon">➕</span>
+          <span>Nuevo producto</span>
+        </a>
+        <a class="dash-action-btn" href="#/leads">
+          <span class="dash-action-icon">👤</span>
+          <span>Ver leads</span>
+        </a>
+        <a class="dash-action-btn" href="#/quotes">
+          <span class="dash-action-icon">📋</span>
+          <span>Cotizaciones</span>
+        </a>
+      </div>
+
+      <!-- Recent Orders -->
       <div class="table-container">
-        <div style="padding:20px 24px;border-bottom:1px solid var(--border-glass);">
-          <h3 style="font-size:0.9375rem;font-weight:600;">Últimas Cotizaciones</h3>
+        <div class="table-toolbar">
+          <h3 style="font-size:0.9375rem;font-weight:600;">🕐 Últimos Pedidos</h3>
+          <a href="#/orders" class="btn btn-secondary btn-sm">Ver todos →</a>
         </div>
         <table>
           <thead>
             <tr>
-              <th>Nombre</th>
-              <th>Email</th>
-              <th>Plan</th>
+              <th>Referencia</th>
+              <th>Cliente</th>
               <th>Estado</th>
+              <th>Despacho</th>
+              <th>Total</th>
               <th>Fecha</th>
             </tr>
           </thead>
-          <tbody id="recentQuotesBody"></tbody>
+          <tbody id="recentOrdersBody"></tbody>
         </table>
       </div>`;
 
-    const tbody = document.getElementById('recentQuotesBody');
-    const quotes = data.recentQuotes || [];
-
-    if (quotes.length === 0) {
-      tbody.innerHTML = `<tr><td colspan="5" style="text-align:center;padding:40px;color:var(--text-secondary);">Sin cotizaciones recientes</td></tr>`;
+    // Render recent orders
+    const ordersTbody = document.getElementById('recentOrdersBody');
+    const recentOrders = data.recentOrders || [];
+    if (recentOrders.length === 0) {
+      ordersTbody.innerHTML = '<tr><td colspan="6" style="text-align:center;padding:40px;color:var(--text-secondary);">Sin pedidos recientes</td></tr>';
     } else {
-      quotes.forEach((q) => {
-        const statusClass = `badge-${q.status || 'pending'}`;
+      recentOrders.forEach((o) => {
+        const paymentCls = 'badge-' + (o.status === 'APPROVED' ? 'active' : o.status === 'DECLINED' || o.status === 'CANCELLED' ? 'inactive' : 'pending');
+        const fulfillCls = o.fulfillmentStatus === 'DELIVERED' ? 'badge-active' : o.fulfillmentStatus === 'SHIPPED' ? 'badge-contacted' : 'badge-pending';
         const tr = $el('tr');
         tr.innerHTML = `
-          <td>${esc(q.name || '—')}</td>
-          <td>${esc(q.email || '—')}</td>
-          <td>${esc(q.plan || '—')}</td>
-          <td><span class="badge ${statusClass}">${esc(q.status || 'pending')}</span></td>
-          <td style="color:var(--text-secondary);font-size:0.8125rem;">${formatDate(q.createdAt)}</td>`;
-        tbody.appendChild(tr);
+          <td><span class="ref-badge">${esc(o.reference || '—')}</span></td>
+          <td>${esc(o.customerName || '—')}</td>
+          <td><span class="badge ${paymentCls}">${statusLabel(o.status)}</span></td>
+          <td><span class="badge ${fulfillCls}">${fulfillmentLabel(o.fulfillmentStatus)}</span></td>
+          <td style="font-weight:600;">${fmtCOP(o.amountInCents || 0)}</td>
+          <td style="color:var(--text-secondary);font-size:0.8125rem;white-space:nowrap;">${formatDate(o.createdAt)}</td>`;
+        ordersTbody.appendChild(tr);
       });
     }
   }

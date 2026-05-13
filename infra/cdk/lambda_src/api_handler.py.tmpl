@@ -944,6 +944,7 @@ def handle_dashboard():
     leads = leads_table.scan().get("Items", [])
     quotes = quotes_table.scan().get("Items", [])
     orders = orders_table.scan().get("Items", [])
+    users = users_table.scan().get("Items", [])
     active_products = [p for p in products if p.get("status", "active") != "deleted"]
     quotes_sorted = sorted(quotes, key=lambda x: x.get("createdAt", ""), reverse=True)
     orders_sorted = sorted(orders, key=lambda x: x.get("createdAt", ""), reverse=True)
@@ -951,13 +952,31 @@ def handle_dashboard():
         order for order in orders
         if order.get("status") == "APPROVED" and order.get("fulfillmentStatus") in ("READY_TO_FULFILL", "PROCESSING")
     ]
+    pending_orders = [o for o in orders if o.get("status") in ("CHECKOUT_CREATED", "PENDING")]
+    approved_orders = [o for o in orders if o.get("status") == "APPROVED"]
+    total_revenue = sum(o.get("amountInCents", 0) for o in approved_orders)
+    # Count by status
+    order_statuses = {}
+    for o in orders:
+        st = o.get("status", "UNKNOWN")
+        order_statuses[st] = order_statuses.get(st, 0) + 1
+    fulfillment_statuses = {}
+    for o in orders:
+        fs = o.get("fulfillmentStatus", "UNKNOWN")
+        fulfillment_statuses[fs] = fulfillment_statuses.get(fs, 0) + 1
     return response(200, {
         "ok": True,
         "totalProducts": len(active_products),
         "totalLeads": len(leads),
+        "totalUsers": len(users),
         "totalQuotes": len(quotes),
         "totalOrders": len(orders),
+        "pendingOrders": len(pending_orders),
+        "approvedOrders": len(approved_orders),
         "readyToFulfillOrders": len(ready_orders),
+        "totalRevenueInCents": total_revenue,
+        "orderStatuses": order_statuses,
+        "fulfillmentStatuses": fulfillment_statuses,
         "recentQuotes": [{
             "name": q.get("name", ""),
             "email": q.get("email", ""),
