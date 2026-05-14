@@ -215,7 +215,11 @@ def verify_admin_token(token: str) -> str | None:
         decoded = json.loads(
             base64.b64decode(payload).decode()
         )
-        return decoded.get("user")
+        # Check expiration
+        exp = decoded.get("exp", 0)
+        if exp and int(time.time()) > exp:
+            return None
+        return decoded.get("sub")
     except Exception:
         return None
 
