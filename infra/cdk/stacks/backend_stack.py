@@ -203,7 +203,7 @@ class BackendStack(Stack):
         # ------------------------------------------------------------------
         # 2b. S3 bucket for product images + image processing Lambda
         # ------------------------------------------------------------------
-        images_bucket = s3.Bucket(
+        self._images_bucket = s3.Bucket(
             self,
             "ImagesBucket",
             bucket_name=f"{project_name}-{environment}-{self.account}-{self.region}-images",
@@ -237,13 +237,13 @@ class BackendStack(Stack):
             timeout=Duration.seconds(30),
             memory_size=512,
             environment={
-                "IMAGES_BUCKET": images_bucket.bucket_name,
+                "IMAGES_BUCKET": self._images_bucket.bucket_name,
                 "ADMIN_SESSION_SECRET_PARAM": f"/{project_name}/{environment}/admin-session-secret",
             },
         )
 
         # Grant image handler access to S3 images bucket
-        images_bucket.grant_read_write(image_handler)
+        self._images_bucket.grant_read_write(image_handler)
         image_handler.add_to_role_policy(
             iam.PolicyStatement(
                 actions=["ssm:GetParameter"],
@@ -258,12 +258,12 @@ class BackendStack(Stack):
         # If not provided, a permissive policy allows any CloudFront in the account
         distribution_arn = kwargs.get('distribution_arn', None)
         if distribution_arn:
-            images_bucket.add_to_resource_policy(
+            self._images_bucket.add_to_resource_policy(
                 iam.PolicyStatement(
                     effect=iam.Effect.ALLOW,
                     principals=[iam.ServicePrincipal('cloudfront.amazonaws.com')],
                     actions=['s3:GetObject'],
-                    resources=[images_bucket.arn_for_objects('*')],
+                    resources=[self._images_bucket.arn_for_objects('*')],
                     conditions={
                         'StringEquals': {
                             'AWS:SourceArn': distribution_arn
@@ -273,19 +273,19 @@ class BackendStack(Stack):
             )
         else:
             # No distribution info — add permissive policy for any CloudFront
-            images_bucket.add_to_resource_policy(
+            self._images_bucket.add_to_resource_policy(
                 iam.PolicyStatement(
                     effect=iam.Effect.ALLOW,
                     principals=[iam.ServicePrincipal('cloudfront.amazonaws.com')],
                     actions=['s3:GetObject'],
-                    resources=[images_bucket.arn_for_objects('*')]
+                    resources=[self._images_bucket.arn_for_objects('*')]
                 )
             )
             print("WARNING: No distribution ARN provided. Images bucket policy allows any CloudFront.")
 
         # Store for cross-stack reference
-        self._images_bucket_domain = images_bucket.bucket_regional_domain_name
-        self._images_bucket_name = images_bucket.bucket_name
+        self._images_bucket_domain = self._images_bucket.bucket_regional_domain_name
+        self._images_bucket_name = self._images_bucket.bucket_name
 
         # ------------------------------------------------------------------
         # 3. HTTP API (API Gateway v2)
@@ -459,8 +459,8 @@ class BackendStack(Stack):
         CfnOutput(self, "QuotesTableName", value=quotes_table.table_name)
         CfnOutput(self, "OrdersTableName", value=orders_table.table_name)
         CfnOutput(self, "UsersTableName", value=users_table.table_name)
-        CfnOutput(self, "ImagesBucketName", value=images_bucket.bucket_name)
-        CfnOutput(self, "ImagesBucketDomain", value=images_bucket.bucket_regional_domain_name)
+        CfnOutput(self, "ImagesBucketName", value=self._images_bucket.bucket_name)
+        CfnOutput(self, "ImagesBucketDomain", value=self._images_bucket.bucket_regional_domain_name)
         CfnOutput(self, "ImageHandlerFunctionName", value=image_handler.function_name)
         CfnOutput(self, "LambdaFunctionName", value=api_lambda.function_name)
         CfnOutput(self, "WompiWebhookUrl", value=f"{http_api.api_endpoint}/api/webhooks/wompi")
@@ -469,13 +469,8 @@ class BackendStack(Stack):
 
     def add_distribution_arn(self, arn: str):
         """Add a CloudFront distribution ARN for the images bucket policy."""
-        # Update the bucket policy with the actual distribution ARN
-        # The bucket was created earlier in __init__
-        images_bucket = self.node.find_child("ImagesBucket")
-        if images_bucket:
-            # Remove old permissive policy and add restricted one
-            # (the else branch policy was added during creation)
-            images_bucket.add_to_resource_policy(
+        if hasattr(self, '_images_bucket') and self._images_bucket:
+            self._images_bucket.add_to_resource_policy(
                 iam.PolicyStatement(
                     effect=iam.Effect.ALLOW,
                     principals=[iam.ServicePrincipal('cloudfront.amazonaws.com')],
