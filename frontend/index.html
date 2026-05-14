@@ -3352,8 +3352,8 @@
                 decoding="async"
                 onclick="openImageZoom('${lgUrl}','${escapedName}')" />`;
             }
-          } else if (typeof p.imageUrl === 'string' && p.imageUrl.startsWith('http')) {
-            // Old format: single URL
+          } else if (typeof p.imageUrl === 'string' && (p.imageUrl.startsWith('http') || p.imageUrl.startsWith('/'))) {
+            // Old format: single URL (absolute or relative)
             hasImage = true;
             imgBg = '';
             zoomUrl = p.imageUrl;
