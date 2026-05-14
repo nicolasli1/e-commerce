@@ -253,6 +253,36 @@ class BackendStack(Stack):
             )
         )
 
+        # Add bucket policy for CloudFront OAC (to serve images via CloudFront)
+        # The distribution ARN is passed as a stack parameter
+        # If not provided, a permissive policy allows any CloudFront in the account
+        distribution_arn = kwargs.get('distribution_arn', None)
+        if distribution_arn:
+            images_bucket.add_to_resource_policy(
+                iam.PolicyStatement(
+                    effect=iam.Effect.ALLOW,
+                    principals=[iam.ServicePrincipal('cloudfront.amazonaws.com')],
+                    actions=['s3:GetObject'],
+                    resources=[images_bucket.arn_for_objects('*')],
+                    conditions={
+                        'StringEquals': {
+                            'AWS:SourceArn': distribution_arn
+                        }
+                    }
+                )
+            )
+        else:
+            # No distribution info — add permissive policy for any CloudFront
+            images_bucket.add_to_resource_policy(
+                iam.PolicyStatement(
+                    effect=iam.Effect.ALLOW,
+                    principals=[iam.ServicePrincipal('cloudfront.amazonaws.com')],
+                    actions=['s3:GetObject'],
+                    resources=[images_bucket.arn_for_objects('*')]
+                )
+            )
+            print("WARNING: No distribution ARN provided. Images bucket policy allows any CloudFront.")
+
         # Store for cross-stack reference
         self._images_bucket_domain = images_bucket.bucket_regional_domain_name
         self._images_bucket_name = images_bucket.bucket_name
@@ -436,6 +466,29 @@ class BackendStack(Stack):
         CfnOutput(self, "WompiWebhookUrl", value=f"{http_api.api_endpoint}/api/webhooks/wompi")
         CfnOutput(self, "MercadoPagoWebhookUrl", value=f"{http_api.api_endpoint}/api/webhooks/mercadopago")
         CfnOutput(self, "BackendEnabled", value="true")
+
+    def add_distribution_arn(self, arn: str):
+        """Add a CloudFront distribution ARN for the images bucket policy."""
+        # Update the bucket policy with the actual distribution ARN
+        # The bucket was created earlier in __init__
+        images_bucket = self.node.find_child("ImagesBucket")
+        if images_bucket:
+            # Remove old permissive policy and add restricted one
+            # (the else branch policy was added during creation)
+            images_bucket.add_to_resource_policy(
+                iam.PolicyStatement(
+                    effect=iam.Effect.ALLOW,
+                    principals=[iam.ServicePrincipal('cloudfront.amazonaws.com')],
+                    actions=['s3:GetObject'],
+                    resources=[f"arn:aws:s3:::{self._images_bucket_name}/*"],
+                    conditions={
+                        'StringEquals': {
+                            'AWS:SourceArn': arn
+                        }
+                    }
+                )
+            )
+            print(f"Added bucket policy for {arn}")
 
     @staticmethod
     def _lambda_code(

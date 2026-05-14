@@ -415,7 +415,7 @@ class FrontendStack(Stack):
                 )
             )
 
-        distribution = cloudfront.CfnDistribution(
+        self._distribution = cloudfront.CfnDistribution(
             self,
             "WebsiteDistribution",
             distribution_config=cloudfront.CfnDistribution.DistributionConfigProperty(
@@ -472,7 +472,12 @@ class FrontendStack(Stack):
         # Outputs
         # ------------------------------------------------------------------
         CfnOutput(self, "WebsiteBucketName", value=bucket.bucket_name)
-        CfnOutput(self, "CloudFrontDistributionId", value=distribution.ref)
+        CfnOutput(self, "CloudFrontDistributionId", value=self._distribution.ref)
+
+    @property
+    def distribution_id(self):
+        """The CloudFront distribution ID."""
+        return self._distribution.ref
         CfnOutput(
             self,
             "CloudFrontDomainName",
