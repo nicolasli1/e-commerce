@@ -473,9 +473,21 @@ class FrontendStack(Stack):
         # ------------------------------------------------------------------
         CfnOutput(self, "WebsiteBucketName", value=bucket.bucket_name)
         CfnOutput(self, "CloudFrontDistributionId", value=self._distribution.ref)
-        CfnOutput(self, "CloudFrontDomainName", value=self._distribution.attr_domain_name)
-        CfnOutput(self, "WebsiteUrl", value=f"https://{self._distribution.attr_domain_name}")
-        CfnOutput(self, "AdminAuthFunctionArn", value=admin_auth_func.attr_function_arn)
+        CfnOutput(
+            self,
+            "CloudFrontDomainName",
+            value=self._distribution.attr_domain_name,
+        )
+        CfnOutput(
+            self,
+            "WebsiteUrl",
+            value=f"https://{self._distribution.attr_domain_name}",
+        )
+        CfnOutput(
+            self,
+            "AdminAuthFunctionArn",
+            value=admin_auth_func.attr_function_arn,
+        )
 
     @property
     def distribution_id(self):
