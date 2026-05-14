@@ -78,11 +78,6 @@ frontend = FrontendStack(
     ),
 )
 
-# Pass CloudFront distribution ARN to backend for images bucket policy
-if enable_backend_bool and frontend.distribution_id:
-    distribution_arn = f"arn:aws:cloudfront::{os.environ.get('CDK_DEFAULT_ACCOUNT', '203918882873')}:distribution/{frontend.distribution_id}"
-    backend.add_distribution_arn(distribution_arn)
-
 # Cross-stack dependency: frontend waits for backend outputs
 if enable_backend_bool:
     frontend.add_dependency(backend)
