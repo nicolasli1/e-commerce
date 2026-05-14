@@ -203,6 +203,7 @@ def verify_admin_token(token: str) -> str | None:
 
         parts = token.split(".")
         if len(parts) != 2:
+            print("verify_admin_token: invalid token format (expected 2 parts)")
             return None
         payload, sig = parts
         expected = hmac.new(
@@ -211,6 +212,7 @@ def verify_admin_token(token: str) -> str | None:
             hashlib.sha256,
         ).hexdigest()
         if not hmac.compare_digest(sig, expected):
+            print("verify_admin_token: HMAC signature mismatch")
             return None
         decoded = json.loads(
             base64.b64decode(payload).decode()
@@ -218,9 +220,13 @@ def verify_admin_token(token: str) -> str | None:
         # Check expiration
         exp = decoded.get("exp", 0)
         if exp and int(time.time()) > exp:
+            print("verify_admin_token: token expired (exp=%d)" % exp)
             return None
-        return decoded.get("sub")
-    except Exception:
+        sub = decoded.get("sub")
+        print("verify_admin_token: OK sub=%s" % sub)
+        return sub
+    except Exception as e:
+        print("verify_admin_token: exception: %s" % str(e))
         return None
 
 
