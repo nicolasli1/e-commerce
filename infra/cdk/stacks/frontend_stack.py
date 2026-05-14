@@ -461,7 +461,7 @@ class FrontendStack(Stack):
                     "StringEquals": {
                         "AWS:SourceArn": (
                             f"arn:aws:cloudfront::{self.account}"
-                            f":distribution/{distribution.ref}"
+                            f":distribution/{self._distribution.ref}"
                         )
                     }
                 },
@@ -481,12 +481,12 @@ class FrontendStack(Stack):
         CfnOutput(
             self,
             "CloudFrontDomainName",
-            value=distribution.attr_domain_name,
+            value=self._distribution.attr_domain_name,
         )
         CfnOutput(
             self,
             "WebsiteUrl",
-            value=f"https://{distribution.attr_domain_name}",
+            value=f"https://{self._distribution.attr_domain_name}",
         )
         CfnOutput(
             self,
