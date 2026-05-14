@@ -284,7 +284,7 @@ def handler(event, context):
     uploaded_urls = {}
     try:
         for size_name, image_bytes in sizes.items():
-            key = f"products/{product_id}/{size_name}.webp"
+            key = f"images/products/{product_id}/{size_name}.webp"
             s3.put_object(
                 Bucket=IMAGES_BUCKET,
                 Key=key,
