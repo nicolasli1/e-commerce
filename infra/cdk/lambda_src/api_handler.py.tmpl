@@ -743,6 +743,20 @@ def list_products():
     return response(200, {"ok": True, "products": items})
 
 
+
+def images_to_url(images, fallback_url=''):
+    """Convert images array to frontend-friendly format.
+    Returns an object {lg, md, sm} if images exist, or the fallback URL string."""
+    if images and isinstance(images, list) and len(images) > 0:
+        img = images[0]
+        if isinstance(img, dict):
+            return {
+                "lg": img.get("lg", fallback_url),
+                "md": img.get("md", fallback_url),
+                "sm": img.get("sm", fallback_url),
+            }
+    return fallback_url
+
 def list_public_products():
     items = products_table.scan().get("Items", [])
     active = [p for p in items if p.get("status", "active") != "deleted"]
@@ -753,8 +767,8 @@ def list_public_products():
         "description": p.get("description", ""),
         "price": p.get("price", 0),
         "category": p.get("category", "general"),
-        "imageUrl": p.get("imageUrl", ""),
         "images": p.get("images", []),
+        "imageUrl": images_to_url(p.get("images", []), p.get("imageUrl", "")),
         "stock": int(p.get("stock", 0)),
     } for p in active]
     return response(200, {"ok": True, "products": safe})
