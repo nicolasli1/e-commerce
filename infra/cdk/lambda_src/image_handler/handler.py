@@ -98,39 +98,44 @@ def _color_distance(c1, c2):
 
 
 def _detect_background_color(img: Image.Image) -> tuple:
-    """Detect the dominant background color from image borders."""
+    """Detect the dominant background color from image borders.
+    
+    Uses the most common color (mode) on the edges, which is more
+    robust than average when the product touches the edges.
+    """
     w, h = img.size
+    from collections import Counter
+
+    # Sample all four edges with higher density
     pixels = []
+    num_samples = min(100, w, h)
 
-    # Sample all four edges evenly
-    num_samples = min(50, w, h)
-
-    # Top edge
     for x in range(0, w, max(1, w // num_samples)):
         pixels.append(img.getpixel((x, 0))[:3])
-
-    # Bottom edge
-    for x in range(0, w, max(1, w // num_samples)):
         pixels.append(img.getpixel((x, h - 1))[:3])
 
-    # Left edge
     for y in range(0, h, max(1, h // num_samples)):
         pixels.append(img.getpixel((0, y))[:3])
-
-    # Right edge
-    for y in range(0, h, max(1, h // num_samples)):
         pixels.append(img.getpixel((w - 1, y))[:3])
 
     if not pixels:
         return (255, 255, 255)
 
-    # Average color (works well for solid backgrounds)
-    avg_r = sum(p[0] for p in pixels) // len(pixels)
-    avg_g = sum(p[1] for p in pixels) // len(pixels)
-    avg_b = sum(p[2] for p in pixels) // len(pixels)
+    # Quantize colors to 32 levels per channel to find dominant
+    quantized = [(r // 32 * 32, g // 32 * 32, b // 32 * 32) for r, g, b in pixels]
+    most_common = Counter(quantized).most_common(1)[0][0]
 
-    print(f"_detect_background_color: detected bg ({avg_r},{avg_g},{avg_b})")
-    return (avg_r, avg_g, avg_b)
+    # Refine: average all pixels in the dominant quantized bucket
+    refined = [
+        p for p in pixels
+        if (p[0] // 32 * 32, p[1] // 32 * 32, p[2] // 32 * 32) == most_common
+    ]
+    bg_r = sum(p[0] for p in refined) // len(refined)
+    bg_g = sum(p[1] for p in refined) // len(refined)
+    bg_b = sum(p[2] for p in refined) // len(refined)
+
+    print(f"_detect_background_color: detected bg ({bg_r},{bg_g},{bg_b}) from {len(refined)}/{len(pixels)} edge pixels")
+    return (bg_r, bg_g, bg_b)
 
 
 # ──────────────────────────────────────────────

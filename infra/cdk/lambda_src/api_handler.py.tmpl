@@ -754,6 +754,7 @@ def list_public_products():
         "price": p.get("price", 0),
         "category": p.get("category", "general"),
         "imageUrl": p.get("imageUrl", ""),
+        "images": p.get("images", []),
         "stock": int(p.get("stock", 0)),
     } for p in active]
     return response(200, {"ok": True, "products": safe})
