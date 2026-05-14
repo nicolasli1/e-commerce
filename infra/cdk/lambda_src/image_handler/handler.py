@@ -292,7 +292,7 @@ def handler(event, context):
                 ContentType="image/webp",
                 CacheControl="max-age=31536000, public",
             )
-            uploaded_urls[size_name] = f"/images/{key}"
+            uploaded_urls[size_name] = f"/{key}"
     except Exception as e:
         return response(500, {"error": f"s3_upload_failed: {str(e)}"})
 
