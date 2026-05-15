@@ -398,7 +398,7 @@ def transparent_product_canvas(img: Image.Image, target_size: tuple) -> Image.Im
         shadow_mask = Image.eval(gray, lambda x: 255 - x)
 
     # Resize product to fit within target (with margin)
-    margin_ratio = 0.85
+    margin_ratio = 0.92
     max_product_w = int(w * margin_ratio)
     max_product_h = int(h * margin_ratio)
     product.thumbnail((max_product_w, max_product_h), Image.LANCZOS)
