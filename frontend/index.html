@@ -676,10 +676,13 @@
       position: relative;
       z-index: 0;
       filter: drop-shadow(0 22px 28px rgba(0,0,0,0.42));
-      transform: scale(1.12);
+      --fit-scale: 1;
+      --fit-x: 0px;
+      --fit-y: 0px;
+      transform: translate(var(--fit-x), var(--fit-y)) scale(calc(var(--fit-scale) * 1.08));
     }
     .product-card:hover .product-img:not(.product-img-rotatable) {
-      transform: scale(1.22);
+      transform: translate(var(--fit-x), var(--fit-y)) scale(calc(var(--fit-scale) * 1.16));
     }
     /* Rotatable images overlap */
     .product-img-rotatable {
@@ -692,10 +695,10 @@
     .product-img-rotatable.active {
       opacity: 1;
       z-index: 1;
-      transform: scale(1.12);
+      transform: translate(var(--fit-x), var(--fit-y)) scale(calc(var(--fit-scale) * 1.08));
     }
     .product-card:hover .product-img-rotatable.active {
-      transform: scale(1.22);
+      transform: translate(var(--fit-x), var(--fit-y)) scale(calc(var(--fit-scale) * 1.16));
     }
     /* Image zoom modal */
     #imageZoomModal {
@@ -3873,6 +3876,82 @@
     let detailPanY = 0;
     let detailPanStart = null;
 
+    function autoFitProductImage(img, options = {}) {
+      if (!img || img.dataset.autoFitDone === '1') return;
+      if (!img.complete || !img.naturalWidth || !img.naturalHeight) {
+        img.addEventListener('load', () => autoFitProductImage(img, options), { once: true });
+        return;
+      }
+
+      try {
+        const sampleMax = 240;
+        const scale = Math.min(1, sampleMax / Math.max(img.naturalWidth, img.naturalHeight));
+        const w = Math.max(1, Math.round(img.naturalWidth * scale));
+        const h = Math.max(1, Math.round(img.naturalHeight * scale));
+        const canvas = document.createElement('canvas');
+        canvas.width = w;
+        canvas.height = h;
+        const ctx = canvas.getContext('2d', { willReadFrequently: true });
+        if (!ctx) return;
+        ctx.drawImage(img, 0, 0, w, h);
+        const pixels = ctx.getImageData(0, 0, w, h).data;
+        let minX = w, minY = h, maxX = -1, maxY = -1, opaque = 0;
+
+        for (let y = 0; y < h; y++) {
+          for (let x = 0; x < w; x++) {
+            const alpha = pixels[(y * w + x) * 4 + 3];
+            if (alpha > 18) {
+              opaque++;
+              if (x < minX) minX = x;
+              if (y < minY) minY = y;
+              if (x > maxX) maxX = x;
+              if (y > maxY) maxY = y;
+            }
+          }
+        }
+
+        if (!opaque || maxX < minX || maxY < minY) return;
+        const bboxW = maxX - minX + 1;
+        const bboxH = maxY - minY + 1;
+        const fillRatio = Math.max(bboxW / w, bboxH / h);
+
+        // Images without meaningful transparent padding do not need correction.
+        if (fillRatio > 0.74) {
+          img.dataset.autoFitDone = '1';
+          return;
+        }
+
+        const desiredFill = options.desiredFill || 0.82;
+        const maxScale = options.maxScale || 3.8;
+        const fitScale = Math.max(1, Math.min(maxScale, desiredFill / Math.max(fillRatio, 0.05)));
+        const centerX = (minX + maxX + 1) / 2 / w;
+        const centerY = (minY + maxY + 1) / 2 / h;
+        const fitX = (0.5 - centerX) * img.clientWidth;
+        const fitY = (0.5 - centerY) * img.clientHeight;
+
+        img.style.setProperty('--fit-scale', fitScale.toFixed(3));
+        img.style.setProperty('--fit-x', fitX.toFixed(1) + 'px');
+        img.style.setProperty('--fit-y', fitY.toFixed(1) + 'px');
+        img.dataset.fitScale = fitScale.toFixed(3);
+        img.dataset.fitX = fitX.toFixed(1);
+        img.dataset.fitY = fitY.toFixed(1);
+        img.dataset.autoFitDone = '1';
+        if (img.classList.contains('active')) applyDetailZoom();
+      } catch (err) {
+        img.dataset.autoFitDone = '1';
+      }
+    }
+
+    function autoFitProductImages(root = document) {
+      root.querySelectorAll('.product-img, #productDetailModal .gallery-main img').forEach((img) => {
+        const isDetail = img.closest('#productDetailModal');
+        autoFitProductImage(img, {
+          desiredFill: isDetail ? 0.9 : 0.84,
+          maxScale: isDetail ? 5 : 4.2,
+        });
+      });
+    }
+
     function openProductDetail(product) {
       detailCurrentProduct = product;
       detailGalleryIdx = 0;
@@ -3936,6 +4015,7 @@
         `;
         bindDetailPanHandlers();
         resetDetailZoom();
+        autoFitProductImages(galleryEl);
       }
 
       // Build info panel (checkout-style)
@@ -4017,7 +4097,10 @@
       if (range) range.value = detailZoom.toFixed(2);
       if (reset) reset.textContent = Math.round(detailZoom * 100) + '%';
       if (activeImg) {
-        activeImg.style.transform = `translate(${detailPanX}px, ${detailPanY}px) scale(${detailZoom})`;
+        const fitScale = Number(activeImg.dataset.fitScale || 1);
+        const fitX = Number(activeImg.dataset.fitX || 0);
+        const fitY = Number(activeImg.dataset.fitY || 0);
+        activeImg.style.transform = `translate(${fitX + detailPanX}px, ${fitY + detailPanY}px) scale(${fitScale * detailZoom})`;
       }
     }
 
@@ -4044,6 +4127,7 @@
       const main = document.querySelector('#productDetailModal .gallery-main');
       if (main) main.classList.remove('dragging');
       document.querySelectorAll('#productDetailModal .gallery-main img').forEach(img => {
+        if (img.classList.contains('active')) return;
         img.style.transform = '';
       });
       applyDetailZoom();
@@ -4264,6 +4348,7 @@
         `;
       }).join('');
 
+      autoFitProductImages(grid);
       const newReveals = document.querySelectorAll('.reveal:not(.visible)');
       newReveals.forEach(el => observer.observe(el));
     }
