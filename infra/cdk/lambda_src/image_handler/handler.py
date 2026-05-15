@@ -372,10 +372,11 @@ def strip_exif(img: Image.Image) -> Image.Image:
 #  Improvement 2: Professional Multi-Layer Shadow
 # ──────────────────────────────────────────────
 
-def white_background_drop_shadow(img: Image.Image, target_size: tuple) -> Image.Image:
-    """Place product on white background with professional multi-layer shadow.
+def transparent_product_canvas(img: Image.Image, target_size: tuple) -> Image.Image:
+    """Place product on a transparent canvas with a soft product shadow.
     
     Features:
+    - Transparent WebP output that blends with the dark storefront
     - Multi-layer shadow: tight dark layer + wide soft layer
     - Diagonal offset (bottom-right) for natural lighting
     - Gradient opacity (denser near product edge)
@@ -385,13 +386,13 @@ def white_background_drop_shadow(img: Image.Image, target_size: tuple) -> Image.
     """
     w, h = target_size
 
-    # Extract product RGB and shadow mask from alpha / luminance
+    # Extract product RGBA and shadow mask from alpha / luminance
     if img.mode == "RGBA":
-        r, g, b, alpha = img.split()
-        product = Image.merge("RGB", (r, g, b))
+        product = img.copy()
+        alpha = product.split()[3]
         shadow_mask = alpha
     else:
-        product = img.convert("RGB")
+        product = img.convert("RGBA")
         gray = product.convert("L")
         # Invert luminance so bright → transparent for shadow
         shadow_mask = Image.eval(gray, lambda x: 255 - x)
@@ -403,8 +404,8 @@ def white_background_drop_shadow(img: Image.Image, target_size: tuple) -> Image.
     product.thumbnail((max_product_w, max_product_h), Image.LANCZOS)
     shadow_mask = shadow_mask.resize(product.size, Image.LANCZOS)
 
-    # White canvas
-    canvas = Image.new("RGB", (w, h), (255, 255, 255))
+    # Transparent canvas so the storefront controls the visual surface.
+    canvas = Image.new("RGBA", (w, h), (0, 0, 0, 0))
 
     # Centered positions with diagonal shadow offset
     center_x = (w - product.width) // 2
@@ -415,22 +416,21 @@ def white_background_drop_shadow(img: Image.Image, target_size: tuple) -> Image.
     shadow_dark = shadow_mask.filter(ImageFilter.GaussianBlur(radius=6))
     shadow_dark = ImageEnhance.Brightness(shadow_dark).enhance(0.5)
 
-    shadow1 = Image.new("L", (w, h), 0)
-    shadow1.paste(shadow_dark, (center_x + offset_x, center_y + offset_y))
-    dark_overlay = Image.new("RGB", (w, h), (0, 0, 0))
-    canvas = Image.composite(dark_overlay, canvas, shadow1)
+    shadow1 = Image.new("RGBA", (w, h), (0, 0, 0, 0))
+    shadow1_layer = Image.new("RGBA", product.size, (0, 0, 0, 120))
+    shadow1_layer.putalpha(shadow_dark)
+    canvas.alpha_composite(shadow1_layer, (center_x + offset_x, center_y + offset_y))
 
     # ── Layer 2: Soft outer shadow (wider, lower opacity) ──
     shadow_soft = shadow_mask.filter(ImageFilter.GaussianBlur(radius=16))
     shadow_soft = ImageEnhance.Brightness(shadow_soft).enhance(0.2)
 
-    shadow2 = Image.new("L", (w, h), 0)
-    shadow2.paste(shadow_soft, (center_x + offset_x, center_y + offset_y))
-    soft_overlay = Image.new("RGB", (w, h), (0, 0, 0))
-    canvas = Image.composite(soft_overlay, canvas, shadow2)
+    shadow2_layer = Image.new("RGBA", product.size, (0, 0, 0, 80))
+    shadow2_layer.putalpha(shadow_soft)
+    canvas.alpha_composite(shadow2_layer, (center_x + offset_x, center_y + offset_y))
 
     # ── Paste product centered (no offset) ──
-    canvas.paste(product, (center_x, center_y))
+    canvas.alpha_composite(product, (center_x, center_y))
 
     return canvas
 
@@ -525,11 +525,8 @@ def color_correction(img: Image.Image) -> Image.Image:
 
 def process_size(img: Image.Image, size_name: str, dimensions: tuple) -> bytes:
     """Process a single image size: shadow + watermark + adaptive WebP compression."""
-    # Professional shadow on white background
-    processed = white_background_drop_shadow(img, dimensions)
-
-    # Semi-transparent watermark
-    processed = add_watermark(processed)
+    # Transparent canvas with product shadow, designed for the dark storefront.
+    processed = transparent_product_canvas(img, dimensions)
 
     # Adaptive compression
     quality = COMPRESSION_QUALITY.get(size_name, 80)
