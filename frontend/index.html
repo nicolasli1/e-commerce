@@ -3401,7 +3401,7 @@
             ${
               item.imageUrl
                 ? (typeof item.imageUrl === 'object' && item.imageUrl.sm
-                  ? `<img class="checkout-result-item-thumb" src="${item.imageUrl.sm}" srcset="${item.imageUrl.sm} 150w${item.imageUrl.md ? ', ' + item.imageUrl.md + ' 400w' : ''}" sizes="150px" alt="${item.name || 'Producto'}" loading="lazy" />`
+                  ? `<img class="checkout-result-item-thumb" src="${item.imageUrl.sm}" srcset="${item.imageUrl.sm} 180w${item.imageUrl.md ? ', ' + item.imageUrl.md + ' 700w' : ''}" sizes="150px" alt="${item.name || 'Producto'}" loading="lazy" />`
                   : `<img class="checkout-result-item-thumb" src="${typeof item.imageUrl === 'string' ? item.imageUrl : item.imageUrl.md || item.imageUrl.lg}" alt="${item.name || 'Producto'}" loading="lazy" />`)
                 : `<div class="checkout-result-item-icon">📦</div>`
             }
@@ -4197,9 +4197,9 @@
           const mdUrl = first.md || lgUrl;
           const smUrl = first.sm || mdUrl;
           const srcsetParts = [];
-          if (smUrl) srcsetParts.push(smUrl + ' 150w');
-          if (mdUrl) srcsetParts.push(mdUrl + ' 400w');
-          if (lgUrl) srcsetParts.push(lgUrl + ' 800w');
+          if (smUrl) srcsetParts.push(smUrl + ' 180w');
+          if (mdUrl) srcsetParts.push(mdUrl + ' 700w');
+          if (lgUrl) srcsetParts.push(lgUrl + ' 1600w');
 
           // Build rotatable images (hide all but first)
           const rotatableImgs = allImages.map((img, idx) => {
@@ -4207,8 +4207,8 @@
             if (!url) return '';
             return `<img class="product-img product-img-rotatable${idx === 0 ? ' active' : ''}"
               src="${img.md || img.lg || ''}"
-              srcset="${img.sm ? img.sm + ' 150w' : ''}${img.md ? ', ' + img.md + ' 400w' : ''}${img.lg ? ', ' + img.lg + ' 800w' : ''}"
-              sizes="(max-width: 480px) 150px, (max-width: 768px) 400px, 800px"
+              srcset="${img.sm ? img.sm + ' 180w' : ''}${img.md ? ', ' + img.md + ' 700w' : ''}${img.lg ? ', ' + img.lg + ' 1600w' : ''}"
+              sizes="(max-width: 480px) 180px, (max-width: 768px) 700px, 700px"
               alt="${p.name}"
               loading="lazy"
               decoding="async"

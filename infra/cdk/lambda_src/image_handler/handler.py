@@ -43,16 +43,16 @@ ALLOWED_TYPES = {"image/jpeg", "image/png", "image/webp"}
 MAX_SIZE_BYTES = 5 * 1024 * 1024  # 5 MB
 
 OUTPUT_SIZES = {
-    "lg": (800, 800),   # page de producto
-    "md": (400, 400),   # catálogo / carrusel
-    "sm": (150, 150),   # carrito / miniatura
+    "lg": (1600, 1600),  # detalle / zoom de producto
+    "md": (700, 700),    # catálogo / carrusel
+    "sm": (180, 180),    # carrito / miniatura
 }
 
 # Adaptive compression quality per size (higher res = more quality budget)
 COMPRESSION_QUALITY = {
-    "lg": 85,
-    "md": 80,
-    "sm": 75,
+    "lg": 90,
+    "md": 84,
+    "sm": 76,
 }
 
 # Color distance threshold for background detection
