@@ -184,9 +184,50 @@
       padding: 10px 22px;
       font-size: 0.8125rem;
     }
-    .btn-sm {
-      padding: 10px 22px;
+
+    /* Details button (glass secondary style) */
+    .btn-details {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+      padding: 10px 16px;
+      border-radius: 12px;
+      background: rgba(255, 255, 255, 0.04);
+      color: #9ca3af;
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      cursor: pointer;
+      font-family: inherit;
       font-size: 0.8125rem;
+      font-weight: 500;
+      transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+      white-space: nowrap;
+    }
+    .btn-details:hover {
+      background: rgba(99, 102, 241, 0.1);
+      border-color: rgba(99, 102, 241, 0.2);
+      color: #c4b5fd;
+      transform: translateY(-1px);
+      box-shadow: 0 4px 12px rgba(99, 102, 241, 0.12);
+    }
+    .btn-details:active {
+      transform: translateY(0px);
+    }
+
+    /* Product card action row */
+    .product-card-actions {
+      display: flex;
+      gap: 6px;
+    }
+    .product-card-actions .btn,
+    .product-card-actions .btn-details {
+      flex: 1;
+    }
+
+    @media (max-width: 480px) {
+      .product-card-actions {
+        flex-direction: column;
+      }
     }
 
     /* Glass card */
