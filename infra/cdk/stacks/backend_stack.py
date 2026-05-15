@@ -234,8 +234,8 @@ class BackendStack(Stack):
                 str(pathlib.Path(__file__).parent.parent / "lambda_src" / "image_handler")
             ),
             layers=[pillow_layer],
-            timeout=Duration.seconds(30),
-            memory_size=512,
+            timeout=Duration.seconds(45),
+            memory_size=1024,
             environment={
                 "IMAGES_BUCKET": images_bucket.bucket_name,
                 "ADMIN_SESSION_SECRET_PARAM": f"/{project_name}/{environment}/admin-session-secret",

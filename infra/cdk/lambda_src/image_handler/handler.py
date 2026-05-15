@@ -43,14 +43,14 @@ ALLOWED_TYPES = {"image/jpeg", "image/png", "image/webp"}
 MAX_SIZE_BYTES = 5 * 1024 * 1024  # 5 MB
 
 OUTPUT_SIZES = {
-    "lg": (1600, 1600),  # detalle / zoom de producto
+    "lg": (1400, 1400),  # detalle / zoom de producto
     "md": (700, 700),    # catálogo / carrusel
     "sm": (180, 180),    # carrito / miniatura
 }
 
 # Adaptive compression quality per size (higher res = more quality budget)
 COMPRESSION_QUALITY = {
-    "lg": 90,
+    "lg": 88,
     "md": 84,
     "sm": 76,
 }
@@ -531,7 +531,7 @@ def process_size(img: Image.Image, size_name: str, dimensions: tuple) -> bytes:
     # Adaptive compression
     quality = COMPRESSION_QUALITY.get(size_name, 80)
     buf = io.BytesIO()
-    processed.save(buf, format="WEBP", quality=quality, optimize=True, method=6)
+    processed.save(buf, format="WEBP", quality=quality, method=4)
     buf.seek(0)
     bytes_out = buf.getvalue()
 

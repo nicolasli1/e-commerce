@@ -4199,7 +4199,7 @@
           const srcsetParts = [];
           if (smUrl) srcsetParts.push(smUrl + ' 180w');
           if (mdUrl) srcsetParts.push(mdUrl + ' 700w');
-          if (lgUrl) srcsetParts.push(lgUrl + ' 1600w');
+          if (lgUrl) srcsetParts.push(lgUrl + ' 1400w');
 
           // Build rotatable images (hide all but first)
           const rotatableImgs = allImages.map((img, idx) => {
@@ -4207,7 +4207,7 @@
             if (!url) return '';
             return `<img class="product-img product-img-rotatable${idx === 0 ? ' active' : ''}"
               src="${img.md || img.lg || ''}"
-              srcset="${img.sm ? img.sm + ' 180w' : ''}${img.md ? ', ' + img.md + ' 700w' : ''}${img.lg ? ', ' + img.lg + ' 1600w' : ''}"
+              srcset="${img.sm ? img.sm + ' 180w' : ''}${img.md ? ', ' + img.md + ' 700w' : ''}${img.lg ? ', ' + img.lg + ' 1400w' : ''}"
               sizes="(max-width: 480px) 180px, (max-width: 768px) 700px, 700px"
               alt="${p.name}"
               loading="lazy"
