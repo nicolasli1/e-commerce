@@ -239,6 +239,8 @@ class BackendStack(Stack):
             environment={
                 "IMAGES_BUCKET": images_bucket.bucket_name,
                 "ADMIN_SESSION_SECRET_PARAM": f"/{project_name}/{environment}/admin-session-secret",
+                "REMOVEBG_API_KEY_PARAM": f"/{project_name}/{environment}/removebg-api-key",
+                "REMOVEBG_API_KEY_REGION": self.region,
             },
         )
 
@@ -248,7 +250,8 @@ class BackendStack(Stack):
             iam.PolicyStatement(
                 actions=["ssm:GetParameter"],
                 resources=[
-                    f"arn:aws:ssm:{self.region}:{self.account}:parameter/{project_name}/{environment}/admin-session-secret"
+                    f"arn:aws:ssm:{self.region}:{self.account}:parameter/{project_name}/{environment}/admin-session-secret",
+                    f"arn:aws:ssm:{self.region}:{self.account}:parameter/{project_name}/{environment}/removebg-api-key",
                 ],
             )
         )

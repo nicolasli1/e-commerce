@@ -26,6 +26,8 @@ import mimetypes
 import os
 import time
 import uuid
+import urllib.error
+import urllib.request
 
 import boto3
 from PIL import Image, ImageFilter, ImageEnhance, ImageOps, ImageDraw, ImageFont
@@ -34,6 +36,8 @@ s3 = boto3.client("s3")
 ssm = boto3.client("ssm")
 
 IMAGES_BUCKET = os.environ.get("IMAGES_BUCKET", "")
+REMOVEBG_API_KEY_PARAM = os.environ.get("REMOVEBG_API_KEY_PARAM", "")
+REMOVEBG_API_KEY_REGION = os.environ.get("REMOVEBG_API_KEY_REGION") or os.environ.get("AWS_REGION", "us-east-1")
 
 ALLOWED_TYPES = {"image/jpeg", "image/png", "image/webp"}
 MAX_SIZE_BYTES = 5 * 1024 * 1024  # 5 MB
@@ -53,6 +57,8 @@ COMPRESSION_QUALITY = {
 
 # Color distance threshold for background detection
 BG_COLOR_THRESHOLD = 60
+
+_removebg_api_key_cache = None
 
 
 def response(status_code, body, extra_headers=None):
@@ -86,6 +92,118 @@ def validate_image(image_data: bytes) -> tuple[bool, str]:
         return True, fmt
     except Exception:
         return False, "Invalid image file"
+
+
+def image_has_transparency(img: Image.Image) -> bool:
+    """Return True when the image already has a meaningful alpha mask."""
+    if img.mode != "RGBA":
+        return False
+    alpha = img.getchannel("A")
+    extrema = alpha.getextrema()
+    return bool(extrema and extrema[0] < 250)
+
+
+def get_removebg_api_key() -> str | None:
+    """Load remove.bg API key from SSM once per warm Lambda container."""
+    global _removebg_api_key_cache
+    if _removebg_api_key_cache:
+        return _removebg_api_key_cache
+    if not REMOVEBG_API_KEY_PARAM:
+        return None
+
+    try:
+        client = ssm
+        if REMOVEBG_API_KEY_REGION and REMOVEBG_API_KEY_REGION != os.environ.get("AWS_REGION"):
+            client = boto3.client("ssm", region_name=REMOVEBG_API_KEY_REGION)
+        result = client.get_parameter(Name=REMOVEBG_API_KEY_PARAM, WithDecryption=True)
+        _removebg_api_key_cache = result["Parameter"]["Value"]
+        print("get_removebg_api_key: loaded key from SSM")
+        return _removebg_api_key_cache
+    except Exception as exc:
+        print(f"get_removebg_api_key: unavailable ({exc})")
+        return None
+
+
+def remove_background_with_removebg(image_data: bytes) -> bytes | None:
+    """Use remove.bg for high-quality background removal.
+
+    Returns transparent PNG bytes on success, or None so the local pipeline can
+    continue as a fallback.
+    """
+    api_key = get_removebg_api_key()
+    if not api_key:
+        return None
+
+    boundary = "----NexCoreRemoveBgBoundary"
+    fields = [
+        (
+            "size",
+            None,
+            b"auto",
+            None,
+        ),
+        (
+            "type",
+            None,
+            b"product",
+            None,
+        ),
+        (
+            "format",
+            None,
+            b"png",
+            None,
+        ),
+        (
+            "image_file",
+            "product.jpg",
+            image_data,
+            "application/octet-stream",
+        ),
+    ]
+
+    body = bytearray()
+    for name, filename, value, content_type in fields:
+        body.extend(f"--{boundary}\r\n".encode())
+        disposition = f'Content-Disposition: form-data; name="{name}"'
+        if filename:
+            disposition += f'; filename="{filename}"'
+        body.extend(f"{disposition}\r\n".encode())
+        if content_type:
+            body.extend(f"Content-Type: {content_type}\r\n".encode())
+        body.extend(b"\r\n")
+        body.extend(value)
+        body.extend(b"\r\n")
+    body.extend(f"--{boundary}--\r\n".encode())
+
+    request = urllib.request.Request(
+        "https://api.remove.bg/v1.0/removebg",
+        data=bytes(body),
+        method="POST",
+        headers={
+            "X-Api-Key": api_key,
+            "Content-Type": f"multipart/form-data; boundary={boundary}",
+            "Accept": "image/png",
+        },
+    )
+
+    try:
+        with urllib.request.urlopen(request, timeout=18) as resp:
+            if resp.status != 200:
+                print(f"remove_background_with_removebg: non-200 status {resp.status}")
+                return None
+            cleaned = resp.read()
+        if not cleaned:
+            return None
+        print(f"remove_background_with_removebg: success bytes={len(cleaned)}")
+        return cleaned
+    except urllib.error.HTTPError as exc:
+        detail = exc.read(300).decode("utf-8", "replace")
+        print(f"remove_background_with_removebg: HTTP {exc.code} {detail}")
+        return None
+    except Exception as exc:
+        print(f"remove_background_with_removebg: failed ({exc})")
+        return None
 
 
 # ──────────────────────────────────────────────
@@ -451,15 +569,24 @@ def process_image(image_data: bytes) -> dict[str, bytes]:
       4. Color correction
       5. Generate all 3 sizes in parallel (shadow + watermark + compression)
     """
+    removebg_image_data = remove_background_with_removebg(image_data)
+    if removebg_image_data:
+        image_data = removebg_image_data
+
     img = Image.open(io.BytesIO(image_data))
 
     # Step 0 — Strip EXIF (security, defense-in-depth)
     # ──────────────────────────────────────────────
     img = strip_exif(img)
 
-    # Step 1 — Smart background removal → RGBA with transparent bg
+    # Step 1 — Smart background removal → RGBA with transparent bg.
+    # If remove.bg already returned a transparent PNG, keep its alpha mask.
     # ──────────────────────────────────────────────
-    img = smart_background_removal(img)
+    if image_has_transparency(img.convert("RGBA")):
+        img = img.convert("RGBA")
+        print("process_image: using existing transparent alpha mask")
+    else:
+        img = smart_background_removal(img)
 
     # Step 2 — Auto-crop using alpha channel
     # ──────────────────────────────────────────────
