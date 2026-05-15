@@ -859,6 +859,7 @@
       width: 100%;
       height: 260px;
       overflow: hidden;
+      touch-action: none;
     }
     @media (min-width: 640px) {
       .detail-gallery .gallery-main {
@@ -879,6 +880,9 @@
       position: absolute;
       inset: 0;
       filter: drop-shadow(0 28px 38px rgba(0,0,0,0.5));
+      transform-origin: center center;
+      user-select: none;
+      -webkit-user-drag: none;
     }
     @media (min-width: 1024px) {
       .detail-gallery .gallery-main img {
@@ -894,6 +898,77 @@
       opacity: 0;
       z-index: 0;
       transform: scale(0.9);
+    }
+    .detail-gallery .gallery-main.zoomed {
+      cursor: grab;
+    }
+    .detail-gallery .gallery-main.zoomed.dragging {
+      cursor: grabbing;
+    }
+    .gallery-zoom-controls {
+      position: absolute;
+      left: 50%;
+      bottom: 14px;
+      z-index: 8;
+      transform: translateX(-50%);
+      display: grid;
+      grid-template-columns: 34px minmax(120px, 190px) 34px 58px;
+      align-items: center;
+      gap: 8px;
+      padding: 8px;
+      border-radius: 9999px;
+      background: rgba(8, 9, 16, 0.72);
+      border: 1px solid rgba(255, 255, 255, 0.09);
+      box-shadow: 0 18px 46px rgba(0, 0, 0, 0.36);
+      backdrop-filter: blur(14px);
+      -webkit-backdrop-filter: blur(14px);
+    }
+    .gallery-zoom-btn,
+    .gallery-zoom-reset {
+      height: 34px;
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      background: rgba(255, 255, 255, 0.05);
+      color: #f5f5f7;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: 700;
+    }
+    .gallery-zoom-btn {
+      width: 34px;
+      border-radius: 9999px;
+      font-size: 1rem;
+    }
+    .gallery-zoom-reset {
+      border-radius: 9999px;
+      font-size: 0.68rem;
+      color: #c4b5fd;
+    }
+    .gallery-zoom-btn:hover,
+    .gallery-zoom-reset:hover {
+      background: rgba(167, 139, 250, 0.18);
+      border-color: rgba(167, 139, 250, 0.34);
+    }
+    .gallery-zoom-range {
+      width: 100%;
+      min-width: 0;
+      accent-color: #a78bfa;
+      cursor: pointer;
+    }
+    @media (max-width: 560px) {
+      .gallery-zoom-controls {
+        grid-template-columns: 30px minmax(86px, 1fr) 30px 48px;
+        width: calc(100% - 28px);
+        bottom: 10px;
+      }
+      .gallery-zoom-btn,
+      .gallery-zoom-reset {
+        height: 30px;
+      }
+      .gallery-zoom-btn {
+        width: 30px;
+      }
     }
     .detail-gallery .gallery-nav-btn {
       position: absolute;
@@ -949,7 +1024,7 @@
       position: absolute;
       bottom: 10px;
       right: 10px;
-      z-index: 5;
+      z-index: 9;
       background: rgba(0,0,0,0.45);
       backdrop-filter: blur(6px);
       -webkit-backdrop-filter: blur(6px);
@@ -3785,6 +3860,10 @@
     let detailGalleryIdx = 0;
     let detailGalleryInterval = null;
     let detailCurrentProduct = null;
+    let detailZoom = 1;
+    let detailPanX = 0;
+    let detailPanY = 0;
+    let detailPanStart = null;
 
     function openProductDetail(product) {
       detailCurrentProduct = product;
@@ -3838,9 +3917,17 @@
             ${mainImgs}
             ${navArrows}
             ${counter}
+            <div class="gallery-zoom-controls" onclick="event.stopPropagation()" onpointerdown="event.stopPropagation()">
+              <button class="gallery-zoom-btn" type="button" onclick="nudgeDetailZoom(-0.25)" aria-label="Alejar">−</button>
+              <input class="gallery-zoom-range" id="detailZoomRange" type="range" min="1" max="3" step="0.05" value="1" oninput="setDetailZoom(this.value)" aria-label="Zoom de imagen" />
+              <button class="gallery-zoom-btn" type="button" onclick="nudgeDetailZoom(0.25)" aria-label="Acercar">+</button>
+              <button class="gallery-zoom-reset" id="detailZoomReset" type="button" onclick="resetDetailZoom()" aria-label="Restablecer zoom">100%</button>
+            </div>
           </div>
           <div class="gallery-thumbs">${thumbs}</div>
         `;
+        bindDetailPanHandlers();
+        resetDetailZoom();
       }
 
       // Build info panel (checkout-style)
@@ -3874,6 +3961,8 @@
       if (modal) modal.classList.remove('open');
       document.body.classList.remove('modal-open');
       detailCurrentProduct = null;
+      detailPanStart = null;
+      resetDetailZoom();
     }
 
     function setGalleryImage(idx) {
@@ -3889,9 +3978,100 @@
       // Update counter display
       const counterSpan = document.getElementById('galleryCurrentIdx');
       if (counterSpan) counterSpan.textContent = idx + 1;
+      resetDetailZoom();
       // Reset auto-rotation timer
       stopGalleryRotation();
       startGalleryRotation();
+    }
+
+    function clampDetailPan() {
+      const main = document.querySelector('#productDetailModal .gallery-main');
+      if (!main || detailZoom <= 1) {
+        detailPanX = 0;
+        detailPanY = 0;
+        return;
+      }
+      const rect = main.getBoundingClientRect();
+      const maxX = (rect.width * (detailZoom - 1)) / 2;
+      const maxY = (rect.height * (detailZoom - 1)) / 2;
+      detailPanX = Math.max(-maxX, Math.min(maxX, detailPanX));
+      detailPanY = Math.max(-maxY, Math.min(maxY, detailPanY));
+    }
+
+    function applyDetailZoom() {
+      clampDetailPan();
+      const main = document.querySelector('#productDetailModal .gallery-main');
+      const activeImg = document.querySelector('#productDetailModal .gallery-main img.active');
+      const range = document.getElementById('detailZoomRange');
+      const reset = document.getElementById('detailZoomReset');
+
+      if (main) main.classList.toggle('zoomed', detailZoom > 1);
+      if (range) range.value = detailZoom.toFixed(2);
+      if (reset) reset.textContent = Math.round(detailZoom * 100) + '%';
+      if (activeImg) {
+        activeImg.style.transform = `translate(${detailPanX}px, ${detailPanY}px) scale(${detailZoom})`;
+      }
+    }
+
+    function setDetailZoom(value) {
+      detailZoom = Math.max(1, Math.min(3, Number(value) || 1));
+      if (detailZoom <= 1.01) {
+        detailZoom = 1;
+        detailPanX = 0;
+        detailPanY = 0;
+      }
+      applyDetailZoom();
+      stopGalleryRotation();
+    }
+
+    function nudgeDetailZoom(delta) {
+      setDetailZoom(detailZoom + delta);
+    }
+
+    function resetDetailZoom() {
+      detailZoom = 1;
+      detailPanX = 0;
+      detailPanY = 0;
+      detailPanStart = null;
+      const main = document.querySelector('#productDetailModal .gallery-main');
+      if (main) main.classList.remove('dragging');
+      document.querySelectorAll('#productDetailModal .gallery-main img').forEach(img => {
+        img.style.transform = '';
+      });
+      applyDetailZoom();
+    }
+
+    function bindDetailPanHandlers() {
+      const main = document.querySelector('#productDetailModal .gallery-main');
+      if (!main) return;
+      main.addEventListener('pointerdown', (event) => {
+        if (detailZoom <= 1 || event.target.closest('button, input')) return;
+        detailPanStart = {
+          pointerId: event.pointerId,
+          x: event.clientX,
+          y: event.clientY,
+          panX: detailPanX,
+          panY: detailPanY,
+        };
+        main.classList.add('dragging');
+        main.setPointerCapture(event.pointerId);
+        event.preventDefault();
+        stopGalleryRotation();
+      });
+      main.addEventListener('pointermove', (event) => {
+        if (!detailPanStart || event.pointerId !== detailPanStart.pointerId) return;
+        detailPanX = detailPanStart.panX + event.clientX - detailPanStart.x;
+        detailPanY = detailPanStart.panY + event.clientY - detailPanStart.y;
+        applyDetailZoom();
+      });
+      const endPan = (event) => {
+        if (detailPanStart && event.pointerId === detailPanStart.pointerId) {
+          detailPanStart = null;
+          main.classList.remove('dragging');
+        }
+      };
+      main.addEventListener('pointerup', endPan);
+      main.addEventListener('pointercancel', endPan);
     }
 
     function nextGalleryImage() {
