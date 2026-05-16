@@ -484,91 +484,17 @@
     /* ==============================
        CATEGORIES
     ============================== */
-    .categories {
-      padding: 100px 0;
-    }
-    .categories-grid {
-      display: grid;
-      grid-template-columns: repeat(3, 1fr);
-      gap: 20px;
-    }
-    .category-card {
-      padding: 28px 20px;
-      text-align: center;
-      border-radius: 20px;
-      background: rgba(255, 255, 255, 0.03);
-      border: 1px solid rgba(255, 255, 255, 0.06);
-      transition: all 0.5s cubic-bezier(0.34, 1.56, 0.64, 1);
-      cursor: pointer;
-      position: relative;
-      overflow: hidden;
-    }
-    .category-card::before {
-      content: '';
-      position: absolute;
-      inset: 0;
-      background: linear-gradient(135deg, rgba(99, 102, 241, 0.08), rgba(168, 85, 247, 0.04));
-      opacity: 0;
-      transition: opacity 0.4s ease;
-    }
-    .category-card:hover::before { opacity: 1; }
-    .category-card:hover {
-      transform: translateY(-6px) scale(1.02);
-      border-color: rgba(99, 102, 241, 0.3);
-      box-shadow: 0 20px 60px rgba(99, 102, 241, 0.1);
-    }
-    .category-icon {
-      width: 48px;
-      height: 48px;
-      border-radius: 14px;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      margin: 0 auto 12px;
-      font-size: 1.375rem;
-      position: relative;
-      z-index: 1;
-    }
-    .category-card h3 {
-      font-size: 1rem;
-      font-weight: 600;
-      margin-bottom: 6px;
-      position: relative;
-      z-index: 1;
-    }
-    .category-card p {
-      font-size: 0.75rem;
-      color: #86868b;
-      position: relative;
-      z-index: 1;
-      line-height: 1.5;
-    }
-    .category-count {
-      display: inline-block;
-      margin-top: 8px;
-      font-size: 0.6875rem;
-      font-weight: 500;
-      color: #a5b4fc;
-      background: rgba(99, 102, 241, 0.1);
-      padding: 3px 10px;
-      border-radius: 9999px;
-      position: relative;
-      z-index: 1;
-    }
-    .hero-grid {
-      display: grid;
-      grid-template-columns: 1.2fr 1fr;
-      gap: 48px;
-      align-items: center;
-    }
-    .hero-content { position: relative; z-index: 1; }
-    .hero-visual {
-      position: relative;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      min-height: 360px;
-    }
+
+
+
+
+
+
+
+
+
+
+
 
     /* ==============================
        FEATURED PRODUCTS
@@ -2261,9 +2187,7 @@
       box-shadow: 0 4px 16px rgba(34,197,94,0.25);
     }
     @media (max-width: 1024px) {
-      .categories-grid {
-        grid-template-columns: repeat(2, 1fr);
-      }
+
       .hero-grid {
         grid-template-columns: 1fr;
         gap: 32px;
@@ -2615,9 +2539,7 @@
       }
     }
     @media (max-width: 480px) {
-      .categories-grid {
-        grid-template-columns: 1fr;
-      }
+
       .hero-mockup {
         grid-template-columns: 1fr 1fr;
       }
@@ -2647,7 +2569,6 @@
         NexCore
       </a>
       <div class="nav-links" id="navLinks">
-        <a href="#categorias">Categorías</a>
         <a href="#productos">Productos</a>
         <a href="#testimonios">Testimonios</a>
         <a href="#precios">Kits DIY</a>
@@ -2684,7 +2605,6 @@
       <button class="mobile-nav-close" onclick="closeMobileNav()" aria-label="Cerrar menú">✕</button>
     </div>
     <div class="mobile-nav-links">
-      <a href="#categorias" onclick="closeMobileNav()"><span class="mobile-nav-link-icon">📂</span> Categorías</a>
       <a href="#productos" onclick="closeMobileNav()"><span class="mobile-nav-link-icon">🏪</span> Productos</a>
       <a href="#testimonios" onclick="closeMobileNav()"><span class="mobile-nav-link-icon">💬</span> Testimonios</a>
       <a href="#precios" onclick="closeMobileNav()"><span class="mobile-nav-link-icon">🧰</span> Kits DIY</a>
@@ -2740,9 +2660,7 @@
                 Explorar catálogo
                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
               </a>
-              <a href="#categorias" class="btn btn-secondary">
-                Ver categorías
-              </a>
+              
             </div>
           </div>
 
@@ -2783,52 +2701,7 @@
   <!-- ============================
        CATEGORIES
   ============================ -->
-  <section class="categories" id="categorias">
-    <div class="container">
-      <div class="section-header reveal">
-        <h2 class="section-title">Categorías</h2>
-        <p class="section-subtitle">Explora por tipo de reparación y encuentra el repuesto correcto para cada intervención.</p>
-      </div>
-      <div class="categories-grid">
-        <div class="category-card reveal reveal-delay-1" data-category="pantallas">
-          <div class="category-icon" style="background:rgba(99,102,241,0.12);color:#818cf8;">🖥️</div>
-          <h3>Pantallas</h3>
-          <p>Módulos AMOLED, OLED, LCD y touch para cambios rápidos y limpios.</p>
-          <span class="category-count">24 repuestos</span>
-        </div>
-        <div class="category-card reveal reveal-delay-2" data-category="baterias">
-          <div class="category-icon" style="background:rgba(236,72,153,0.12);color:#f472b6;">🔋</div>
-          <h3>Baterías</h3>
-          <p>Reemplazos de alta capacidad y opciones OEM para más modelos.</p>
-          <span class="category-count">18 repuestos</span>
-        </div>
-        <div class="category-card reveal reveal-delay-3" data-category="flex-y-conectores">
-          <div class="category-icon" style="background:rgba(34,197,94,0.12);color:#4ade80;">🔌</div>
-          <h3>Flex y conectores</h3>
-          <p>Flex de carga, encendido, volumen, audio y sensores para reparación fina.</p>
-          <span class="category-count">22 repuestos</span>
-        </div>
-        <div class="category-card reveal reveal-delay-1" data-category="camaras-y-modulos">
-          <div class="category-icon" style="background:rgba(251,191,36,0.12);color:#fbbf24;">📷</div>
-          <h3>Cámaras y módulos</h3>
-          <p>Cámaras frontal y trasera, parlantes, vibradores y piezas internas clave.</p>
-          <span class="category-count">15 repuestos</span>
-        </div>
-        <div class="category-card reveal reveal-delay-2" data-category="tapas-y-carcasa">
-          <div class="category-icon" style="background:rgba(168,85,247,0.12);color:#c084fc;">📦</div>
-          <h3>Tapas y carcasa</h3>
-          <p>Tapas traseras, marcos y piezas externas para dejar el equipo presentable.</p>
-          <span class="category-count">12 repuestos</span>
-        </div>
-        <div class="category-card reveal reveal-delay-3" data-category="herramientas-diy">
-          <div class="category-icon" style="background:rgba(6,182,212,0.12);color:#22d3ee;">🛠️</div>
-          <h3>Herramientas DIY</h3>
-          <p>Kits de apertura, pinzas, adhesivos y consumibles para trabajar con confianza.</p>
-          <span class="category-count">9 kits</span>
-        </div>
-      </div>
-    </div>
-  </section>
+
 
   <!-- ============================
        PRODUCTS
@@ -4412,13 +4285,7 @@
     
     loadProducts();
 
-    document.querySelectorAll('.category-card[data-category]').forEach((card) => {
-      card.addEventListener('click', () => {
-        activeProductCategory = card.dataset.category || '';
-        renderStorefrontProducts();
-        document.getElementById('productos')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
-      });
-    });
+
 
     // ==============================
     // SCROLL REVEAL (Intersection Observer)
