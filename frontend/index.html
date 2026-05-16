@@ -430,7 +430,23 @@
       flex-wrap: wrap;
       margin-top: 36px;
     }
-
+    .hero-stats {
+      display: flex;
+      gap: 48px;
+      margin-top: 64px;
+      padding-top: 40px;
+      border-top: 1px solid rgba(255, 255, 255, 0.06);
+    }
+    .hero-stat h3 {
+      font-size: 2rem;
+      font-weight: 700;
+      letter-spacing: -0.03em;
+    }
+    .hero-stat p {
+      font-size: 0.875rem;
+      color: #86868b;
+      margin-top: 4px;
+    }
 
     /* Hero decorative elements */
     .hero-glow {
@@ -2561,7 +2577,10 @@
         gap: 20px;
         border-bottom: 1px solid rgba(255, 255, 255, 0.06);
       }
-
+      .hero-stats {
+        flex-direction: column;
+        gap: 24px;
+      }
       .products-grid {
         grid-template-columns: 1fr;
       }
@@ -2727,6 +2746,24 @@
             </div>
           </div>
 
+          <div class="hero-stats reveal visible reveal-delay-2">
+            <div class="hero-stat">
+              <h3>5,000+</h3>
+              <p>Repuestos vendidos</p>
+            </div>
+            <div class="hero-stat">
+              <h3>99.2%</h3>
+              <p>Clientes satisfechos</p>
+            </div>
+            <div class="hero-stat">
+              <h3>24-48h</h3>
+              <p>Envíos a Colombia</p>
+            </div>
+            <div class="hero-stat">
+              <h3>4.9★</h3>
+              <p>Calificación promedio</p>
+            </div>
+          </div>
         </div>
 
         <div class="hero-visual reveal visible reveal-delay-1">
