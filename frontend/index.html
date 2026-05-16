@@ -2149,76 +2149,7 @@
       justify-content: center;
       min-height: 400px;
     }
-    .hero-mockup {
-      position: relative;
-      width: 100%;
-      max-width: 440px;
-      aspect-ratio: 4/3;
-      display: grid;
-      grid-template-columns: 1fr 1fr;
-      grid-template-rows: 1fr 1fr;
-      gap: 12px;
-      padding: 20px;
-    }
-    .mockup-item {
-      border-radius: 20px;
-      background: rgba(255,255,255,0.04);
-      border: 1px solid rgba(255,255,255,0.08);
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      justify-content: center;
-      gap: 8px;
-      font-size: 2.5rem;
-      transition: all 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
-      position: relative;
-      overflow: hidden;
-    }
-    .mockup-item::before {
-      content: '';
-      position: absolute;
-      inset: 0;
-      background: linear-gradient(135deg, rgba(99,102,241,0.08), transparent);
-      opacity: 0;
-      transition: opacity 0.4s ease;
-    }
-    .mockup-item:hover::before { opacity: 1; }
-    .mockup-item:hover {
-      transform: translateY(-4px) scale(1.02);
-      border-color: rgba(99,102,241,0.25);
-      box-shadow: 0 12px 40px rgba(99,102,241,0.1);
-    }
-    .mockup-item span {
-      font-size: 0.6875rem;
-      color: #86868b;
-      font-weight: 500;
-    }
-    .mockup-item:nth-child(1) { grid-column: 1; grid-row: 1; }
-    .mockup-item:nth-child(2) { grid-column: 2; grid-row: 1; }
-    .mockup-item:nth-child(3) { grid-column: 1; grid-row: 2; }
-    .mockup-item:nth-child(4) { grid-column: 2; grid-row: 2; }
-    .mockup-glow-1 {
-      position: absolute;
-      width: 300px;
-      height: 300px;
-      border-radius: 50%;
-      background: radial-gradient(circle, rgba(99,102,241,0.12), transparent 70%);
-      top: 10%;
-      right: 5%;
-      pointer-events: none;
-      animation: glow-float 8s ease-in-out infinite;
-    }
-    .mockup-glow-2 {
-      position: absolute;
-      width: 200px;
-      height: 200px;
-      border-radius: 50%;
-      background: radial-gradient(circle, rgba(236,72,153,0.08), transparent 70%);
-      bottom: 5%;
-      left: 5%;
-      pointer-events: none;
-      animation: glow-float 10s ease-in-out infinite reverse;
-    }
+
     /* ==============================
        PRODUCT CARDS — quick-add
     ============================== */
@@ -2618,9 +2549,7 @@
       .categories-grid {
         grid-template-columns: 1fr;
       }
-      .hero-mockup {
-        grid-template-columns: 1fr 1fr;
-      }
+
     }
     @media (max-width: 1180px) {
       .checkout-shell {
@@ -2767,14 +2696,7 @@
         </div>
 
         <div class="hero-visual reveal visible reveal-delay-1">
-          <div class="mockup-glow-1"></div>
-          <div class="mockup-glow-2"></div>
-          <div class="hero-mockup">
-            <div class="mockup-item">📱<span>Pantallas</span></div>
-            <div class="mockup-item">🔋<span>Baterías</span></div>
-            <div class="mockup-item">🧰<span>Kits</span></div>
-            <div class="mockup-item">📷<span>Cámaras</span></div>
-          </div>
+
         </div>
       </div>
     </div>
