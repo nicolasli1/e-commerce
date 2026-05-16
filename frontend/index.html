@@ -489,10 +489,8 @@
     }
     .categories-grid {
       display: grid;
-      grid-template-columns: repeat(2, 1fr);
+      grid-template-columns: repeat(3, 1fr);
       gap: 20px;
-      max-width: 600px;
-      margin: 0 auto;
     }
     .category-card {
       padding: 28px 20px;
@@ -2789,25 +2787,45 @@
     <div class="container">
       <div class="section-header reveal">
         <h2 class="section-title">Categorías</h2>
-        <p class="section-subtitle">Componentes y accesorios esenciales para tu taller.</p>
+        <p class="section-subtitle">Explora por tipo de reparación y encuentra el repuesto correcto para cada intervención.</p>
       </div>
       <div class="categories-grid">
-
-
+        <div class="category-card reveal reveal-delay-1" data-category="pantallas">
+          <div class="category-icon" style="background:rgba(99,102,241,0.12);color:#818cf8;">🖥️</div>
+          <h3>Pantallas</h3>
+          <p>Módulos AMOLED, OLED, LCD y touch para cambios rápidos y limpios.</p>
+          <span class="category-count">24 repuestos</span>
+        </div>
+        <div class="category-card reveal reveal-delay-2" data-category="baterias">
+          <div class="category-icon" style="background:rgba(236,72,153,0.12);color:#f472b6;">🔋</div>
+          <h3>Baterías</h3>
+          <p>Reemplazos de alta capacidad y opciones OEM para más modelos.</p>
+          <span class="category-count">18 repuestos</span>
+        </div>
         <div class="category-card reveal reveal-delay-3" data-category="flex-y-conectores">
           <div class="category-icon" style="background:rgba(34,197,94,0.12);color:#4ade80;">🔌</div>
           <h3>Flex y conectores</h3>
           <p>Flex de carga, encendido, volumen, audio y sensores para reparación fina.</p>
           <span class="category-count">22 repuestos</span>
         </div>
-
+        <div class="category-card reveal reveal-delay-1" data-category="camaras-y-modulos">
+          <div class="category-icon" style="background:rgba(251,191,36,0.12);color:#fbbf24;">📷</div>
+          <h3>Cámaras y módulos</h3>
+          <p>Cámaras frontal y trasera, parlantes, vibradores y piezas internas clave.</p>
+          <span class="category-count">15 repuestos</span>
+        </div>
         <div class="category-card reveal reveal-delay-2" data-category="tapas-y-carcasa">
           <div class="category-icon" style="background:rgba(168,85,247,0.12);color:#c084fc;">📦</div>
           <h3>Tapas y carcasa</h3>
           <p>Tapas traseras, marcos y piezas externas para dejar el equipo presentable.</p>
           <span class="category-count">12 repuestos</span>
         </div>
-
+        <div class="category-card reveal reveal-delay-3" data-category="herramientas-diy">
+          <div class="category-icon" style="background:rgba(6,182,212,0.12);color:#22d3ee;">🛠️</div>
+          <h3>Herramientas DIY</h3>
+          <p>Kits de apertura, pinzas, adhesivos y consumibles para trabajar con confianza.</p>
+          <span class="category-count">9 kits</span>
+        </div>
       </div>
     </div>
   </section>
