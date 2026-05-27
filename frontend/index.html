@@ -4675,6 +4675,7 @@
     // ==============================
     const AUTH_TOKEN_KEY = 'nexcore_auth_token';
     const AUTH_USER_KEY = 'nexcore_auth_user';
+    const AUTH_USERID_KEY = 'nexcore_auth_user_id';
     let currentUser = JSON.parse(localStorage.getItem(AUTH_USER_KEY) || 'null');
 
     function isLoggedIn() {
@@ -4703,37 +4704,51 @@
     }
 
     function openAuthModal() {
-      document.getElementById('authModal').classList.add('open');
+      const modal = document.getElementById('authModal');
+      if (!modal) return;
+      modal.classList.add('open');
       document.body.classList.add('modal-open');
     }
 
     function closeAuthModal() {
-      document.getElementById('authModal').classList.remove('open');
+      const modal = document.getElementById('authModal');
+      if (!modal) return;
+      modal.classList.remove('open');
       document.body.classList.remove('modal-open');
-      document.getElementById('authStatus').className = 'checkout-status';
-      document.getElementById('authStatus').textContent = '';
+      const status = document.getElementById('authStatus');
+      if (status) {
+        status.className = 'checkout-status';
+        status.textContent = '';
+      }
     }
 
     function setAuthStatus(msg, type) {
       const el = document.getElementById('authStatus');
+      if (!el) return;
       el.textContent = msg;
       el.className = 'checkout-status visible' + (type ? ' ' + type : '');
     }
 
     function showRegisterForm() {
-      document.getElementById('loginForm').style.display = 'none';
-      document.getElementById('registerForm').style.display = 'block';
-      document.getElementById('authTitle').textContent = 'Crear cuenta';
+      const loginForm = document.getElementById('loginForm');
+      const registerForm = document.getElementById('registerForm');
+      const title = document.getElementById('authTitle');
+      if (loginForm) loginForm.style.display = 'none';
+      if (registerForm) registerForm.style.display = 'block';
+      if (title) title.textContent = 'Crear cuenta';
     }
 
     function showLoginForm() {
-      document.getElementById('loginForm').style.display = 'block';
-      document.getElementById('registerForm').style.display = 'none';
-      document.getElementById('authTitle').textContent = 'Ingresar';
+      const loginForm = document.getElementById('loginForm');
+      const registerForm = document.getElementById('registerForm');
+      const title = document.getElementById('authTitle');
+      if (loginForm) loginForm.style.display = 'block';
+      if (registerForm) registerForm.style.display = 'none';
+      if (title) title.textContent = 'Ingresar';
     }
 
     // Login form submit
-    document.getElementById('loginForm').addEventListener('submit', async (e) => {
+    document.getElementById('loginForm')?.addEventListener('submit', async (e) => {
       e.preventDefault();
       const email = document.getElementById('loginEmail').value.trim();
       const password = document.getElementById('loginPassword').value;
@@ -4768,7 +4783,7 @@
     });
 
     // Register form submit
-    document.getElementById('registerForm').addEventListener('submit', async (e) => {
+    document.getElementById('registerForm')?.addEventListener('submit', async (e) => {
       e.preventDefault();
       const name = document.getElementById('registerName').value.trim();
       const email = document.getElementById('registerEmail').value.trim();
