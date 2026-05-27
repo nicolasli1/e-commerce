@@ -14,6 +14,7 @@ const App = (() => {
     { value: 'flex-y-conectores', label: 'Flex y conectores' },
     { value: 'camaras-y-modulos', label: 'Cámaras y módulos' },
     { value: 'tapas-y-carcasa', label: 'Tapas y carcasa' },
+    { value: 'accesorios', label: 'Accesorios' },
     { value: 'herramientas-diy', label: 'Herramientas DIY' },
   ];
 
