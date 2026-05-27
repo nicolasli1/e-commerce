@@ -4079,30 +4079,38 @@
       const stock = getStockMeta(product.stock);
       const quality = product.quality || 'Sin especificar';
       const qualityTip = QUALITY_TIPS[quality] || 'Calidad pendiente de confirmar.';
+      const hasQuality = Boolean(product.quality);
+      const hasCompatibility = Array.isArray(product.compatibility) && product.compatibility.filter(Boolean).length > 0;
+      const hasShipping = Boolean(product.shippingTime);
+      const hasWarranty = Boolean(product.warranty);
+      const infoCards = [
+        `<div class="detail-info-card ${stock.tone}">
+          <span class="detail-info-icon">📦</span>
+          <div><span class="detail-info-label">Stock disponible</span><span class="detail-info-value">${htmlSafe(stock.text)}</span></div>
+        </div>`,
+        hasQuality ? `<div class="detail-info-card">
+          <span class="detail-info-icon">🏷️</span>
+          <div><span class="detail-info-label">Calidad</span><span class="detail-info-value"><span class="quality-pill" data-tip="${htmlSafe(qualityTip)}">${htmlSafe(quality)}</span></span></div>
+        </div>` : '',
+        hasCompatibility ? `<div class="detail-info-card">
+          <span class="detail-info-icon">📱</span>
+          <div><span class="detail-info-label">Compatibilidad</span>${renderCompatibility(product.compatibility)}</div>
+        </div>` : '',
+        hasShipping ? `<div class="detail-info-card">
+          <span class="detail-info-icon">🚚</span>
+          <div><span class="detail-info-label">Envío estimado</span><span class="detail-info-value">${htmlSafe(product.shippingTime)}</span></div>
+        </div>` : '',
+        hasWarranty ? `<div class="detail-info-card">
+          <span class="detail-info-icon">🛡️</span>
+          <div><span class="detail-info-label">Garantía</span><span class="detail-info-value">${htmlSafe(product.warranty)}</span></div>
+        </div>` : ''
+      ].filter(Boolean).join('');
+
       return `
         <div class="detail-product-info">
           <h3>Información del producto</h3>
           <div class="detail-info-grid">
-            <div class="detail-info-card ${stock.tone}">
-              <span class="detail-info-icon">📦</span>
-              <div><span class="detail-info-label">Stock disponible</span><span class="detail-info-value">${htmlSafe(stock.text)}</span></div>
-            </div>
-            <div class="detail-info-card">
-              <span class="detail-info-icon">🏷️</span>
-              <div><span class="detail-info-label">Calidad</span><span class="detail-info-value"><span class="quality-pill" data-tip="${htmlSafe(qualityTip)}">${htmlSafe(quality)}</span></span></div>
-            </div>
-            <div class="detail-info-card">
-              <span class="detail-info-icon">📱</span>
-              <div><span class="detail-info-label">Compatibilidad</span>${renderCompatibility(product.compatibility)}</div>
-            </div>
-            <div class="detail-info-card">
-              <span class="detail-info-icon">🚚</span>
-              <div><span class="detail-info-label">Envío estimado</span><span class="detail-info-value">${htmlSafe(product.shippingTime || 'Envío nacional disponible')}</span></div>
-            </div>
-            <div class="detail-info-card">
-              <span class="detail-info-icon">🛡️</span>
-              <div><span class="detail-info-label">Garantía</span><span class="detail-info-value">${htmlSafe(product.warranty || 'Garantía por defecto de fábrica')}</span></div>
-            </div>
+            ${infoCards}
           </div>
         </div>
         <div class="detail-trust-row">
