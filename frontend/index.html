@@ -386,12 +386,12 @@
        HERO
     ============================== */
     .hero {
-      min-height: 100vh;
+      min-height: auto;
       display: flex;
       align-items: center;
       position: relative;
       overflow: hidden;
-      padding-top: 80px;
+      padding: 120px 0 56px;
     }
     .hero-grid {
       display: grid;
@@ -457,8 +457,8 @@
       display: flex;
       justify-content: center;
       gap: 48px;
-      margin-top: 64px;
-      padding-top: 40px;
+      margin-top: 48px;
+      padding-top: 32px;
       border-top: 1px solid rgba(255, 255, 255, 0.06);
     }
     .hero-stat h3 {
@@ -509,7 +509,7 @@
        CATEGORIES
     ============================== */
     .categories {
-      padding: 100px 0;
+      padding: 56px 0 100px;
     }
     .categories-grid {
       display: grid;
@@ -2667,6 +2667,12 @@
       .hero-stats {
         flex-direction: column;
         gap: 24px;
+      }
+      .hero {
+        padding: 104px 0 44px;
+      }
+      .categories {
+        padding-top: 44px;
       }
       .products-grid {
         grid-template-columns: 1fr;
