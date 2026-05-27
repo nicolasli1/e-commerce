@@ -770,6 +770,10 @@ def list_public_products():
         "images": p.get("images", []),
         "imageUrl": images_to_url(p.get("images", []), p.get("imageUrl", "")),
         "stock": int(p.get("stock", 0)),
+        "quality": p.get("quality", ""),
+        "compatibility": p.get("compatibility", []),
+        "shippingTime": p.get("shippingTime", ""),
+        "warranty": p.get("warranty", ""),
     } for p in active]
     return response(200, {"ok": True, "products": safe})
 
@@ -799,6 +803,14 @@ def create_product(body):
         "imageUrl": image_url,
         "images": images_parsed,
         "stock": int(body.get("stock", 0)),
+        "quality": (body.get("quality") or "").strip(),
+        "compatibility": [
+            str(model).strip()
+            for model in (body.get("compatibility") or [])
+            if str(model).strip()
+        ],
+        "shippingTime": (body.get("shippingTime") or "").strip(),
+        "warranty": (body.get("warranty") or "").strip(),
         "status": body.get("status", "active").strip(),
         "createdAt": now_iso(),
         "updatedAt": now_iso(),
@@ -814,9 +826,15 @@ def update_product(product_id, body):
     if not existing:
         return response(404, {"error": "not_found"})
     updates = {}
-    for field in ["name", "description", "imageUrl", "status"]:
+    for field in ["name", "description", "imageUrl", "status", "quality", "shippingTime", "warranty"]:
         if field in body:
             updates[field] = body[field]
+    if "compatibility" in body:
+        updates["compatibility"] = [
+            str(model).strip()
+            for model in (body.get("compatibility") or [])
+            if str(model).strip()
+        ]
     if "images" in body:
         images_raw = body["images"]
         images_parsed = []

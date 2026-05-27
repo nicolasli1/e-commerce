@@ -540,37 +540,99 @@ const App = (() => {
             <button class="modal-close" id="modalCloseBtn">✕</button>
           </div>
           <form id="productForm">
-            <div class="form-group">
-              <label class="form-label">Nombre</label>
-              <input class="form-input" id="pName" required placeholder="Ej: AMD Ryzen 7 9800X3D" />
-            </div>
-            <div class="form-group">
-              <label class="form-label">Descripción</label>
-              <textarea class="form-textarea" id="pDesc" placeholder="Descripción del producto"></textarea>
-            </div>
-            <div class="form-row">
-              <div class="form-group">
-                <label class="form-label">Precio (COP)</label>
-                <input class="form-input" type="number" step="1" id="pPrice" required placeholder="289000" />
-              </div>
-              <div class="form-group">
-                <label class="form-label">Stock</label>
-                <input class="form-input" type="number" id="pStock" placeholder="0" />
-              </div>
-            </div>
-            <div class="form-row">
-              <div class="form-group">
-                <label class="form-label">Categoría</label>
-                <select class="form-select" id="pCategory"></select>
-              </div>
-              <div class="form-group">
-                <label class="form-label">Imágenes</label>
-                <div class="image-upload-area">
-                  <input type="file" accept="image/*" id="pImageInput" style="display:none" />
-                  <button type="button" class="btn btn-secondary btn-sm" id="pImageUploadBtn">📷 Agregar imagen</button>
+            <div class="product-form-section">
+              <div class="form-section-heading">
+                <span class="form-section-icon">📦</span>
+                <div>
+                  <h3>Información principal</h3>
+                  <p>Datos visibles en catálogo y detalle del producto.</p>
                 </div>
-                <div class="product-images" id="pImagesPreview"></div>
               </div>
+              <div class="form-group">
+                <label class="form-label">Nombre del producto</label>
+                <input class="form-input" id="pName" required placeholder="Ej: Pantalla OLED iPhone 11" />
+              </div>
+              <div class="form-group">
+                <label class="form-label">Descripción corta</label>
+                <textarea class="form-textarea" id="pDesc" placeholder="Describe calidad, modelo, instalación o notas importantes"></textarea>
+              </div>
+              <div class="form-row">
+                <div class="form-group">
+                  <label class="form-label">Precio (COP)</label>
+                  <input class="form-input" type="number" step="1" id="pPrice" required placeholder="289000" />
+                </div>
+                <div class="form-group">
+                  <label class="form-label">Stock</label>
+                  <input class="form-input" type="number" id="pStock" placeholder="0" />
+                  <div class="stock-hint" id="pStockHint">Define unidades disponibles para mostrar confianza.</div>
+                </div>
+              </div>
+              <div class="form-row">
+                <div class="form-group">
+                  <label class="form-label">Categoría</label>
+                  <select class="form-select" id="pCategory"></select>
+                </div>
+                <div class="form-group">
+                  <label class="form-label">Imágenes</label>
+                  <div class="image-upload-area">
+                    <input type="file" accept="image/*" id="pImageInput" style="display:none" />
+                    <button type="button" class="btn btn-secondary btn-sm" id="pImageUploadBtn">📷 Agregar imagen</button>
+                  </div>
+                  <div class="product-images" id="pImagesPreview"></div>
+                </div>
+              </div>
+            </div>
+
+            <div class="product-form-section">
+              <div class="form-section-heading">
+                <span class="form-section-icon">🧪</span>
+                <div>
+                  <h3>Información técnica</h3>
+                  <p>Ayuda al comprador a validar compatibilidad, calidad y garantía.</p>
+                </div>
+              </div>
+              <div class="form-row">
+                <div class="form-group">
+                  <label class="form-label">Calidad del repuesto</label>
+                  <select class="form-select" id="pQuality">
+                    <option value="">Sin especificar</option>
+                    <option value="Original">Original</option>
+                    <option value="OEM">OEM</option>
+                    <option value="AAA">AAA</option>
+                    <option value="GX">GX</option>
+                    <option value="Refurbished">Refurbished</option>
+                  </select>
+                </div>
+                <div class="form-group">
+                  <label class="form-label">Tiempo de envío</label>
+                  <input class="form-input" id="pShippingTime" placeholder="Ej: 2-4 días hábiles" />
+                </div>
+              </div>
+              <div class="form-row">
+                <div class="form-group">
+                  <label class="form-label">Garantía</label>
+                  <input class="form-input" id="pWarranty" placeholder="Ej: Garantía de 30 días" />
+                </div>
+                <div class="form-group">
+                  <label class="form-label">Compatibilidad</label>
+                  <div class="tag-input-shell" id="pCompatibilityShell">
+                    <div class="tag-list" id="pCompatibilityTags"></div>
+                    <input class="tag-input" id="pCompatibilityInput" placeholder="Buscar o agregar modelo…" />
+                  </div>
+                  <div class="form-helper">Enter o coma para agregar. Ej: iPhone 11, iPhone XR.</div>
+                </div>
+              </div>
+            </div>
+
+            <div class="product-form-section product-live-preview">
+              <div class="form-section-heading compact">
+                <span class="form-section-icon">👁️</span>
+                <div>
+                  <h3>Preview rápido</h3>
+                  <p>Vista resumida de confianza para el cliente.</p>
+                </div>
+              </div>
+              <div class="product-tech-preview" id="pTechPreview"></div>
             </div>
             <div class="modal-footer">
               <button type="button" class="btn btn-secondary" id="modalCancelBtn">Cancelar</button>
@@ -600,13 +662,14 @@ const App = (() => {
       filtered.forEach((p) => {
         const statusClass = `badge-${p.status || 'active'}`;
         const isDeleted = p.status === 'deleted';
+        const stock = stockLabel(p.stock);
         const tr = $el('tr', { dataset: { productId: p.productId, category: p.category || '' } });
         if (isDeleted) tr.classList.add('deleted');
         tr.innerHTML = `
           <td><strong>${esc(p.name)}</strong></td>
           <td>$${Number(p.price).toLocaleString('en-US', { minimumFractionDigits: 2 })}</td>
           <td>${esc(getCategoryLabel(p.category))}</td>
-          <td>${p.stock ?? 0}</td>
+          <td><span class="stock-badge ${stock.tone}">${esc(stock.text)}</span></td>
           <td><span class="badge ${statusClass}">${esc(p.status || 'active')}</span></td>
           <td>
             <div class="table-actions">
@@ -630,6 +693,13 @@ const App = (() => {
     const pPrice = document.getElementById('pPrice');
     const pStock = document.getElementById('pStock');
     const pCategory = document.getElementById('pCategory');
+    const pQuality = document.getElementById('pQuality');
+    const pShippingTime = document.getElementById('pShippingTime');
+    const pWarranty = document.getElementById('pWarranty');
+    const pCompatibilityInput = document.getElementById('pCompatibilityInput');
+    const pCompatibilityTags = document.getElementById('pCompatibilityTags');
+    const pStockHint = document.getElementById('pStockHint');
+    const pTechPreview = document.getElementById('pTechPreview');
 
     pCategory.innerHTML = PRODUCT_CATEGORY_OPTIONS.map((option) => (
       `<option value="${option.value}">${option.label}</option>`
@@ -638,6 +708,74 @@ const App = (() => {
     let editingId = null;
     let uploadedImages = [];
     let isUploading = false;
+    let compatibilityTags = [];
+
+    function stockLabel(stock) {
+      const count = Number(stock) || 0;
+      if (count <= 0) return { text: 'Agotado', tone: 'danger' };
+      if (count < 5) return { text: `Últimas ${count} unidades`, tone: 'warning' };
+      return { text: `${count} unidades disponibles`, tone: 'success' };
+    }
+
+    function renderCompatibilityTags() {
+      pCompatibilityTags.innerHTML = compatibilityTags.map((tag, idx) => `
+        <span class="compat-tag">${esc(tag)}<button type="button" data-idx="${idx}" aria-label="Eliminar ${esc(tag)}">×</button></span>
+      `).join('');
+      pCompatibilityTags.querySelectorAll('button').forEach((btn) => {
+        btn.addEventListener('click', () => {
+          compatibilityTags.splice(parseInt(btn.dataset.idx), 1);
+          renderCompatibilityTags();
+          updateTechPreview();
+        });
+      });
+    }
+
+    function addCompatibilityTag(value) {
+      const tags = (value || '').split(',').map((item) => item.trim()).filter(Boolean);
+      if (tags.length === 0) return;
+      tags.forEach((tag) => {
+        const exists = compatibilityTags.some((item) => item.toLowerCase() === tag.toLowerCase());
+        if (!exists) compatibilityTags.push(tag);
+      });
+      pCompatibilityInput.value = '';
+      renderCompatibilityTags();
+      updateTechPreview();
+    }
+
+    function updateStockHint() {
+      const stock = stockLabel(pStock.value);
+      pStockHint.textContent = stock.text;
+      pStockHint.className = `stock-hint ${stock.tone}`;
+    }
+
+    function updateTechPreview() {
+      updateStockHint();
+      const stock = stockLabel(pStock.value);
+      const shown = compatibilityTags.slice(0, 3);
+      const more = compatibilityTags.length - shown.length;
+      pTechPreview.innerHTML = `
+        <div class="tech-preview-item ${stock.tone}">
+          <span>📦</span>
+          <strong>${stock.text}</strong>
+        </div>
+        <div class="tech-preview-item">
+          <span>🏷️</span>
+          <strong>${esc(pQuality.value || 'Calidad sin especificar')}</strong>
+        </div>
+        <div class="tech-preview-item">
+          <span>📱</span>
+          <strong>${shown.length ? shown.map(esc).join(', ') + (more > 0 ? ` +${more} más` : '') : 'Compatibilidad pendiente'}</strong>
+        </div>
+        <div class="tech-preview-item">
+          <span>🚚</span>
+          <strong>${esc(pShippingTime.value || 'Tiempo de envío pendiente')}</strong>
+        </div>
+        <div class="tech-preview-item">
+          <span>🛡️</span>
+          <strong>${esc(pWarranty.value || 'Garantía pendiente')}</strong>
+        </div>
+      `;
+    }
 
     function renderImagePreviews() {
       const container = document.getElementById('pImagesPreview');
@@ -721,6 +859,12 @@ const App = (() => {
       pPrice.value = product ? product.price : '';
       pStock.value = product ? product.stock : '';
       pCategory.value = product ? (product.category || 'pantallas') : 'pantallas';
+      pQuality.value = product ? (product.quality || '') : '';
+      pShippingTime.value = product ? (product.shippingTime || '') : '';
+      pWarranty.value = product ? (product.warranty || '') : '';
+      compatibilityTags = Array.isArray(product?.compatibility) ? product.compatibility.slice() : [];
+      renderCompatibilityTags();
+      updateTechPreview();
 
       // Restore images from existing product
       uploadedImages = [];
@@ -737,6 +881,7 @@ const App = (() => {
     function closeModal() {
       modal.classList.remove('open');
       editingId = null;
+      compatibilityTags = [];
       productForm.reset();
     }
 
@@ -756,6 +901,21 @@ const App = (() => {
     document.getElementById('modalCloseBtn').addEventListener('click', closeModal);
     document.getElementById('modalCancelBtn').addEventListener('click', closeModal);
     modal.addEventListener('click', (e) => { if (e.target === modal) closeModal(); });
+    pCompatibilityInput.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter' || e.key === ',') {
+        e.preventDefault();
+        addCompatibilityTag(pCompatibilityInput.value);
+      } else if (e.key === 'Backspace' && !pCompatibilityInput.value && compatibilityTags.length) {
+        compatibilityTags.pop();
+        renderCompatibilityTags();
+        updateTechPreview();
+      }
+    });
+    pCompatibilityInput.addEventListener('blur', () => addCompatibilityTag(pCompatibilityInput.value));
+    [pStock, pQuality, pShippingTime, pWarranty].forEach((input) => {
+      input.addEventListener('input', updateTechPreview);
+      input.addEventListener('change', updateTechPreview);
+    });
 
     productForm.addEventListener('submit', async (e) => {
       e.preventDefault();
@@ -770,6 +930,10 @@ const App = (() => {
         price: parseFloat(pPrice.value),
         stock: parseInt(pStock.value) || 0,
         category: pCategory.value,
+        quality: pQuality.value,
+        compatibility: compatibilityTags,
+        shippingTime: pShippingTime.value.trim(),
+        warranty: pWarranty.value.trim(),
         images: uploadedImages,
       };
 
