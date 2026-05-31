@@ -1734,6 +1734,154 @@
     body.modal-open {
       overflow: hidden;
     }
+
+    /* ── Cart redesign ─────────────────────────────── */
+    .cart-item {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      padding: 14px 0;
+      border-bottom: 1px solid rgba(255,255,255,0.05);
+      opacity: 1;
+      transform: translateY(0);
+      transition: opacity 180ms cubic-bezier(0.16,1,0.3,1),
+                  transform 180ms cubic-bezier(0.16,1,0.3,1),
+                  max-height 200ms cubic-bezier(0.16,1,0.3,1),
+                  padding 200ms cubic-bezier(0.16,1,0.3,1);
+      max-height: 120px;
+      overflow: hidden;
+    }
+    @starting-style {
+      .cart-item { opacity: 0; transform: translateY(6px); }
+    }
+    .cart-item.removing {
+      opacity: 0;
+      transform: scale(0.96) translateY(-4px);
+      max-height: 0;
+      padding-top: 0;
+      padding-bottom: 0;
+      pointer-events: none;
+    }
+    .cart-item-info { flex: 1; min-width: 0; }
+    .cart-item-name {
+      font-weight: 600;
+      font-size: 0.9rem;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+    .cart-item-price {
+      color: #86868b;
+      font-size: 0.75rem;
+      margin-top: 2px;
+    }
+    .cart-qty {
+      display: flex;
+      align-items: center;
+      gap: 0;
+      background: rgba(255,255,255,0.05);
+      border: 1px solid rgba(255,255,255,0.08);
+      border-radius: 9999px;
+      padding: 2px;
+    }
+    .cart-qty-btn {
+      width: 30px;
+      height: 30px;
+      border-radius: 9999px;
+      border: none;
+      background: transparent;
+      color: #f5f5f7;
+      font-size: 1.1rem;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: background 120ms cubic-bezier(0.16,1,0.3,1),
+                  transform 100ms cubic-bezier(0.16,1,0.3,1);
+      line-height: 1;
+    }
+    @media (hover: hover) and (pointer: fine) {
+      .cart-qty-btn:hover { background: rgba(255,255,255,0.1); }
+    }
+    .cart-qty-btn:active { transform: scale(0.88); }
+    .cart-qty-count {
+      min-width: 26px;
+      text-align: center;
+      font-size: 0.875rem;
+      font-weight: 600;
+      font-variant-numeric: tabular-nums;
+    }
+    .cart-item-subtotal {
+      min-width: 72px;
+      text-align: right;
+      font-weight: 700;
+      font-size: 0.9rem;
+      font-variant-numeric: tabular-nums;
+    }
+    .cart-remove {
+      width: 28px;
+      height: 28px;
+      border-radius: 9999px;
+      border: none;
+      background: transparent;
+      color: #86868b;
+      font-size: 0.75rem;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: background 120ms, color 120ms, transform 100ms cubic-bezier(0.16,1,0.3,1);
+      flex-shrink: 0;
+    }
+    @media (hover: hover) and (pointer: fine) {
+      .cart-remove:hover { background: rgba(239,68,68,0.12); color: #ef4444; }
+    }
+    .cart-remove:active { transform: scale(0.88); }
+    .cart-empty-state {
+      text-align: center;
+      padding: 48px 24px;
+      color: #86868b;
+    }
+    .cart-empty-icon {
+      font-size: 2.5rem;
+      margin-bottom: 12px;
+      opacity: 0.5;
+    }
+    .cart-empty-text {
+      font-size: 0.9rem;
+    }
+    .cart-footer {
+      border-top: 1px solid rgba(255,255,255,0.06);
+      padding-top: 20px;
+      margin-top: 12px;
+    }
+    .cart-total-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: baseline;
+      margin-bottom: 16px;
+    }
+    .cart-total-label {
+      font-size: 0.875rem;
+      color: #86868b;
+    }
+    .cart-total-amount {
+      font-size: 1.375rem;
+      font-weight: 700;
+      letter-spacing: -0.02em;
+      font-variant-numeric: tabular-nums;
+    }
+    .cart-checkout-btn {
+      width: 100%;
+      justify-content: center;
+    }
+    .cart-secure-note {
+      font-size: 0.7rem;
+      color: #86868b;
+      text-align: center;
+      margin-top: 10px;
+      line-height: 1.5;
+    }
     .checkout-modal {
       width: min(100%, 980px);
       max-height: min(90vh, 820px);
@@ -4183,19 +4331,19 @@
       </div>
       <div id="cartContent">
         <div id="cartItems"></div>
-        <div id="cartEmpty" style="text-align:center;padding:40px;color:#86868b;">
-          <p style="font-size:2rem;margin-bottom:12px;">🛒</p>
-          <p>Tu carrito está vacío</p>
+        <div id="cartEmpty" class="cart-empty-state" style="display:none;">
+          <div class="cart-empty-icon">🛒</div>
+          <p class="cart-empty-text">Tu carrito está vacío</p>
         </div>
-        <div id="cartSummary" style="display:none;border-top:1px solid rgba(255,255,255,0.06);padding-top:20px;margin-top:20px;">
-          <div style="display:flex;justify-content:space-between;font-size:1.125rem;font-weight:600;margin-bottom:16px;">
-            <span>Total</span>
-            <span id="cartTotal">$0 COP</span>
+        <div id="cartSummary" class="cart-footer" style="display:none;">
+          <div class="cart-total-row">
+            <span class="cart-total-label">Total</span>
+            <span class="cart-total-amount" id="cartTotal">$0 COP</span>
           </div>
-          <button class="btn btn-gradient" id="checkoutBtn" style="width:100%;justify-content:center;">
+          <button class="btn btn-gradient cart-checkout-btn" id="checkoutBtn">
             Continuar al pago
           </button>
-          <p style="font-size:0.75rem;color:#86868b;text-align:center;margin-top:8px;">Checkout seguro con Mercado Pago. El backend firma la referencia y valida el estado final con webhook.</p>
+          <p class="cart-secure-note">🔒 Checkout seguro con Mercado Pago</p>
         </div>
       </div>
     </div>
@@ -4353,10 +4501,21 @@
     }
     
     function removeFromCart(productId) {
-      cart = cart.filter(c => c.productId !== productId);
-      localStorage.setItem('nexcore_cart', JSON.stringify(cart));
-      updateCartCount();
-      renderCart();
+      const el = document.querySelector(`.cart-item[data-id="${productId}"]`);
+      if (el) {
+        el.classList.add('removing');
+        setTimeout(() => {
+          cart = cart.filter(c => c.productId !== productId);
+          localStorage.setItem('nexcore_cart', JSON.stringify(cart));
+          updateCartCount();
+          renderCart();
+        }, 200);
+      } else {
+        cart = cart.filter(c => c.productId !== productId);
+        localStorage.setItem('nexcore_cart', JSON.stringify(cart));
+        updateCartCount();
+        renderCart();
+      }
     }
     
     function updateQuantity(productId, delta) {
@@ -4408,21 +4567,19 @@
       
       const total = cart.reduce((sum, c) => sum + (Number(c.price) || 0) * c.quantity, 0);
       
-      container.innerHTML = cart.map(c => `
-        <div style="display:flex;align-items:center;gap:12px;padding:12px 0;border-bottom:1px solid rgba(255,255,255,0.04);">
-          <div style="flex:1;">
-            <div style="font-weight:600;font-size:0.875rem;">${c.name}</div>
-            <div style="color:#86868b;font-size:0.75rem;">$${Number(c.price).toLocaleString('es-CO', {minimumFractionDigits:0})} COP c/u</div>
+      container.innerHTML = cart.map((c, i) => `
+        <div class="cart-item" data-id="${htmlSafe(c.productId)}" style="animation-delay:${i * 40}ms">
+          <div class="cart-item-info">
+            <div class="cart-item-name">${htmlSafe(c.name)}</div>
+            <div class="cart-item-price">$${Number(c.price).toLocaleString('es-CO', {minimumFractionDigits:0})} COP c/u</div>
           </div>
-          <div style="display:flex;align-items:center;gap:8px;">
-            <button class="btn btn-secondary btn-sm" onclick="updateQuantity('${c.productId}', -1)" style="padding:4px 10px;">−</button>
-            <span style="min-width:20px;text-align:center;">${c.quantity}</span>
-            <button class="btn btn-secondary btn-sm" onclick="updateQuantity('${c.productId}', 1)" style="padding:4px 10px;">+</button>
+          <div class="cart-qty">
+            <button class="cart-qty-btn" onclick="updateQuantity('${htmlSafe(c.productId)}', -1)" aria-label="Restar">−</button>
+            <span class="cart-qty-count">${c.quantity}</span>
+            <button class="cart-qty-btn" onclick="updateQuantity('${htmlSafe(c.productId)}', 1)" aria-label="Sumar">+</button>
           </div>
-          <div style="min-width:80px;text-align:right;font-weight:600;">
-            $${(Number(c.price) * c.quantity).toLocaleString('es-CO', {minimumFractionDigits:0})}
-          </div>
-          <button class="btn btn-danger btn-sm" onclick="removeFromCart('${c.productId}')" style="padding:4px 8px;">✕</button>
+          <div class="cart-item-subtotal">$${(Number(c.price) * c.quantity).toLocaleString('es-CO', {minimumFractionDigits:0})}</div>
+          <button class="cart-remove" onclick="removeFromCart('${htmlSafe(c.productId)}')" aria-label="Eliminar">✕</button>
         </div>
       `).join('');
       
