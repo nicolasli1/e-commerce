@@ -934,23 +934,8 @@
       -webkit-text-fill-color: #71717a;
       letter-spacing: 0;
     }
-    /* "Desde $X" — prefix text smaller, number stays bold */
-    .product-price-from {
-      display: flex;
-      flex-direction: column;
-      align-items: flex-start;
-      gap: 0;
-    }
-    .product-price-from-label {
-      font-size: 0.65rem;
-      font-weight: 500;
-      letter-spacing: 0.06em;
-      text-transform: uppercase;
-      background: none;
-      -webkit-text-fill-color: #71717a;
-      color: #71717a;
-      line-height: 1.2;
-    }
+    /* Price range — slightly smaller so both numbers fit */
+    .product-price-range { font-size: 1.15rem; letter-spacing: -0.02em; }
 
     /* ==============================
        PRODUCT DETAILS / GALLERY MODAL
@@ -6152,7 +6137,7 @@
             const minP = Math.min(...vPrices);
             const maxP = Math.max(...vPrices);
             const fmt = n => '$' + n.toLocaleString('es-CO', {minimumFractionDigits: 0});
-            priceStr = minP === maxP ? fmt(minP) : `Desde ${fmt(minP)}`;
+            priceStr = minP === maxP ? fmt(minP) : `${fmt(minP)} – ${fmt(maxP)}`;
           } else {
             priceStr = '$' + Number(p.price).toLocaleString('es-CO', {minimumFractionDigits: 0});
           }
@@ -6266,13 +6251,7 @@
               <p>${htmlSafe(p.description || getCategoryLabel(p.category) || '')}</p>
               ${cardMetaHtml}
               <div class="product-footer">
-                ${priceStr.startsWith('Desde') ? `
-                  <span class="product-price product-price-from">
-                    <span class="product-price-from-label">Desde</span>
-                    ${priceStr.replace('Desde ', '')} <span>COP</span>
-                  </span>` : `
-                  <span class="product-price">${priceStr} <span>COP</span></span>`
-                }
+                <span class="product-price${priceStr.includes('–') ? ' product-price-range' : ''}">${priceStr} <span>COP</span></span>
                 <div class="product-card-actions">
                   <button class="btn-details btn-sm" onclick='openProductDetail(${productJsonForModal})' aria-label="Ver detalles de ${htmlSafe(p.name)}">Detalles</button>
                   <button class="btn btn-gradient btn-sm${outOfStock ? ' is-disabled' : ''}" ${outOfStock ? 'disabled' : ''} onclick='addToCart({productId:"${p.productId}",name:${JSON.stringify(p.name)},price:${p.price},image:${JSON.stringify(allImages[0]?.sm || allImages[0]?.md || '')}})' aria-label="Agregar ${htmlSafe(p.name)} al carrito">${outOfStock ? 'Agotado' : 'Agregar'}</button>
