@@ -1365,70 +1365,36 @@
         line-height: 1.75;
       }
     }
+    /* Product specs — clean Apple-style rows */
     .detail-product-info {
-      margin: 2px 0 18px;
-      padding: 16px;
-      border-radius: 20px;
-      background: linear-gradient(180deg, rgba(255,255,255,0.045), rgba(255,255,255,0.018));
-      border: 1px solid rgba(255,255,255,0.07);
-      box-shadow: inset 0 1px 0 rgba(255,255,255,0.04);
+      margin: 4px 0 20px;
+      border-top: 1px solid rgba(255,255,255,0.07);
+      padding-top: 16px;
     }
-    .detail-product-info h3 {
-      font-size: 0.78rem;
-      text-transform: uppercase;
-      letter-spacing: 0.08em;
-      color: #d8b4fe;
-      margin-bottom: 12px;
-    }
-    .detail-info-grid {
-      display: grid;
-      grid-template-columns: 1fr;
-      gap: 10px;
-    }
-    .detail-info-card {
+    .detail-spec-row {
       display: flex;
-      align-items: flex-start;
-      gap: 10px;
-      padding: 11px;
-      border-radius: 16px;
-      background: rgba(255,255,255,0.035);
-      border: 1px solid rgba(255,255,255,0.06);
-      transition: transform 160ms cubic-bezier(0.16, 1, 0.3, 1), border-color 160ms cubic-bezier(0.16, 1, 0.3, 1), background 160ms cubic-bezier(0.16, 1, 0.3, 1);
+      justify-content: space-between;
+      align-items: baseline;
+      gap: 16px;
+      padding: 9px 0;
+      border-bottom: 1px solid rgba(255,255,255,0.05);
     }
-    @media (hover: hover) and (pointer: fine) {
-      .detail-info-card:hover {
-        transform: translateY(-1px);
-        border-color: rgba(167,139,250,0.26);
-        background: rgba(167,139,250,0.07);
-      }
-    }
-    .detail-info-icon {
-      width: 30px;
-      height: 30px;
-      border-radius: 11px;
-      display: inline-flex;
-      align-items: center;
-      justify-content: center;
-      background: rgba(99,102,241,0.14);
+    .detail-spec-row:last-child { border-bottom: none; }
+    .detail-spec-label {
+      font-size: 0.8rem;
+      color: #86868b;
+      font-weight: 400;
       flex-shrink: 0;
     }
-    .detail-info-label {
-      display: block;
-      color: #71717a;
-      font-size: 0.66rem;
-      font-weight: 700;
-      text-transform: uppercase;
-      letter-spacing: 0.06em;
-      margin-bottom: 2px;
-    }
-    .detail-info-value {
+    .detail-spec-value {
+      font-size: 0.85rem;
       color: #f5f5f7;
-      font-size: 0.84rem;
-      font-weight: 700;
-      line-height: 1.35;
+      font-weight: 500;
+      text-align: right;
     }
-    .detail-info-card.warning .detail-info-value { color: #fbbf24; }
-    .detail-info-card.danger .detail-info-value { color: #f87171; }
+    .detail-spec-value.warning { color: #fbbf24; }
+    .detail-spec-value.danger  { color: #f87171; }
+    .detail-spec-value.success { color: #4ade80; }
     .detail-tech-section {
       margin-top: 14px;
       padding-top: 14px;
@@ -5682,80 +5648,47 @@
 
     function renderProductInfo(product) {
       const stock = getStockMeta(product.stock);
-      const quality = product.quality || 'Sin especificar';
-      const qualityTip = QUALITY_TIPS[quality] || 'Calidad pendiente de confirmar.';
-      const hasQuality = Boolean(product.quality);
-      const hasCompatibility = Array.isArray(product.compatibility) && product.compatibility.filter(Boolean).length > 0;
-      const hasShipping = Boolean(product.shippingTime);
-      const hasWarranty = Boolean(product.warranty);
-      const hasDifficulty = Boolean(product.repairDifficulty);
-      const hasRepairTime = Boolean(product.repairTime);
-      const hasTools = Array.isArray(product.requiredTools) && product.requiredTools.filter(Boolean).length > 0;
-      const hasCondition = Boolean(product.productCondition);
-      const hasRelated = Array.isArray(product.related) && product.related.filter(Boolean).length > 0;
-      const infoCards = [
-        `<div class="detail-info-card ${stock.tone}">
-          <span class="detail-info-icon">📦</span>
-          <div><span class="detail-info-label">Stock disponible</span><span class="detail-info-value">${htmlSafe(stock.text)}</span></div>
-        </div>`,
-        hasCondition ? `<div class="detail-info-card">
-          <span class="detail-info-icon">✓</span>
-          <div><span class="detail-info-label">Estado del producto</span><span class="detail-info-value">${htmlSafe(product.productCondition)}</span></div>
-        </div>` : '',
-        hasQuality ? `<div class="detail-info-card">
-          <span class="detail-info-icon">🏷️</span>
-          <div><span class="detail-info-label">Calidad</span><span class="detail-info-value"><span class="quality-pill" data-tip="${htmlSafe(qualityTip)}">${htmlSafe(quality)}</span></span></div>
-        </div>` : '',
-        hasCompatibility ? `<div class="detail-info-card">
-          <span class="detail-info-icon">📱</span>
-          <div><span class="detail-info-label">Compatibilidad</span>${renderCompatibility(product.compatibility)}</div>
-        </div>` : '',
-        hasShipping ? `<div class="detail-info-card">
-          <span class="detail-info-icon">🚚</span>
-          <div><span class="detail-info-label">Envío estimado</span><span class="detail-info-value">${htmlSafe(product.shippingTime)}</span></div>
-        </div>` : '',
-        hasWarranty ? `<div class="detail-info-card">
-          <span class="detail-info-icon">🛡️</span>
-          <div><span class="detail-info-label">Garantía</span><span class="detail-info-value">${htmlSafe(product.warranty)}</span></div>
-        </div>` : '',
-        hasDifficulty ? `<div class="detail-info-card">
-          <span class="detail-info-icon">◐</span>
-          <div><span class="detail-info-label">Dificultad</span><span class="detail-info-value">${htmlSafe(product.repairDifficulty)}</span></div>
-        </div>` : '',
-        hasRepairTime ? `<div class="detail-info-card">
-          <span class="detail-info-icon">⏱</span>
-          <div><span class="detail-info-label">Tiempo estimado</span><span class="detail-info-value">${htmlSafe(product.repairTime)}</span></div>
-        </div>` : ''
-      ].filter(Boolean).join('');
+      const rows = [];
 
-      const toolsHtml = hasTools
-        ? `<div class="detail-tech-section">
-            <h4>Herramientas necesarias</h4>
-            <div class="detail-tool-list">${product.requiredTools.filter(Boolean).map((tool) => `<span>${htmlSafe(tool)}</span>`).join('')}</div>
-          </div>`
-        : '';
-      const relatedHtml = hasRelated
-        ? `<div class="detail-tech-section">
-            <h4>Recomendaciones relacionadas</h4>
-            <div class="detail-related-list">${product.related.filter(Boolean).slice(0, 4).map((item) => `<span>${htmlSafe(item)}</span>`).join('')}</div>
-          </div>`
-        : '';
+      // Stock — always shown
+      rows.push(`
+        <div class="detail-spec-row">
+          <span class="detail-spec-label">Disponibilidad</span>
+          <span class="detail-spec-value ${stock.tone}">${htmlSafe(stock.text)}</span>
+        </div>`);
 
-      return `
-        <div class="detail-product-info">
-          <h3>Información del producto</h3>
-          <div class="detail-info-grid">
-            ${infoCards}
-          </div>
-          ${toolsHtml}
-          ${relatedHtml}
-        </div>
-        <div class="detail-trust-row">
-          <div class="detail-trust-item">Probado</div>
-          <div class="detail-trust-item">Compatible</div>
-          <div class="detail-trust-item">Pago seguro</div>
-        </div>
-      `;
+      // Quality
+      if (product.quality) {
+        const tip = QUALITY_TIPS[product.quality] || '';
+        rows.push(`
+        <div class="detail-spec-row">
+          <span class="detail-spec-label">Calidad</span>
+          <span class="detail-spec-value"><span class="quality-pill" data-tip="${htmlSafe(tip)}">${htmlSafe(product.quality)}</span></span>
+        </div>`);
+      }
+
+      // Shipping
+      if (product.shippingTime) rows.push(`
+        <div class="detail-spec-row">
+          <span class="detail-spec-label">Envío</span>
+          <span class="detail-spec-value">${htmlSafe(product.shippingTime)}</span>
+        </div>`);
+
+      // Warranty
+      if (product.warranty) rows.push(`
+        <div class="detail-spec-row">
+          <span class="detail-spec-label">Garantía</span>
+          <span class="detail-spec-value">${htmlSafe(product.warranty)}</span>
+        </div>`);
+
+      // Condition
+      if (product.productCondition) rows.push(`
+        <div class="detail-spec-row">
+          <span class="detail-spec-label">Estado</span>
+          <span class="detail-spec-value">${htmlSafe(product.productCondition)}</span>
+        </div>`);
+
+      return `<div class="detail-product-info">${rows.join('')}</div>`;
     }
 
     function selectDetailVariant(variantId) {
