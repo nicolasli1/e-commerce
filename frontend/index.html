@@ -41,16 +41,21 @@
     "sameAs": []
   }
   </script>
-  <!-- Google Analytics (configurable — replace __GA_MEASUREMENT_ID__ at deploy) -->
-  <script async src="https://www.googletagmanager.com/gtag/js?id=__GA_MEASUREMENT_ID__"></script>
+  <!-- Google Analytics — set VITE_GA_ID (or replace __GA_MEASUREMENT_ID__) at build/deploy time -->
   <script>
-    window.dataLayer = window.dataLayer || [];
-    function gtag(){dataLayer.push(arguments);}
-    gtag('js', new Date());
-    gtag('config', '__GA_MEASUREMENT_ID__', {
-      send_page_view: true,
-      anonymize_ip: true
-    });
+    (function() {
+      var gaId = '__GA_MEASUREMENT_ID__';
+      if (!gaId || gaId === '__GA_MEASUREMENT_ID__') return;
+      var s = document.createElement('script');
+      s.async = true;
+      s.src = 'https://www.googletagmanager.com/gtag/js?id=' + gaId;
+      document.head.appendChild(s);
+      window.dataLayer = window.dataLayer || [];
+      function gtag(){dataLayer.push(arguments);}
+      window.gtag = gtag;
+      gtag('js', new Date());
+      gtag('config', gaId, { send_page_view: true, anonymize_ip: true });
+    })();
   </script>
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Inter+Tight:wght@500;600;700;800&display=swap" rel="stylesheet" />
@@ -4453,8 +4458,10 @@
       if (!bar) return;
       searchVisible = !searchVisible;
       bar.classList.toggle('visible', searchVisible);
-      if (searchVisible && input) { input.focus(); input.select(); }
-      else if (input) { input.value = ''; filterProducts(''); }
+      if (searchVisible && input) {
+        input.focus(); input.select();
+        document.getElementById('productos')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      } else if (input) { input.value = ''; filterProducts(''); }
     }
     function clearSearch() {
       var input = document.getElementById('searchInput');
@@ -5877,8 +5884,8 @@
               ${imgHtml}
             </div>
             <div class="product-body">
-              <h3>${p.name}</h3>
-              <p>${p.description || getCategoryLabel(p.category) || ''}</p>
+              <h3>${htmlSafe(p.name)}</h3>
+              <p>${htmlSafe(p.description || getCategoryLabel(p.category) || '')}</p>
               ${cardMetaHtml}
               <div class="product-footer">
                 <span class="product-price">${priceStr} <span>COP</span></span>
@@ -6029,14 +6036,14 @@
     const AUTH_TOKEN_KEY = 'nexcore_auth_token';
     const AUTH_USER_KEY = 'nexcore_auth_user';
     const AUTH_USERID_KEY = 'nexcore_auth_user_id';
-    let currentUser = JSON.parse(localStorage.getItem(AUTH_USER_KEY) || 'null');
+    let currentUser = JSON.parse(sessionStorage.getItem(AUTH_USER_KEY) || 'null');
 
     function isLoggedIn() {
-      return !!localStorage.getItem(AUTH_TOKEN_KEY);
+      return !!sessionStorage.getItem(AUTH_TOKEN_KEY);
     }
 
     function getUserToken() {
-      return localStorage.getItem(AUTH_TOKEN_KEY) || '';
+      return sessionStorage.getItem(AUTH_TOKEN_KEY) || '';
     }
 
     function updateAuthUI() {
@@ -6122,8 +6129,8 @@
           setAuthStatus(data.error === 'invalid_credentials' ? 'Correo o contraseña incorrectos.' : (data.message || 'Error al ingresar.'), 'error');
           return;
         }
-        localStorage.setItem(AUTH_TOKEN_KEY, data.token);
-        localStorage.setItem(AUTH_USER_KEY, JSON.stringify(data.user));
+        sessionStorage.setItem(AUTH_TOKEN_KEY, data.token);
+        sessionStorage.setItem(AUTH_USER_KEY, JSON.stringify(data.user));
         currentUser = data.user;
         closeAuthModal();
         updateAuthUI();
@@ -6166,9 +6173,9 @@
           setAuthStatus(msg, 'error');
           return;
         }
-        localStorage.setItem(AUTH_TOKEN_KEY, data.token);
-        localStorage.setItem(AUTH_USER_KEY, JSON.stringify(data.user));
-        localStorage.setItem(AUTH_USERID_KEY, data.userId || '');
+        sessionStorage.setItem(AUTH_TOKEN_KEY, data.token);
+        sessionStorage.setItem(AUTH_USER_KEY, JSON.stringify(data.user));
+        sessionStorage.setItem(AUTH_USERID_KEY, data.userId || '');
         currentUser = data.user;
         closeAuthModal();
         updateAuthUI();
@@ -6213,7 +6220,7 @@
           <div style="background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.06);border-radius:16px;padding:16px;margin-bottom:12px;">
             <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px;">
               <div>
-                <strong style="font-size:0.875rem;">${o.reference || '—'}</strong>
+                <strong style="font-size:0.875rem;">${htmlSafe(o.reference || '—')}</strong>
                 <span style="color:#86868b;font-size:0.75rem;margin-left:8px;">${humanizeStatus(o.status)}</span>
               </div>
               <div style="text-align:right;">
@@ -6224,7 +6231,7 @@
             <div style="margin-top:8px;font-size:0.75rem;color:#86868b;">
               ${o.items?.length || 0} ítems · Despacho: ${humanizeStatus(o.fulfillmentStatus)}
             </div>
-            ${o.trackingNumber ? `<div style="margin-top:6px;font-size:0.75rem;color:#a5b4fc;">🔗 Guía: ${o.trackingNumber}${o.courier ? ' (' + o.courier + ')' : ''}</div>` : ''}
+            ${o.trackingNumber ? `<div style="margin-top:6px;font-size:0.75rem;color:#a5b4fc;">🔗 Guía: ${htmlSafe(o.trackingNumber)}${o.courier ? ' (' + htmlSafe(o.courier) + ')' : ''}</div>` : ''}
           </div>
         `).join('');
         section.scrollIntoView({ behavior: 'smooth', block: 'start' });
@@ -6239,9 +6246,9 @@
     }
 
     function logoutUser() {
-      localStorage.removeItem(AUTH_TOKEN_KEY);
-      localStorage.removeItem(AUTH_USER_KEY);
-      localStorage.removeItem(AUTH_USERID_KEY);
+      sessionStorage.removeItem(AUTH_TOKEN_KEY);
+      sessionStorage.removeItem(AUTH_USER_KEY);
+      sessionStorage.removeItem(AUTH_USERID_KEY);
       currentUser = null;
       updateAuthUI();
       closeOrders();
