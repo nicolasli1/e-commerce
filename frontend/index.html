@@ -5016,8 +5016,12 @@
         .trim();
     }
 
+    const SEARCH_STOPWORDS = new Set(['de', 'del', 'la', 'el', 'los', 'las', 'para', 'por', 'con', 'sin', 'no', 'un', 'una', 'y', 'o']);
+
     function searchTokens(value) {
-      return normalizeSearchValue(value).split(/\s+/).filter(Boolean);
+      return normalizeSearchValue(value)
+        .split(/\s+/)
+        .filter((token) => token && !SEARCH_STOPWORDS.has(token) && (/^\d+$/.test(token) || token.length >= 3));
     }
 
     function productSearchText(product) {
