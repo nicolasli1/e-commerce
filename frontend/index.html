@@ -1782,24 +1782,31 @@
     .cart-item:last-child { border-bottom: none; }
 
     .cart-thumb {
-      width: 44px;
-      height: 44px;
-      border-radius: 12px;
+      width: 52px;
+      height: 52px;
+      border-radius: 14px;
       flex-shrink: 0;
       overflow: hidden;
-      background: rgba(255,255,255,0.05);
-      border: 1px solid rgba(255,255,255,0.07);
       display: flex;
       align-items: center;
       justify-content: center;
-      font-size: 1.1rem;
-      font-weight: 700;
-      color: rgba(255,255,255,0.5);
     }
-    .cart-thumb img {
+    .cart-thumb-img {
+      background: #fff;
+      border: 1px solid rgba(255,255,255,0.12);
+    }
+    .cart-thumb-img img {
       width: 100%;
       height: 100%;
-      object-fit: cover;
+      object-fit: contain;
+      padding: 4px;
+    }
+    .cart-thumb-init {
+      background: rgba(139,92,246,0.15);
+      border: 1px solid rgba(139,92,246,0.2);
+      font-size: 1.25rem;
+      font-weight: 700;
+      color: #a78bfa;
     }
 
     .cart-item-info { flex: 1; min-width: 0; }
@@ -4617,12 +4624,11 @@
       const total = cart.reduce((sum, c) => sum + (Number(c.price) || 0) * c.quantity, 0);
       
       container.innerHTML = cart.map((c, i) => {
-        const product = storefrontProducts.find(p => p.productId === c.productId);
-        const img = product?.images?.[0]?.sm || product?.images?.[0]?.md || '';
+        const img = c.image || '';
         const initial = (c.name || '?')[0].toUpperCase();
         const thumbHtml = img
-          ? `<div class="cart-thumb"><img src="${htmlSafe(img)}" alt="" loading="lazy"></div>`
-          : `<div class="cart-thumb">${initial}</div>`;
+          ? `<div class="cart-thumb cart-thumb-img"><img src="${htmlSafe(img)}" alt="" loading="lazy"></div>`
+          : `<div class="cart-thumb cart-thumb-init">${initial}</div>`;
         return `
         <div class="cart-item" data-id="${htmlSafe(c.productId)}" style="animation-delay:${i * 45}ms">
           ${thumbHtml}
@@ -4725,15 +4731,15 @@
       }
       resize();
 
-      const COUNT = 55;
-      const COLORS = ['#a78bfa','#818cf8','#c084fc','#f0abfc','#7dd3fc'];
+      const COUNT = 48;
+      const COLORS = ['#a78bfa','#818cf8','#c084fc','#e879f9','#7dd3fc','#a5f3fc'];
       const pts = Array.from({length: COUNT}, () => ({
         x:  Math.random() * canvas.width,
         y:  Math.random() * canvas.height,
-        r:  Math.random() * 1.8 + 0.4,
-        vx: (Math.random() - 0.5) * 0.35,
-        vy: (Math.random() - 0.5) * 0.35,
-        o:  Math.random() * 0.45 + 0.1,
+        r:  Math.random() * 2.2 + 1.0,
+        vx: (Math.random() - 0.5) * 0.28,
+        vy: (Math.random() - 0.5) * 0.28,
+        o:  Math.random() * 0.35 + 0.18,
         color: COLORS[Math.floor(Math.random() * COLORS.length)]
       }));
 
@@ -5805,7 +5811,7 @@
           <div class="detail-desc">${htmlSafe(description)}</div>
           ${renderProductInfo(product)}
           <div class="detail-actions">
-            <button class="btn btn-gradient" onclick='addToCart({productId:"${product.productId}",name:${JSON.stringify(product.name)},price:${product.price}}); closeProductDetail();'>🛒 Agregar al carrito</button>
+            <button class="btn btn-gradient" onclick='addToCart({productId:"${product.productId}",name:${JSON.stringify(product.name)},price:${product.price},image:${JSON.stringify(images[0]?.sm || images[0]?.md || '')}}); closeProductDetail();'>🛒 Agregar al carrito</button>
           </div>
         `;
       }
@@ -6153,7 +6159,7 @@
                 <span class="product-price">${priceStr} <span>COP</span></span>
                 <div class="product-card-actions">
                   <button class="btn-details btn-sm" onclick='openProductDetail(${productJsonForModal})' aria-label="Ver detalles de ${htmlSafe(p.name)}">Detalles</button>
-                  <button class="btn btn-gradient btn-sm${outOfStock ? ' is-disabled' : ''}" ${outOfStock ? 'disabled' : ''} onclick='addToCart({productId:"${p.productId}",name:${JSON.stringify(p.name)},price:${p.price}})' aria-label="Agregar ${htmlSafe(p.name)} al carrito">${outOfStock ? 'Agotado' : 'Agregar'}</button>
+                  <button class="btn btn-gradient btn-sm${outOfStock ? ' is-disabled' : ''}" ${outOfStock ? 'disabled' : ''} onclick='addToCart({productId:"${p.productId}",name:${JSON.stringify(p.name)},price:${p.price},image:${JSON.stringify(allImages[0]?.sm || allImages[0]?.md || '')}})' aria-label="Agregar ${htmlSafe(p.name)} al carrito">${outOfStock ? 'Agotado' : 'Agregar'}</button>
                 </div>
               </div>
             </div>
