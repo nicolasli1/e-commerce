@@ -1837,9 +1837,16 @@
       text-overflow: ellipsis;
       margin-bottom: 3px;
     }
+    .cart-item-variant {
+      font-size: 0.72rem;
+      font-weight: 500;
+      color: #a78bfa;
+      margin-top: 1px;
+    }
     .cart-item-price {
       color: #86868b;
       font-size: 0.72rem;
+      margin-top: 1px;
     }
 
     .cart-item-right {
@@ -4653,6 +4660,7 @@
           ${thumbHtml}
           <div class="cart-item-info">
             <div class="cart-item-name">${htmlSafe(c.name)}</div>
+            ${c.variantLabel ? `<div class="cart-item-variant">${htmlSafe(c.variantLabel)}</div>` : ''}
             <div class="cart-item-price">$${Number(c.price).toLocaleString('es-CO', {minimumFractionDigits:0})} COP c/u</div>
           </div>
           <div class="cart-item-right">
@@ -5825,7 +5833,7 @@
           <div class="detail-desc">${htmlSafe(description)}</div>
           ${renderProductInfo(product)}
           <div class="detail-actions">
-            <button class="btn btn-gradient" onclick='(function(){const v=selectedVariant;addToCart({productId:"${product.productId}",name:${JSON.stringify(product.name)},price:v!=null&&v.price!=null?v.price:${product.price},image:${JSON.stringify(images[0]?.sm || images[0]?.md || '')},variantId:v?v.variantId:null});closeProductDetail();})()'>🛒 Agregar al carrito</button>
+            <button class="btn btn-gradient" onclick='(function(){const v=selectedVariant;const vImg=v&&v.images&&v.images[0]?(v.images[0].sm||v.images[0].md||""):"";addToCart({productId:"${product.productId}",name:${JSON.stringify(product.name)},price:v!=null&&v.price!=null?v.price:${product.price},image:vImg||${JSON.stringify(images[0]?.sm||images[0]?.md||"")},variantId:v?v.variantId:null,variantLabel:v?[v.deviceFamily,v.model].filter(Boolean).join(" "):null});closeProductDetail();})()'>🛒 Agregar al carrito</button>
           </div>
         `;
       }
