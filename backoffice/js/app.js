@@ -625,6 +625,18 @@ const App = (() => {
               </div>
             </div>
 
+            <div class="product-form-section">
+              <div class="form-section-heading">
+                <span class="form-section-icon">🗂️</span>
+                <div>
+                  <h3>Variantes por dispositivo</h3>
+                  <p>Agrega variantes si este repuesto aplica a múltiples modelos con precios o stocks distintos.</p>
+                </div>
+              </div>
+              <div id="variantsList"></div>
+              <button type="button" class="btn btn-secondary btn-sm" id="addVariantBtn" style="margin-top:8px;">+ Agregar variante</button>
+            </div>
+
             <div class="product-form-section product-live-preview">
               <div class="form-section-heading compact">
                 <span class="form-section-icon">👁️</span>
@@ -666,8 +678,11 @@ const App = (() => {
         const stock = stockLabel(p.stock);
         const tr = $el('tr', { dataset: { productId: p.productId, category: p.category || '' } });
         if (isDeleted) tr.classList.add('deleted');
+        const variantChip = (p.variants && p.variants.length > 0)
+          ? ` <span class="badge" style="background:var(--info,#3b82f6);color:#fff;font-size:0.7rem;padding:2px 6px;border-radius:10px;">${p.variants.length} var.</span>`
+          : '';
         tr.innerHTML = `
-          <td><strong>${esc(p.name)}</strong></td>
+          <td><strong>${esc(p.name)}</strong>${variantChip}</td>
           <td>$${Number(p.price).toLocaleString('en-US', { minimumFractionDigits: 2 })}</td>
           <td>${esc(getCategoryLabel(p.category))}</td>
           <td><span class="stock-badge ${stock.tone}">${esc(stock.text)}</span></td>
@@ -710,6 +725,128 @@ const App = (() => {
     let uploadedImages = [];
     let isUploading = false;
     let compatibilityTags = [];
+    let variantRows = []; // [{variantId, deviceBrand, deviceFamily, model, price, stock, quality, images, _uploadingImage}]
+
+    // ---- Variant helpers ----
+    function newVariantRow(data = {}) {
+      return {
+        variantId: data.variantId || ('v_' + Date.now() + '_' + Math.random().toString(36).slice(2, 7)),
+        deviceBrand: data.deviceBrand || '',
+        deviceFamily: data.deviceFamily || '',
+        model: data.model || '',
+        price: data.price != null ? data.price : '',
+        stock: data.stock != null ? data.stock : '',
+        quality: data.quality || '',
+        images: Array.isArray(data.images) ? data.images.map(img => ({...img})) : [],
+        _uploadingImage: false,
+      };
+    }
+
+    function renderVariantRows() {
+      const container = document.getElementById('variantsList');
+      if (!container) return;
+      if (variantRows.length === 0) {
+        container.innerHTML = '<p style="font-size:0.8125rem;color:var(--text-secondary);margin:4px 0 8px;">Sin variantes — el producto usará precio y stock global.</p>';
+        return;
+      }
+      container.innerHTML = '';
+      variantRows.forEach((row, idx) => {
+        const firstImg = row.images[0];
+        const imgPreview = firstImg
+          ? `<img src="${esc(firstImg.md || firstImg.lg)}" style="width:32px;height:32px;object-fit:cover;border-radius:4px;vertical-align:middle;" />`
+          : '';
+        const div = document.createElement('div');
+        div.className = 'variant-row';
+        div.style.cssText = 'display:grid;grid-template-columns:1fr 1fr 1fr 90px 70px auto auto auto;gap:6px;align-items:center;padding:8px;background:var(--surface);border:1px solid var(--border);border-radius:6px;margin-bottom:6px;';
+        div.innerHTML = `
+          <input class="form-input variant-brand" style="padding:6px 8px;" placeholder="Apple" value="${esc(row.deviceBrand)}" data-idx="${idx}" data-field="deviceBrand" />
+          <input class="form-input variant-family" style="padding:6px 8px;" placeholder="iPhone 12" value="${esc(row.deviceFamily)}" data-idx="${idx}" data-field="deviceFamily" />
+          <input class="form-input variant-model" style="padding:6px 8px;" placeholder="Pro Max (opcional)" value="${esc(row.model)}" data-idx="${idx}" data-field="model" />
+          <input class="form-input variant-price" type="number" step="1" style="padding:6px 8px;" placeholder="Precio" value="${row.price !== '' ? row.price : ''}" data-idx="${idx}" data-field="price" />
+          <input class="form-input variant-stock" type="number" style="padding:6px 8px;" placeholder="Stock" value="${row.stock !== '' ? row.stock : ''}" data-idx="${idx}" data-field="stock" />
+          <select class="form-select variant-quality" style="padding:6px 8px;" data-idx="${idx}" data-field="quality">
+            <option value="">—</option>
+            <option value="Original"${row.quality === 'Original' ? ' selected' : ''}>Original</option>
+            <option value="OEM"${row.quality === 'OEM' ? ' selected' : ''}>OEM</option>
+            <option value="AAA"${row.quality === 'AAA' ? ' selected' : ''}>AAA</option>
+            <option value="GX"${row.quality === 'GX' ? ' selected' : ''}>GX</option>
+          </select>
+          <button type="button" class="btn btn-secondary btn-sm variant-img-btn" data-idx="${idx}" title="Imagen">${imgPreview || '📷'}</button>
+          <input type="file" accept="image/*" class="variant-img-input" style="display:none;" data-idx="${idx}" />
+          <button type="button" class="btn btn-danger btn-sm variant-remove-btn" data-idx="${idx}" style="padding:6px 8px;" title="Eliminar">✕</button>
+        `;
+        container.appendChild(div);
+      });
+
+      // Bind text/number/select change handlers
+      container.querySelectorAll('[data-field]').forEach((input) => {
+        input.addEventListener('input', (e) => {
+          const idx = parseInt(e.target.dataset.idx);
+          const field = e.target.dataset.field;
+          variantRows[idx][field] = e.target.value;
+        });
+        input.addEventListener('change', (e) => {
+          const idx = parseInt(e.target.dataset.idx);
+          const field = e.target.dataset.field;
+          variantRows[idx][field] = e.target.value;
+        });
+      });
+
+      // Image upload per variant
+      container.querySelectorAll('.variant-img-btn').forEach((btn) => {
+        btn.addEventListener('click', () => {
+          const idx = parseInt(btn.dataset.idx);
+          const fileInput = container.querySelector(`.variant-img-input[data-idx="${idx}"]`);
+          if (fileInput) fileInput.click();
+        });
+      });
+      container.querySelectorAll('.variant-img-input').forEach((fileInput) => {
+        fileInput.addEventListener('change', async (e) => {
+          const idx = parseInt(fileInput.dataset.idx);
+          const file = e.target.files[0];
+          if (!file || variantRows[idx]._uploadingImage) return;
+          variantRows[idx]._uploadingImage = true;
+          try {
+            const base64 = await fileToBase64(file);
+            const cleanB64 = base64.split(',')[1] || base64;
+            const tempId = 'temp_variant_' + Date.now();
+            const result = await Api.uploadImage(tempId, cleanB64);
+            if (result.ok && result.urls) {
+              variantRows[idx].images = [{ lg: result.urls.lg, md: result.urls.md, sm: result.urls.sm }];
+              renderVariantRows();
+              showToast('Imagen de variante subida');
+            }
+          } catch (err) {
+            showToast('Error al subir imagen de variante: ' + err.message, 'error');
+          } finally {
+            variantRows[idx]._uploadingImage = false;
+            e.target.value = '';
+          }
+        });
+      });
+
+      // Remove buttons
+      container.querySelectorAll('.variant-remove-btn').forEach((btn) => {
+        btn.addEventListener('click', () => {
+          const idx = parseInt(btn.dataset.idx);
+          variantRows.splice(idx, 1);
+          renderVariantRows();
+        });
+      });
+    }
+
+    function collectVariants() {
+      return variantRows.map((row) => ({
+        variantId: row.variantId,
+        deviceBrand: row.deviceBrand,
+        deviceFamily: row.deviceFamily,
+        model: row.model,
+        price: row.price !== '' ? parseFloat(row.price) : null,
+        stock: row.stock !== '' ? parseInt(row.stock) : null,
+        quality: row.quality,
+        images: row.images,
+      }));
+    }
 
     function stockLabel(stock) {
       const count = Number(stock) || 0;
@@ -876,6 +1013,10 @@ const App = (() => {
       }
       renderImagePreviews();
 
+      // Restore variant rows
+      variantRows = Array.isArray(product?.variants) ? product.variants.map(newVariantRow) : [];
+      renderVariantRows();
+
       modal.classList.add('open');
     }
 
@@ -883,6 +1024,7 @@ const App = (() => {
       modal.classList.remove('open');
       editingId = null;
       compatibilityTags = [];
+      variantRows = [];
       productForm.reset();
     }
 
@@ -897,6 +1039,11 @@ const App = (() => {
       } catch (err) {
         showToast(err.message, 'error');
       }
+    });
+
+    document.getElementById('addVariantBtn').addEventListener('click', () => {
+      variantRows.push(newVariantRow());
+      renderVariantRows();
     });
 
     document.getElementById('modalCloseBtn').addEventListener('click', closeModal);
@@ -936,6 +1083,7 @@ const App = (() => {
         shippingTime: pShippingTime.value.trim(),
         warranty: pWarranty.value.trim(),
         images: uploadedImages,
+        variants: collectVariants(),
       };
 
       try {

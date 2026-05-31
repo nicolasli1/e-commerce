@@ -1312,6 +1312,44 @@
       color: #6b7280;
       -webkit-text-fill-color: #6b7280;
     }
+    .detail-variant-picker {
+      margin: 0 0 12px;
+    }
+    .detail-variant-label {
+      font-size: 0.75rem;
+      font-weight: 600;
+      color: #9ca3af;
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+      margin-bottom: 8px;
+    }
+    .detail-variant-pills {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+    }
+    .variant-pill {
+      padding: 5px 12px;
+      border-radius: 20px;
+      border: 1px solid rgba(255,255,255,0.15);
+      background: rgba(255,255,255,0.05);
+      color: #d1d5db;
+      font-size: 0.8125rem;
+      cursor: pointer;
+      transition: border-color 0.15s, background 0.15s, color 0.15s;
+      white-space: nowrap;
+    }
+    .variant-pill:hover {
+      border-color: rgba(255,255,255,0.35);
+      background: rgba(255,255,255,0.1);
+      color: #fff;
+    }
+    .variant-pill.active {
+      border-color: #6366f1;
+      background: rgba(99,102,241,0.2);
+      color: #a5b4fc;
+      font-weight: 600;
+    }
     .detail-info .detail-desc {
       color: #9ca3af;
       font-size: 0.875rem;
@@ -5482,6 +5520,7 @@
     let detailGalleryIdx = 0;
     let detailGalleryInterval = null;
     let detailCurrentProduct = null;
+    let selectedVariant = null;
     let detailZoom = 1;
     let detailPanX = 0;
     let detailPanY = 0;
@@ -5602,7 +5641,9 @@
       if (stock) chips.push(`<span class="product-meta-chip ${stock.tone}">${htmlSafe(stock.text)}</span>`);
       if (product.category) chips.push(`<span class="product-meta-chip category">${htmlSafe(getCategoryLabel(product.category))}</span>`);
       if (product.quality) chips.push(`<span class="product-meta-chip quality">${htmlSafe(product.quality)}</span>`);
-      if (Array.isArray(product.compatibility) && product.compatibility.filter(Boolean).length > 0) {
+      if (Array.isArray(product.variants) && product.variants.length > 0) {
+        chips.push(`<span class="product-meta-chip">${product.variants.length} modelos</span>`);
+      } else if (Array.isArray(product.compatibility) && product.compatibility.filter(Boolean).length > 0) {
         const model = product.compatibility.filter(Boolean)[0];
         const more = product.compatibility.filter(Boolean).length - 1;
         chips.push(`<span class="product-meta-chip">${htmlSafe(model)}${more > 0 ? ` +${more}` : ''}</span>`);
@@ -5714,9 +5755,32 @@
       `;
     }
 
+    function selectDetailVariant(variantId) {
+      if (!detailCurrentProduct) return;
+      const variants = detailCurrentProduct.variants || [];
+      selectedVariant = variants.find(v => v.variantId === variantId) || null;
+      // Update price display
+      const priceEl = document.getElementById('detailPriceDisplay');
+      if (priceEl) {
+        const price = selectedVariant?.price != null ? selectedVariant.price : detailCurrentProduct.price;
+        priceEl.textContent = '$' + Number(price).toLocaleString('es-CO', {minimumFractionDigits: 0}) + ' COP';
+      }
+      // Update pill active state
+      document.querySelectorAll('.variant-pill').forEach(pill => {
+        pill.classList.toggle('active', pill.dataset.variantId === variantId);
+      });
+      // Swap first gallery image to variant image if available
+      if (selectedVariant?.images?.length > 0) {
+        const vImg = selectedVariant.images[0];
+        const mainEl = document.querySelector('.detail-gallery .gallery-main img.active, .detail-gallery .gallery-main img:first-of-type');
+        if (mainEl) mainEl.src = vImg.lg || vImg.md || mainEl.src;
+      }
+    }
+
     function openProductDetail(product) {
       detailCurrentProduct = product;
       detailGalleryIdx = 0;
+      selectedVariant = null;
       const modal = document.getElementById('productDetailModal');
       if (!modal) return;
 
@@ -5801,17 +5865,30 @@
       const infoEl = modal.querySelector('.detail-info');
       if (infoEl) {
         const imgCount = images.length;
+        const variants = Array.isArray(product.variants) ? product.variants : [];
+        const variantPickerHtml = variants.length > 0
+          ? `<div class="detail-variant-picker">
+              <div class="detail-variant-label">Selecciona tu modelo:</div>
+              <div class="detail-variant-pills">
+                ${variants.map(v => {
+                  const label = htmlSafe([v.deviceFamily, v.model].filter(Boolean).join(' '));
+                  return `<button type="button" class="variant-pill" data-variant-id="${htmlSafe(v.variantId)}" onclick="selectDetailVariant('${htmlSafe(v.variantId)}')">${label}</button>`;
+                }).join('')}
+              </div>
+            </div>`
+          : '';
         infoEl.innerHTML = `
           <div class="detail-kicker">
             🏷️ ${htmlSafe(categoryLabel)}
             ${imgCount > 1 ? `<span class="detail-counter-badge">📸 ${imgCount}</span>` : ''}
           </div>
           <h2>${htmlSafe(product.name)}</h2>
-          <div class="detail-price">${priceStr} <span>COP</span></div>
+          ${variantPickerHtml}
+          <div class="detail-price" id="detailPriceDisplay">${priceStr} <span>COP</span></div>
           <div class="detail-desc">${htmlSafe(description)}</div>
           ${renderProductInfo(product)}
           <div class="detail-actions">
-            <button class="btn btn-gradient" onclick='addToCart({productId:"${product.productId}",name:${JSON.stringify(product.name)},price:${product.price},image:${JSON.stringify(images[0]?.sm || images[0]?.md || '')}}); closeProductDetail();'>🛒 Agregar al carrito</button>
+            <button class="btn btn-gradient" onclick='(function(){const v=selectedVariant;addToCart({productId:"${product.productId}",name:${JSON.stringify(product.name)},price:v!=null&&v.price!=null?v.price:${product.price},image:${JSON.stringify(images[0]?.sm || images[0]?.md || '')},variantId:v?v.variantId:null});closeProductDetail();})()'>🛒 Agregar al carrito</button>
           </div>
         `;
       }
@@ -6124,7 +6201,8 @@
           related: Array.isArray(p.related) ? p.related : [],
           stock: p.stock || 0,
           images: p.images || (p.imageUrl ? [p.imageUrl] : []),
-          imageUrl: p.imageUrl || ''
+          imageUrl: p.imageUrl || '',
+          variants: Array.isArray(p.variants) ? p.variants : []
         }).replace(/'/g, "\\'");
         const stockCount = Number(p.stock);
         const outOfStock = Number.isFinite(stockCount) && stockCount <= 0;
