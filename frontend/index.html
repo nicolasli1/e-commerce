@@ -53,8 +53,34 @@
     });
   </script>
   <link rel="preconnect" href="https://fonts.googleapis.com" />
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet" />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Inter+Tight:wght@500;600;700;800&display=swap" rel="stylesheet" />
   <style>
+    :root {
+      --bg: #05060a;
+      --bg-soft: #080a12;
+      --surface: rgba(255, 255, 255, 0.045);
+      --surface-strong: rgba(255, 255, 255, 0.07);
+      --surface-muted: rgba(255, 255, 255, 0.028);
+      --border: rgba(255, 255, 255, 0.08);
+      --border-strong: rgba(255, 255, 255, 0.14);
+      --text: #f7f8fb;
+      --muted: #a1a7b3;
+      --muted-2: #737987;
+      --violet: #8b5cf6;
+      --violet-2: #a855f7;
+      --blue: #6d7dfc;
+      --green: #3ddc97;
+      --yellow: #f6c85f;
+      --danger: #fb7185;
+      --radius-xs: 10px;
+      --radius-sm: 14px;
+      --radius-md: 20px;
+      --radius-lg: 28px;
+      --ease-out: cubic-bezier(0.16, 1, 0.3, 1);
+      --shadow-soft: 0 18px 60px rgba(0, 0, 0, 0.34);
+      --shadow-card: 0 22px 70px rgba(0, 0, 0, 0.26);
+    }
+
     /* ==============================
        RESET / BASE
     ============================== */
@@ -959,6 +985,36 @@
       user-select: none;
       -webkit-user-drag: none;
     }
+    .gallery-placeholder {
+      position: absolute;
+      inset: 0;
+      display: grid;
+      place-items: center;
+      padding: 32px;
+      text-align: center;
+      color: #cbd5e1;
+    }
+    .gallery-placeholder-icon {
+      width: 92px;
+      height: 92px;
+      margin: 0 auto 18px;
+      display: grid;
+      place-items: center;
+      border-radius: 28px;
+      background: rgba(255,255,255,0.055);
+      border: 1px solid rgba(255,255,255,0.08);
+      font-size: 2.2rem;
+    }
+    .gallery-placeholder strong {
+      display: block;
+      font-size: 1rem;
+      margin-bottom: 6px;
+    }
+    .gallery-placeholder span {
+      color: #8e95a4;
+      font-size: 0.86rem;
+      line-height: 1.5;
+    }
     @media (min-width: 1024px) {
       .detail-gallery .gallery-main img {
         padding: 20px;
@@ -1295,6 +1351,36 @@
     }
     .detail-info-card.warning .detail-info-value { color: #fbbf24; }
     .detail-info-card.danger .detail-info-value { color: #f87171; }
+    .detail-tech-section {
+      margin-top: 14px;
+      padding-top: 14px;
+      border-top: 1px solid rgba(255,255,255,0.07);
+    }
+    .detail-tech-section h4 {
+      margin-bottom: 10px;
+      color: #cbd5e1;
+      font-size: 0.74rem;
+      font-weight: 800;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+    }
+    .detail-tool-list,
+    .detail-related-list {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+    }
+    .detail-tool-list span,
+    .detail-related-list span {
+      display: inline-flex;
+      padding: 7px 10px;
+      border-radius: 999px;
+      background: rgba(255,255,255,0.055);
+      border: 1px solid rgba(255,255,255,0.08);
+      color: #d1d5db;
+      font-size: 0.74rem;
+      font-weight: 700;
+    }
     .quality-pill {
       display: inline-flex;
       align-items: center;
@@ -2720,6 +2806,822 @@
         position: static;
       }
     }
+
+    /* ==============================
+       PREMIUM REDESIGN LAYER
+    ============================== */
+    html {
+      background: var(--bg);
+    }
+    body {
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+      background:
+        radial-gradient(circle at 50% -10%, rgba(109, 125, 252, 0.14), transparent 34rem),
+        radial-gradient(circle at 12% 42%, rgba(168, 85, 247, 0.08), transparent 28rem),
+        linear-gradient(180deg, #06070d 0%, #05060a 42%, #06070d 100%);
+      color: var(--text);
+      -webkit-font-smoothing: antialiased;
+      text-rendering: geometricPrecision;
+    }
+    body::before {
+      background-image: radial-gradient(rgba(255, 255, 255, 0.035) 1px, transparent 1px);
+      background-size: 28px 28px;
+      mask-image: linear-gradient(180deg, rgba(0,0,0,0.65), transparent 78%);
+    }
+    section {
+      scroll-margin-top: 96px;
+    }
+    .container {
+      max-width: 1240px;
+      padding-inline: clamp(20px, 4vw, 40px);
+    }
+    .section-header {
+      text-align: left;
+      margin-bottom: clamp(32px, 5vw, 56px);
+    }
+    .section-header .section-subtitle {
+      margin: 0;
+    }
+    .section-title,
+    .hero h1,
+    .cta h2 {
+      font-family: 'Inter Tight', 'Inter', sans-serif;
+    }
+    .section-title {
+      max-width: 820px;
+      font-size: clamp(2.15rem, 5.2vw, 4.35rem);
+      font-weight: 760;
+      letter-spacing: -0.055em;
+    }
+    .section-subtitle {
+      color: var(--muted);
+      max-width: 680px;
+      font-size: clamp(0.98rem, 1.4vw, 1.12rem);
+      line-height: 1.75;
+    }
+    .btn {
+      border-radius: 999px;
+      min-height: 44px;
+      padding: 12px 22px;
+      letter-spacing: -0.015em;
+      transition: transform 180ms var(--ease-out), box-shadow 180ms var(--ease-out), background 180ms var(--ease-out), border-color 180ms var(--ease-out);
+    }
+    .btn:hover {
+      transform: translateY(-1px);
+    }
+    .btn-primary {
+      background: linear-gradient(180deg, #ffffff, #e9ecf5);
+      color: #080a12;
+      box-shadow: 0 14px 34px rgba(255, 255, 255, 0.13);
+    }
+    .btn-secondary {
+      background: rgba(255, 255, 255, 0.055);
+      border-color: var(--border);
+      color: #eef0f6;
+      box-shadow: inset 0 1px 0 rgba(255,255,255,0.05);
+    }
+    .btn-gradient {
+      background: linear-gradient(135deg, var(--blue), var(--violet), var(--violet-2));
+      box-shadow: 0 12px 32px rgba(139, 92, 246, 0.22);
+    }
+    .btn-gradient:hover {
+      box-shadow: 0 16px 44px rgba(139, 92, 246, 0.3);
+    }
+    .btn:disabled,
+    .btn.is-disabled {
+      cursor: not-allowed;
+      opacity: 0.5;
+      transform: none;
+      box-shadow: none;
+    }
+    .btn-details {
+      border-radius: 999px;
+      background: rgba(255,255,255,0.05);
+      border-color: var(--border);
+      color: #d7dbe6;
+    }
+    .navbar {
+      padding: 18px 0;
+    }
+    .navbar.scrolled {
+      background: rgba(5, 6, 10, 0.76);
+      border-bottom-color: rgba(255,255,255,0.08);
+      box-shadow: 0 10px 34px rgba(0, 0, 0, 0.26);
+    }
+    .navbar .container {
+      min-height: 52px;
+    }
+    .logo {
+      font-family: 'Inter Tight', 'Inter', sans-serif;
+      font-size: 1.18rem;
+      font-weight: 780;
+    }
+    .logo-icon {
+      width: 36px;
+      height: 36px;
+      border-radius: 12px;
+      background: linear-gradient(145deg, #7c5cff, #9d4edd);
+      box-shadow: 0 12px 34px rgba(124, 92, 255, 0.3);
+    }
+    .nav-links {
+      gap: 24px;
+      padding: 9px 14px;
+      border: 1px solid rgba(255,255,255,0.055);
+      border-radius: 999px;
+      background: rgba(255,255,255,0.025);
+    }
+    .nav-links a {
+      color: #8e95a4;
+      font-size: 0.78rem;
+      font-weight: 650;
+    }
+    .nav-links a::after {
+      display: none;
+    }
+    .nav-links a:hover {
+      color: #f4f6fb;
+    }
+    .search-toggle,
+    .cart-trigger {
+      width: 42px;
+      height: 42px;
+      border-radius: 999px;
+      background: rgba(255,255,255,0.048);
+      border: 1px solid var(--border);
+      box-shadow: inset 0 1px 0 rgba(255,255,255,0.05);
+    }
+    .hero {
+      padding: clamp(112px, 12vw, 152px) 0 clamp(48px, 7vw, 82px);
+    }
+    .hero-grid {
+      grid-template-columns: minmax(0, 760px) minmax(360px, 1fr);
+      gap: clamp(36px, 6vw, 84px);
+      justify-content: space-between;
+      text-align: left;
+    }
+    .hero-content {
+      margin: 0;
+    }
+    .hero-badge {
+      margin-bottom: 26px;
+      padding: 7px 13px 7px 9px;
+      background: rgba(255,255,255,0.045);
+      border-color: rgba(255,255,255,0.09);
+      color: #dfe4ff;
+      box-shadow: inset 0 1px 0 rgba(255,255,255,0.05);
+    }
+    .hero-badge-dot {
+      background: var(--green);
+    }
+    .hero h1 {
+      max-width: 900px;
+      font-size: clamp(3.15rem, 7.4vw, 6.15rem);
+      font-weight: 800;
+      line-height: 0.94;
+      letter-spacing: -0.072em;
+    }
+    .hero h1 .gradient-text {
+      background: linear-gradient(115deg, #ffffff 0%, #cfc8ff 22%, #8d7cff 52%, #ef6bd8 100%);
+      -webkit-background-clip: text;
+      background-clip: text;
+    }
+    .hero p {
+      margin: 28px 0 0;
+      max-width: 660px;
+      color: var(--muted);
+      font-size: clamp(1.02rem, 1.7vw, 1.22rem);
+      line-height: 1.72;
+    }
+    .hero-actions {
+      justify-content: flex-start;
+      margin-top: 34px;
+    }
+    .hero-trust-strip {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      margin-top: 18px;
+    }
+    .hero-trust-strip span {
+      display: inline-flex;
+      align-items: center;
+      gap: 7px;
+      padding: 8px 12px;
+      border-radius: 999px;
+      color: #c7ceda;
+      font-size: 0.78rem;
+      font-weight: 650;
+      background: rgba(255,255,255,0.035);
+      border: 1px solid rgba(255,255,255,0.07);
+    }
+    .hero-trust-strip span::before {
+      content: '';
+      width: 6px;
+      height: 6px;
+      border-radius: 999px;
+      background: var(--green);
+      box-shadow: 0 0 0 4px rgba(61,220,151,0.1);
+    }
+    .hero-stats {
+      justify-content: flex-start;
+      gap: 12px;
+      margin-top: clamp(42px, 6vw, 72px);
+      padding-top: 22px;
+      border-top-color: rgba(255,255,255,0.08);
+      flex-wrap: wrap;
+    }
+    .hero-stat {
+      min-width: 150px;
+      padding: 16px 18px;
+      border: 1px solid rgba(255,255,255,0.07);
+      border-radius: 18px;
+      background: rgba(255,255,255,0.028);
+    }
+    .hero-stat h3 {
+      font-family: 'Inter Tight', 'Inter', sans-serif;
+      font-size: 1.58rem;
+      letter-spacing: -0.045em;
+    }
+    .hero-stat p {
+      margin: 2px 0 0;
+      color: var(--muted-2);
+      font-size: 0.76rem;
+    }
+    .hero-finder {
+      position: relative;
+      align-self: center;
+      padding: 22px;
+      border-radius: 30px;
+      background:
+        radial-gradient(circle at 50% 0%, rgba(141,124,255,0.13), transparent 54%),
+        linear-gradient(180deg, rgba(255,255,255,0.06), rgba(255,255,255,0.02));
+      border: 1px solid rgba(255,255,255,0.09);
+      box-shadow: var(--shadow-soft), inset 0 1px 0 rgba(255,255,255,0.05);
+      overflow: hidden;
+    }
+    .hero-finder::before {
+      content: '';
+      position: absolute;
+      inset: 0;
+      background-image: linear-gradient(rgba(255,255,255,0.04) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,0.04) 1px, transparent 1px);
+      background-size: 32px 32px;
+      opacity: 0.25;
+      pointer-events: none;
+    }
+    .finder-header,
+    .finder-search,
+    .finder-grid,
+    .finder-parts {
+      position: relative;
+      z-index: 1;
+    }
+    .finder-header {
+      display: flex;
+      align-items: flex-end;
+      justify-content: space-between;
+      gap: 14px;
+      margin-bottom: 18px;
+    }
+    .finder-eyebrow {
+      color: #a7f3d0;
+      font-size: 0.72rem;
+      font-weight: 800;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+    }
+    .finder-header strong {
+      font-family: 'Inter Tight', 'Inter', sans-serif;
+      color: #fff;
+      font-size: 1.45rem;
+      letter-spacing: -0.035em;
+    }
+    .finder-search {
+      width: 100%;
+      min-height: 54px;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 14px 16px;
+      border-radius: 18px;
+      border: 1px solid rgba(255,255,255,0.1);
+      background: rgba(5,6,10,0.5);
+      color: #98a1b2;
+      text-align: left;
+      font: inherit;
+      cursor: pointer;
+      box-shadow: inset 0 1px 0 rgba(255,255,255,0.04);
+    }
+    .finder-search:hover {
+      border-color: rgba(141,124,255,0.34);
+      background: rgba(255,255,255,0.055);
+    }
+    .finder-grid {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 10px;
+      margin-top: 14px;
+    }
+    .finder-grid > div {
+      min-height: 88px;
+      padding: 13px;
+      border-radius: 18px;
+      background: rgba(255,255,255,0.04);
+      border: 1px solid rgba(255,255,255,0.07);
+    }
+    .finder-grid span {
+      display: block;
+      margin-bottom: 8px;
+      color: #778092;
+      font-size: 0.68rem;
+      font-weight: 800;
+      letter-spacing: 0.07em;
+      text-transform: uppercase;
+    }
+    .finder-grid strong {
+      color: #e5e7eb;
+      font-size: 0.86rem;
+      line-height: 1.35;
+    }
+    .finder-parts {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin-top: 16px;
+    }
+    .finder-parts span {
+      padding: 7px 9px;
+      border-radius: 999px;
+      color: #d5d9e4;
+      background: rgba(255,255,255,0.045);
+      border: 1px solid rgba(255,255,255,0.07);
+      font-size: 0.72rem;
+      font-weight: 750;
+    }
+    .hero-glow,
+    .hero-glow-2 {
+      opacity: 0.72;
+      filter: blur(8px);
+    }
+    .categories,
+    .products,
+    .testimonials,
+    .pricing {
+      padding: clamp(72px, 9vw, 116px) 0;
+    }
+    .products,
+    .pricing {
+      background: linear-gradient(180deg, rgba(255,255,255,0.018), rgba(255,255,255,0.006));
+      border-block: 1px solid rgba(255,255,255,0.045);
+    }
+    .categories-grid {
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+      gap: 14px;
+    }
+    .category-card {
+      text-align: left;
+      min-height: 188px;
+      padding: 22px;
+      border-radius: 24px;
+      background: linear-gradient(180deg, rgba(255,255,255,0.048), rgba(255,255,255,0.018));
+      border-color: rgba(255,255,255,0.075);
+      box-shadow: inset 0 1px 0 rgba(255,255,255,0.04);
+      transition: transform 220ms var(--ease-out), border-color 220ms var(--ease-out), background 220ms var(--ease-out), box-shadow 220ms var(--ease-out);
+    }
+    .category-card:hover {
+      transform: translateY(-4px);
+      border-color: rgba(141,124,255,0.34);
+      box-shadow: var(--shadow-card);
+    }
+    .category-card::before {
+      background: radial-gradient(circle at top right, rgba(141,124,255,0.14), transparent 46%);
+    }
+    .category-icon {
+      margin: 0 0 30px;
+      width: 44px;
+      height: 44px;
+      border-radius: 14px;
+    }
+    .category-card h3 {
+      font-family: 'Inter Tight', 'Inter', sans-serif;
+      font-size: 1.06rem;
+      letter-spacing: -0.02em;
+    }
+    .category-card p {
+      color: var(--muted);
+      font-size: 0.8rem;
+    }
+    .category-count {
+      color: #cfc8ff;
+      background: rgba(141,124,255,0.1);
+      border: 1px solid rgba(141,124,255,0.14);
+    }
+    .products-filter-bar {
+      align-items: flex-start;
+      margin-bottom: 30px;
+    }
+    .products-filter-info {
+      max-width: 360px;
+      color: var(--muted);
+      font-size: 0.92rem;
+      line-height: 1.6;
+    }
+    .products-filter-actions {
+      gap: 8px;
+      max-width: 760px;
+      justify-content: flex-end;
+    }
+    .filter-chip {
+      padding: 9px 15px;
+      background: rgba(255,255,255,0.035);
+      border-color: rgba(255,255,255,0.075);
+      color: #aab0bc;
+      font-size: 0.8rem;
+      font-weight: 650;
+      transition: transform 180ms var(--ease-out), border-color 180ms var(--ease-out), background 180ms var(--ease-out), color 180ms var(--ease-out);
+    }
+    .filter-chip:hover {
+      transform: translateY(-1px);
+      background: rgba(255,255,255,0.06);
+      border-color: rgba(255,255,255,0.14);
+      color: #f5f7fb;
+    }
+    .filter-chip.active {
+      color: #fff;
+      background: linear-gradient(180deg, rgba(141,124,255,0.24), rgba(141,124,255,0.12));
+      border-color: rgba(141,124,255,0.42);
+      box-shadow: 0 12px 32px rgba(141,124,255,0.12);
+    }
+    .products-grid {
+      grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+      gap: 20px;
+      align-items: stretch;
+    }
+    .product-card {
+      display: flex;
+      flex-direction: column;
+      min-height: 520px;
+      border-radius: 28px;
+      background:
+        radial-gradient(circle at 50% 12%, rgba(255,255,255,0.07), transparent 42%),
+        linear-gradient(180deg, rgba(255,255,255,0.055), rgba(255,255,255,0.018));
+      border-color: rgba(255,255,255,0.085);
+      box-shadow: inset 0 1px 0 rgba(255,255,255,0.04);
+      transition: transform 220ms var(--ease-out), border-color 220ms var(--ease-out), box-shadow 220ms var(--ease-out), background 220ms var(--ease-out);
+    }
+    .product-card::before,
+    .product-card::after {
+      display: none;
+    }
+    .product-card:hover {
+      transform: translateY(-5px);
+      border-color: rgba(141,124,255,0.32);
+      box-shadow: var(--shadow-card);
+    }
+    .product-image {
+      height: clamp(260px, 26vw, 330px);
+      background:
+        radial-gradient(circle at 50% 45%, rgba(255,255,255,0.1), transparent 35%),
+        radial-gradient(circle at 50% 50%, rgba(141,124,255,0.13), transparent 50%),
+        linear-gradient(180deg, #0f111c, #070810) !important;
+      border-bottom: 1px solid rgba(255,255,255,0.06);
+    }
+    .product-image::after {
+      background: linear-gradient(180deg, transparent 55%, rgba(5,6,10,0.82));
+      z-index: 1;
+    }
+    .product-img,
+    .product-img-rotatable.active {
+      transform: translate(var(--fit-x), var(--fit-y)) scale(calc(var(--fit-scale) * 1.16));
+    }
+    .product-card:hover .product-img:not(.product-img-rotatable),
+    .product-card:hover .product-img-rotatable.active {
+      transform: translate(var(--fit-x), var(--fit-y)) scale(calc(var(--fit-scale) * 1.23));
+    }
+    .product-badge {
+      top: 18px;
+      left: 18px;
+      padding: 7px 12px;
+      color: #bfffe2;
+      background: rgba(61,220,151,0.12);
+      border-color: rgba(61,220,151,0.24);
+      box-shadow: none;
+    }
+    .product-body {
+      display: flex;
+      flex: 1;
+      flex-direction: column;
+      padding: 22px;
+    }
+    .product-body h3 {
+      font-family: 'Inter Tight', 'Inter', sans-serif;
+      font-size: 1.28rem;
+      font-weight: 760;
+      letter-spacing: -0.02em;
+    }
+    .product-body p {
+      color: var(--muted);
+      font-size: 0.86rem;
+      margin-bottom: 14px;
+    }
+    .product-card-meta {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 7px;
+      margin: 2px 0 20px;
+    }
+    .product-meta-chip {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      max-width: 100%;
+      padding: 6px 9px;
+      border-radius: 999px;
+      color: #cfd5e2;
+      background: rgba(255,255,255,0.045);
+      border: 1px solid rgba(255,255,255,0.07);
+      font-size: 0.72rem;
+      font-weight: 700;
+      line-height: 1;
+    }
+    .product-meta-chip.success { color: #bfffe2; border-color: rgba(61,220,151,0.18); background: rgba(61,220,151,0.08); }
+    .product-meta-chip.warning { color: #ffe5a3; border-color: rgba(246,200,95,0.2); background: rgba(246,200,95,0.09); }
+    .product-meta-chip.danger { color: #fecdd3; border-color: rgba(251,113,133,0.2); background: rgba(251,113,133,0.09); }
+    .product-meta-chip.quality { color: #ddd6fe; border-color: rgba(141,124,255,0.22); background: rgba(141,124,255,0.1); }
+    .product-meta-chip.category { color: #bfdbfe; border-color: rgba(96,165,250,0.18); background: rgba(96,165,250,0.08); }
+    .product-footer {
+      margin-top: auto;
+      align-items: flex-end;
+    }
+    .product-price {
+      font-family: 'Inter Tight', 'Inter', sans-serif;
+      font-size: clamp(1.65rem, 3vw, 2.15rem);
+      font-weight: 800;
+      background: linear-gradient(120deg, #ffffff, #dad6ff 58%, #a78bfa);
+      -webkit-background-clip: text;
+      background-clip: text;
+    }
+    .product-card-actions .btn,
+    .product-card-actions .btn-details {
+      min-height: 40px;
+      padding: 9px 14px;
+      font-size: 0.78rem;
+      border-radius: 999px;
+    }
+    .search-bar-wrap {
+      top: 76px;
+      background: rgba(5, 6, 10, 0.84);
+      border-bottom-color: rgba(255,255,255,0.08);
+      box-shadow: 0 18px 60px rgba(0,0,0,0.28);
+    }
+    .search-bar-inner {
+      max-width: 860px;
+      padding: 8px;
+      border-radius: 22px;
+      background: rgba(255,255,255,0.045);
+      border: 1px solid rgba(255,255,255,0.08);
+    }
+    .search-quick-picks {
+      max-width: 860px;
+      margin: 10px auto 0;
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+    }
+    .search-quick-picks button {
+      padding: 7px 10px;
+      border-radius: 999px;
+      border: 1px solid rgba(255,255,255,0.08);
+      background: rgba(255,255,255,0.04);
+      color: #c4cad6;
+      font: inherit;
+      font-size: 0.74rem;
+      font-weight: 750;
+      cursor: pointer;
+    }
+    .search-quick-picks button:hover {
+      color: #fff;
+      border-color: rgba(141,124,255,0.32);
+      background: rgba(141,124,255,0.12);
+    }
+    .search-bar-wrap input,
+    .checkout-input,
+    .checkout-select,
+    .checkout-textarea,
+    .tracking-form input,
+    .cta-form input,
+    .cta-form textarea {
+      background: rgba(255,255,255,0.045);
+      border-color: rgba(255,255,255,0.08);
+      border-radius: 16px;
+      box-shadow: inset 0 1px 0 rgba(255,255,255,0.03);
+    }
+    .search-bar-wrap input:focus,
+    .checkout-input:focus,
+    .checkout-select:focus,
+    .checkout-textarea:focus,
+    .tracking-form input:focus,
+    .cta-form input:focus,
+    .cta-form textarea:focus {
+      border-color: rgba(141,124,255,0.52);
+      background: rgba(255,255,255,0.065);
+      box-shadow: 0 0 0 4px rgba(141,124,255,0.12);
+    }
+    .detail-panel,
+    .detail-info,
+    .checkout-panel,
+    .modal,
+    .tracking-shell,
+    .testimonial-card,
+    .pricing-card {
+      background: linear-gradient(180deg, rgba(255,255,255,0.055), rgba(255,255,255,0.02));
+      border-color: rgba(255,255,255,0.085);
+      box-shadow: inset 0 1px 0 rgba(255,255,255,0.04);
+    }
+    .detail-gallery .gallery-main {
+      height: clamp(320px, 52vh, 560px);
+      background:
+        radial-gradient(circle at 50% 44%, rgba(255,255,255,0.11), transparent 36%),
+        radial-gradient(circle at 50% 42%, rgba(141,124,255,0.12), transparent 52%);
+    }
+    .detail-gallery .gallery-thumbs img {
+      width: 86px;
+      height: 86px;
+      border-radius: 18px;
+      background: rgba(255,255,255,0.045);
+    }
+    .gallery-zoom-controls {
+      background: rgba(5,6,10,0.78);
+      border-color: rgba(255,255,255,0.1);
+    }
+    .detail-product-info {
+      background: rgba(255,255,255,0.032);
+      border-color: rgba(255,255,255,0.075);
+    }
+    .detail-info-card,
+    .checkout-meta-card,
+    .checkout-provider,
+    .checkout-result-card,
+    .tracking-box {
+      background: rgba(255,255,255,0.036);
+      border-color: rgba(255,255,255,0.075);
+    }
+    .checkout-modal {
+      width: min(100%, 1080px);
+    }
+    .checkout-provider input:checked + .checkout-provider-card {
+      background: linear-gradient(180deg, rgba(141,124,255,0.2), rgba(141,124,255,0.08));
+      box-shadow: inset 0 0 0 1px rgba(141,124,255,0.36), 0 16px 42px rgba(141,124,255,0.12);
+    }
+    .floating-cart {
+      background: rgba(5, 6, 10, 0.9);
+      border-top-color: rgba(255,255,255,0.1);
+    }
+    .floating-cart-btn {
+      border-radius: 999px;
+      background: linear-gradient(135deg, var(--blue), var(--violet-2));
+    }
+    .product-skeleton {
+      min-height: 520px;
+      border-radius: 28px;
+      background: linear-gradient(180deg, rgba(255,255,255,0.045), rgba(255,255,255,0.018));
+      border: 1px solid rgba(255,255,255,0.075);
+      overflow: hidden;
+    }
+    .skeleton-block {
+      position: relative;
+      overflow: hidden;
+      background: rgba(255,255,255,0.055);
+    }
+    .skeleton-block::after {
+      content: '';
+      position: absolute;
+      inset: 0;
+      transform: translateX(-100%);
+      background: linear-gradient(90deg, transparent, rgba(255,255,255,0.08), transparent);
+      animation: skeleton-sheen 1.3s infinite;
+    }
+    @keyframes skeleton-sheen {
+      to { transform: translateX(100%); }
+    }
+    .product-skeleton-media {
+      height: 300px;
+    }
+    .product-skeleton-body {
+      display: grid;
+      gap: 12px;
+      padding: 22px;
+    }
+    .product-skeleton-line {
+      height: 14px;
+      border-radius: 999px;
+    }
+    .product-skeleton-line.title {
+      width: 58%;
+      height: 22px;
+    }
+    .product-skeleton-line.short {
+      width: 38%;
+    }
+    @media (max-width: 1024px) {
+      .categories-grid {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+      }
+      .products-filter-actions {
+        justify-content: flex-start;
+      }
+    }
+    @media (max-width: 768px) {
+      .section-header {
+        margin-bottom: 28px;
+      }
+      .hero {
+        padding: 104px 0 42px;
+      }
+      .hero-grid,
+      .hero-content {
+        max-width: none;
+        grid-template-columns: 1fr;
+      }
+      .hero h1 {
+        font-size: clamp(3.05rem, 13.8vw, 4.7rem);
+      }
+      .hero p {
+        font-size: 1rem;
+      }
+      .hero-actions {
+        display: grid;
+        grid-template-columns: 1fr;
+      }
+      .hero-actions .btn {
+        justify-content: center;
+      }
+      .hero-stats {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 10px;
+      }
+      .hero-finder {
+        margin-top: 8px;
+      }
+      .finder-grid {
+        grid-template-columns: 1fr;
+      }
+      .hero-stat {
+        min-width: 0;
+        padding: 14px;
+      }
+      .categories-grid {
+        grid-template-columns: 1fr;
+      }
+      .category-card {
+        min-height: 0;
+      }
+      .products-grid {
+        grid-template-columns: 1fr;
+      }
+      .product-card {
+        min-height: 0;
+      }
+      .product-image {
+        height: clamp(300px, 72vw, 430px);
+      }
+      .product-footer {
+        align-items: stretch;
+      }
+      .product-price {
+        width: 100%;
+      }
+      .product-card-actions {
+        justify-content: stretch;
+        width: 100%;
+      }
+      .detail-gallery .gallery-main {
+        height: 330px;
+      }
+      .detail-gallery .gallery-thumbs img {
+        width: 74px;
+        height: 74px;
+      }
+    }
+    @media (max-width: 480px) {
+      .container {
+        padding-inline: 20px;
+      }
+      .hero h1 {
+        letter-spacing: -0.065em;
+      }
+      .hero-trust-strip span {
+        flex: 1 1 auto;
+        justify-content: center;
+      }
+      .product-image {
+        height: 330px;
+      }
+      .product-card-actions .btn,
+      .product-card-actions .btn-details {
+        font-size: 0.76rem;
+      }
+    }
   </style>
 </head>
 <body>
@@ -2755,9 +3657,15 @@
   <!-- Search Bar (sticky below nav) -->
   <div class="search-bar-wrap" id="searchBar">
     <div class="search-bar-inner">
-      <input type="text" id="searchInput" placeholder="Buscar repuestos por nombre…" autocomplete="off" />
+      <input type="text" id="searchInput" placeholder="Buscar por modelo, calidad, categoría o repuesto…" autocomplete="off" />
       <button class="search-clear" id="searchClear" onclick="clearSearch()" aria-label="Limpiar búsqueda">✕</button>
       <button class="btn btn-secondary btn-sm" onclick="toggleSearch()" style="flex-shrink:0;">Cerrar</button>
+    </div>
+    <div class="search-quick-picks" aria-label="Búsquedas rápidas">
+      <button type="button" data-search-pick="iPhone 11 pantalla">iPhone 11 pantalla</button>
+      <button type="button" data-search-pick="batería OEM">Batería OEM</button>
+      <button type="button" data-search-pick="puerto de carga">Puerto de carga</button>
+      <button type="button" data-search-pick="adhesivo">Adhesivo</button>
     </div>
   </div>
 
@@ -2813,46 +3721,85 @@
               🇨🇴 Repuestos en Colombia
             </div>
             <h1>
-              Repara mejor.<br/>
-              <span class="gradient-text">Compra como técnico</span>
+              Encuentra el repuesto correcto<br/>
+              <span class="gradient-text">para tu dispositivo</span>
             </h1>
             <p>
-              Repuestos para celulares, piezas de reemplazo y kits de trabajo para
-              quienes prefieren hacerlo por su cuenta. Desde pantallas y baterías
-              hasta flex, tapas y herramientas: un catálogo pensado para reparación
-              real, no para vitrina genérica.
+              Busca por modelo, pieza o síntoma. Pantallas, baterías, cámaras,
+              flex, puertos y herramientas con compatibilidad clara, calidad visible
+              y datos técnicos antes de comprar.
             </p>
             <div class="hero-actions">
               <a href="#productos" class="btn btn-primary">
-                Explorar catálogo
+                Buscar repuesto
                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
               </a>
               <a href="#categorias" class="btn btn-secondary">
-                Ver categorías
+                Explorar categorías
               </a>
+            </div>
+            <div class="hero-trust-strip" aria-label="Indicadores de confianza">
+              <span>Compatibilidad clara</span>
+              <span>Calidad identificada</span>
+              <span>Soporte para reparación</span>
             </div>
           </div>
 
           <div class="hero-stats reveal visible reveal-delay-2">
             <div class="hero-stat">
-              <h3>5,000+</h3>
-              <p>Repuestos vendidos</p>
+              <h3>12+</h3>
+              <p>familias de repuestos</p>
             </div>
             <div class="hero-stat">
-              <h3>99.2%</h3>
-              <p>Clientes satisfechos</p>
+              <h3>OEM</h3>
+              <p>calidad visible</p>
             </div>
             <div class="hero-stat">
               <h3>24-48h</h3>
-              <p>Envíos a Colombia</p>
+              <p>despacho nacional</p>
             </div>
             <div class="hero-stat">
-              <h3>4.9★</h3>
-              <p>Calificación promedio</p>
+              <h3>30d</h3>
+              <p>garantía disponible</p>
             </div>
           </div>
         </div>
 
+        <div class="hero-finder reveal visible reveal-delay-1" aria-label="Buscador técnico de repuestos">
+          <div class="finder-header">
+            <span class="finder-eyebrow">Finder técnico</span>
+            <strong>Busca como reparador</strong>
+          </div>
+          <button class="finder-search" type="button" onclick="toggleSearch()">
+            <span>🔍</span>
+            <span>iPhone 11 pantalla GX, puerto de carga A52...</span>
+          </button>
+          <div class="finder-grid">
+            <div>
+              <span>Dispositivo</span>
+              <strong>iPhone, Samsung, Xiaomi</strong>
+            </div>
+            <div>
+              <span>Pieza</span>
+              <strong>Pantalla, batería, flex</strong>
+            </div>
+            <div>
+              <span>Calidad</span>
+              <strong>Original, OEM, AAA, GX</strong>
+            </div>
+            <div>
+              <span>Instalación</span>
+              <strong>Tiempo, dificultad, herramientas</strong>
+            </div>
+          </div>
+          <div class="finder-parts">
+            <span>Pantallas</span>
+            <span>Baterías</span>
+            <span>Face ID</span>
+            <span>Charging ports</span>
+            <span>Adhesivos</span>
+          </div>
+        </div>
       </div>
     </div>
   </section>
@@ -2863,8 +3810,8 @@
   <section class="categories" id="categorias">
     <div class="container">
       <div class="section-header reveal">
-        <h2 class="section-title">Categorías</h2>
-        <p class="section-subtitle">Explora por tipo de reparación y encuentra el repuesto correcto para cada intervención.</p>
+        <h2 class="section-title">Repuestos por sistema</h2>
+        <p class="section-subtitle">Entra por la parte que vas a reparar: pantalla, energía, carga, cámara, audio, sensores o herramientas.</p>
       </div>
       <div class="categories-grid">
         <div class="category-card reveal reveal-delay-1" data-category="pantallas">
@@ -2881,7 +3828,7 @@
         </div>
         <div class="category-card reveal reveal-delay-3" data-category="flex-y-conectores">
           <div class="category-icon" style="background:rgba(34,197,94,0.12);color:#4ade80;">🔌</div>
-          <h3>Flex y conectores</h3>
+          <h3>Flex</h3>
           <p>Flex de carga, encendido, volumen, audio y sensores para reparación fina.</p>
           <span class="category-count">22 repuestos</span>
         </div>
@@ -2903,6 +3850,36 @@
           <p>Cargadores, cables, protectores y complementos para venta rápida.</p>
           <span class="category-count">Nuevos productos</span>
         </div>
+        <div class="category-card reveal reveal-delay-1" data-category="back-glass">
+          <div class="category-icon" style="background:rgba(244,114,182,0.12);color:#f9a8d4;">🪞</div>
+          <h3>Back Glass</h3>
+          <p>Tapas traseras, vidrios, adhesivos y piezas cosméticas por modelo.</p>
+          <span class="category-count">Por modelo</span>
+        </div>
+        <div class="category-card reveal reveal-delay-2" data-category="face-id">
+          <div class="category-icon" style="background:rgba(59,130,246,0.12);color:#93c5fd;">◇</div>
+          <h3>Face ID</h3>
+          <p>Sensores, flex y módulos delicados para diagnóstico avanzado.</p>
+          <span class="category-count">Técnico</span>
+        </div>
+        <div class="category-card reveal reveal-delay-3" data-category="charging-ports">
+          <div class="category-icon" style="background:rgba(45,212,191,0.12);color:#5eead4;">⌁</div>
+          <h3>Charging Ports</h3>
+          <p>Puertos de carga, micrófono, conectores y placas auxiliares.</p>
+          <span class="category-count">Alta rotación</span>
+        </div>
+        <div class="category-card reveal reveal-delay-1" data-category="speakers">
+          <div class="category-icon" style="background:rgba(250,204,21,0.12);color:#fde047;">▰</div>
+          <h3>Speakers</h3>
+          <p>Parlantes, auricular interno, vibradores y módulos de audio.</p>
+          <span class="category-count">Audio</span>
+        </div>
+        <div class="category-card reveal reveal-delay-2" data-category="adhesivos">
+          <div class="category-icon" style="background:rgba(248,113,113,0.12);color:#fca5a5;">⬚</div>
+          <h3>Adhesivos</h3>
+          <p>Sellos, pegantes, pre-cuts y consumibles para cierre limpio.</p>
+          <span class="category-count">Consumibles</span>
+        </div>
         <div class="category-card reveal reveal-delay-1" data-category="herramientas-diy">
           <div class="category-icon" style="background:rgba(6,182,212,0.12);color:#22d3ee;">🛠️</div>
           <h3>Herramientas DIY</h3>
@@ -2919,8 +3896,8 @@
   <section class="products" id="productos">
     <div class="container">
       <div class="section-header reveal">
-        <h2 class="section-title">Más Vendidos</h2>
-        <p class="section-subtitle">Los repuestos preferidos por los técnicos en Colombia. Calidad original, AAA y OEM.</p>
+        <h2 class="section-title">Catálogo técnico</h2>
+        <p class="section-subtitle">Piezas con compatibilidad, calidad, disponibilidad y datos de instalación para comprar con confianza.</p>
       </div>
       <div class="products-filter-bar">
         <div class="products-filter-info" id="productsFilterInfo">Mostrando todo el catálogo disponible.</div>
@@ -3446,21 +4423,8 @@
       if (input) { input.value = ''; input.focus(); filterProducts(''); }
     }
     function filterProducts(query) {
-      var grid = document.getElementById('productsGrid');
-      if (!grid) return;
-      var cards = grid.querySelectorAll('.product-card');
-      var q = query.toLowerCase().trim();
-      cards.forEach(function(card) {
-        var name = (card.querySelector('h3') || {}).textContent || '';
-        card.style.display = (!q || name.toLowerCase().includes(q)) ? '' : 'none';
-      });
-      var info = document.getElementById('productsFilterInfo');
-      if (info) {
-        var visible = grid.querySelectorAll('.product-card[style*="display: none"]');
-        var total = cards.length;
-        var shown = total - visible.length;
-        info.textContent = q ? shown + ' de ' + total + ' productos para "' + q + '"' : 'Mostrando todo el catálogo disponible.';
-      }
+      activeSearchQuery = String(query || '').trim();
+      renderStorefrontProducts();
     }
     // Wire search input
     document.addEventListener('DOMContentLoaded', function() {
@@ -3468,6 +4432,15 @@
       if (input) {
         input.addEventListener('input', function() { filterProducts(this.value); });
       }
+      document.querySelectorAll('[data-search-pick]').forEach(function(btn) {
+        btn.addEventListener('click', function() {
+          var value = this.getAttribute('data-search-pick') || '';
+          if (!input) return;
+          input.value = value;
+          filterProducts(value);
+          document.getElementById('productos')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        });
+      });
     });
 
     // Mobile nav slide-in panel
@@ -3941,14 +4914,206 @@
       'tapas': 'Tapas y carcasa',
       'tapas-y-carcasa': 'Tapas y carcasa',
       'accesorios': 'Accesorios',
+      'back-glass': 'Back Glass',
+      'face-id': 'Face ID',
+      'charging-ports': 'Charging Ports',
+      'speakers': 'Speakers',
+      'adhesivos': 'Adhesivos',
       'herramientas': 'Herramientas DIY',
       'herramientas-diy': 'Herramientas DIY',
     };
     let storefrontProducts = [];
     let activeProductCategory = '';
+    let activeSearchQuery = '';
+
+    function isLocalPreview() {
+      return ['localhost', '127.0.0.1', ''].includes(window.location.hostname) || window.location.protocol === 'file:';
+    }
+
+    function localPreviewProducts() {
+      return [
+        {
+          productId: 'preview-screen-iphone-11',
+          name: 'Pantalla iPhone 11',
+          description: 'Módulo completo con touch probado, brillo estable y marco listo para instalación.',
+          price: 120000,
+          category: 'pantallas',
+          quality: 'GX',
+          compatibility: ['iPhone 11', 'iPhone XR'],
+          shippingTime: '24-48h',
+          warranty: '30 días',
+          repairDifficulty: 'Media',
+          repairTime: '45-60 min',
+          requiredTools: ['Pentalobe', 'Spudger', 'Adhesivo display'],
+          productCondition: 'Nuevo probado',
+          related: ['Adhesivo iPhone 11', 'Kit apertura iPhone'],
+          stock: 4
+        },
+        {
+          productId: 'preview-battery-iphone-xr',
+          name: 'Batería iPhone XR',
+          description: 'Batería de reemplazo para servicios de alta rotación en taller.',
+          price: 78000,
+          category: 'baterias',
+          quality: 'OEM',
+          compatibility: ['iPhone XR'],
+          shippingTime: 'Entrega nacional',
+          warranty: '90 días',
+          repairDifficulty: 'Media',
+          repairTime: '30-45 min',
+          requiredTools: ['Pentalobe', 'Spudger', 'Adhesivo batería'],
+          productCondition: 'Nuevo OEM',
+          related: ['Adhesivo batería XR', 'Kit destornilladores'],
+          stock: 18
+        },
+        {
+          productId: 'preview-flex-samsung',
+          name: 'Flex de carga Samsung A52',
+          description: 'Puerto de carga y micrófono para reparación de falla de conexión.',
+          price: 42000,
+          category: 'flex-y-conectores',
+          quality: 'AAA',
+          compatibility: ['Samsung A52', 'Samsung A52s'],
+          shippingTime: '2-4 días',
+          warranty: '30 días',
+          repairDifficulty: 'Baja',
+          repairTime: '20-30 min',
+          requiredTools: ['Phillips', 'Pinza', 'Alcohol isopropílico'],
+          productCondition: 'Nuevo',
+          related: ['Adhesivo tapa A52', 'Puerto SIM A52'],
+          stock: 9
+        },
+        {
+          productId: 'preview-camera',
+          name: 'Cámara trasera iPhone 12',
+          description: 'Módulo de cámara probado antes de despacho para instalación segura.',
+          price: 165000,
+          category: 'camaras-y-modulos',
+          quality: 'Original',
+          compatibility: ['iPhone 12', 'iPhone 12 Mini'],
+          shippingTime: '24-48h',
+          warranty: '30 días',
+          repairDifficulty: 'Alta',
+          repairTime: '60-90 min',
+          requiredTools: ['Pentalobe', 'Spudger', 'Pinza ESD'],
+          productCondition: 'Original probado',
+          related: ['Flash iPhone 12', 'Flex cámara iPhone 12'],
+          stock: 0
+        }
+      ];
+    }
 
     function getCategoryLabel(category) {
       return PRODUCT_CATEGORY_LABELS[category] || category || 'Catálogo';
+    }
+
+    function normalizeSearchValue(value) {
+      return String(value || '')
+        .normalize('NFD')
+        .replace(/[\u0300-\u036f]/g, '')
+        .toLowerCase()
+        .replace(/[^a-z0-9]+/g, ' ')
+        .trim();
+    }
+
+    function searchTokens(value) {
+      return normalizeSearchValue(value).split(/\s+/).filter(Boolean);
+    }
+
+    function productSearchText(product) {
+      return normalizeSearchValue([
+        product.name,
+        product.description,
+        getCategoryLabel(product.category),
+        product.category,
+        product.quality,
+        product.shippingTime,
+        product.warranty,
+        product.repairDifficulty,
+        product.repairTime,
+        product.productCondition,
+        product.condition,
+        ...(Array.isArray(product.requiredTools) ? product.requiredTools : []),
+        ...(Array.isArray(product.compatibility) ? product.compatibility : []),
+        ...(Array.isArray(product.related) ? product.related : []),
+      ].filter(Boolean).join(' '));
+    }
+
+    function scoreProductSearch(product, query) {
+      const normalizedQuery = normalizeSearchValue(query);
+      if (!normalizedQuery) return { score: 1, exact: false, related: false };
+
+      const text = productSearchText(product);
+      const name = normalizeSearchValue(product.name);
+      const category = normalizeSearchValue(getCategoryLabel(product.category));
+      const compatibility = normalizeSearchValue((Array.isArray(product.compatibility) ? product.compatibility : []).join(' '));
+      const tokens = searchTokens(normalizedQuery);
+      const alphaTokens = tokens.filter((token) => !/^\d+$/.test(token));
+      const numericTokens = tokens.filter((token) => /^\d+$/.test(token));
+
+      let score = 0;
+      let exact = false;
+      let related = false;
+
+      if (name === normalizedQuery) {
+        score += 120;
+        exact = true;
+      }
+      if (name.includes(normalizedQuery)) {
+        score += 80;
+        exact = true;
+      }
+      if (compatibility.includes(normalizedQuery)) {
+        score += 72;
+        exact = true;
+      }
+      if (text.includes(normalizedQuery)) {
+        score += 55;
+      }
+
+      tokens.forEach((token) => {
+        if (name.includes(token)) score += 18;
+        if (compatibility.includes(token)) score += 16;
+        if (category.includes(token)) score += 10;
+        if (text.includes(token)) {
+          score += 8;
+          related = true;
+        }
+      });
+
+      const matchedAlpha = alphaTokens.filter((token) => text.includes(token)).length;
+      const matchedNumeric = numericTokens.filter((token) => text.includes(token)).length;
+      if (alphaTokens.length && matchedAlpha === alphaTokens.length) score += 24;
+      if (numericTokens.length && matchedNumeric === numericTokens.length) score += 18;
+
+      // If "iPhone 7" does not exist but iPhone products exist, keep the search useful.
+      if (!score && alphaTokens.length) {
+        const looseMatches = alphaTokens.filter((token) => token.length >= 3 && text.includes(token)).length;
+        if (looseMatches) {
+          score += looseMatches * 12;
+          related = true;
+        }
+      }
+
+      return { score, exact, related };
+    }
+
+    function rankedProductsForSearch(products, query) {
+      const normalizedQuery = normalizeSearchValue(query);
+      if (!normalizedQuery) {
+        return { products: products.slice(), exactCount: 0, relatedCount: 0 };
+      }
+
+      const ranked = products
+        .map((product, index) => ({ product, index, ...scoreProductSearch(product, normalizedQuery) }))
+        .filter((item) => item.score > 0)
+        .sort((a, b) => b.score - a.score || a.index - b.index);
+
+      return {
+        products: ranked.map((item) => item.product),
+        exactCount: ranked.filter((item) => item.exact).length,
+        relatedCount: ranked.filter((item) => !item.exact && item.related).length,
+      };
     }
 
     /* ==============================
@@ -4102,6 +5267,46 @@
       return { text: `${count} unidades disponibles`, tone: 'success' };
     }
 
+    function shortStockMeta(stock) {
+      const count = Number(stock);
+      if (!Number.isFinite(count)) return null;
+      if (count <= 0) return { text: 'Agotado', tone: 'danger' };
+      if (count < 5) return { text: `Últimas ${count}`, tone: 'warning' };
+      return { text: `${count} en stock`, tone: 'success' };
+    }
+
+    function renderProductCardMeta(product) {
+      const chips = [];
+      const stock = shortStockMeta(product.stock);
+      if (stock) chips.push(`<span class="product-meta-chip ${stock.tone}">${htmlSafe(stock.text)}</span>`);
+      if (product.category) chips.push(`<span class="product-meta-chip category">${htmlSafe(getCategoryLabel(product.category))}</span>`);
+      if (product.quality) chips.push(`<span class="product-meta-chip quality">${htmlSafe(product.quality)}</span>`);
+      if (Array.isArray(product.compatibility) && product.compatibility.filter(Boolean).length > 0) {
+        const model = product.compatibility.filter(Boolean)[0];
+        const more = product.compatibility.filter(Boolean).length - 1;
+        chips.push(`<span class="product-meta-chip">${htmlSafe(model)}${more > 0 ? ` +${more}` : ''}</span>`);
+      }
+      if (product.repairDifficulty) chips.push(`<span class="product-meta-chip">${htmlSafe(product.repairDifficulty)}</span>`);
+      if (product.shippingTime) chips.push(`<span class="product-meta-chip">${htmlSafe(product.shippingTime)}</span>`);
+      if (chips.length === 0) return '';
+      return `<div class="product-card-meta">${chips.slice(0, 5).join('')}</div>`;
+    }
+
+    function renderProductSkeletons() {
+      const grid = document.getElementById('productsGrid');
+      if (!grid) return;
+      grid.innerHTML = Array.from({ length: 6 }).map(() => `
+        <div class="product-skeleton" aria-hidden="true">
+          <div class="product-skeleton-media skeleton-block"></div>
+          <div class="product-skeleton-body">
+            <div class="product-skeleton-line title skeleton-block"></div>
+            <div class="product-skeleton-line skeleton-block"></div>
+            <div class="product-skeleton-line short skeleton-block"></div>
+          </div>
+        </div>
+      `).join('');
+    }
+
     function renderCompatibility(models) {
       const list = Array.isArray(models) ? models.filter(Boolean) : [];
       if (list.length === 0) return '<span class="detail-info-value">Consultar compatibilidad</span>';
@@ -4118,11 +5323,20 @@
       const hasCompatibility = Array.isArray(product.compatibility) && product.compatibility.filter(Boolean).length > 0;
       const hasShipping = Boolean(product.shippingTime);
       const hasWarranty = Boolean(product.warranty);
+      const hasDifficulty = Boolean(product.repairDifficulty);
+      const hasRepairTime = Boolean(product.repairTime);
+      const hasTools = Array.isArray(product.requiredTools) && product.requiredTools.filter(Boolean).length > 0;
+      const hasCondition = Boolean(product.productCondition);
+      const hasRelated = Array.isArray(product.related) && product.related.filter(Boolean).length > 0;
       const infoCards = [
         `<div class="detail-info-card ${stock.tone}">
           <span class="detail-info-icon">📦</span>
           <div><span class="detail-info-label">Stock disponible</span><span class="detail-info-value">${htmlSafe(stock.text)}</span></div>
         </div>`,
+        hasCondition ? `<div class="detail-info-card">
+          <span class="detail-info-icon">✓</span>
+          <div><span class="detail-info-label">Estado del producto</span><span class="detail-info-value">${htmlSafe(product.productCondition)}</span></div>
+        </div>` : '',
         hasQuality ? `<div class="detail-info-card">
           <span class="detail-info-icon">🏷️</span>
           <div><span class="detail-info-label">Calidad</span><span class="detail-info-value"><span class="quality-pill" data-tip="${htmlSafe(qualityTip)}">${htmlSafe(quality)}</span></span></div>
@@ -4138,8 +5352,29 @@
         hasWarranty ? `<div class="detail-info-card">
           <span class="detail-info-icon">🛡️</span>
           <div><span class="detail-info-label">Garantía</span><span class="detail-info-value">${htmlSafe(product.warranty)}</span></div>
+        </div>` : '',
+        hasDifficulty ? `<div class="detail-info-card">
+          <span class="detail-info-icon">◐</span>
+          <div><span class="detail-info-label">Dificultad</span><span class="detail-info-value">${htmlSafe(product.repairDifficulty)}</span></div>
+        </div>` : '',
+        hasRepairTime ? `<div class="detail-info-card">
+          <span class="detail-info-icon">⏱</span>
+          <div><span class="detail-info-label">Tiempo estimado</span><span class="detail-info-value">${htmlSafe(product.repairTime)}</span></div>
         </div>` : ''
       ].filter(Boolean).join('');
+
+      const toolsHtml = hasTools
+        ? `<div class="detail-tech-section">
+            <h4>Herramientas necesarias</h4>
+            <div class="detail-tool-list">${product.requiredTools.filter(Boolean).map((tool) => `<span>${htmlSafe(tool)}</span>`).join('')}</div>
+          </div>`
+        : '';
+      const relatedHtml = hasRelated
+        ? `<div class="detail-tech-section">
+            <h4>Recomendaciones relacionadas</h4>
+            <div class="detail-related-list">${product.related.filter(Boolean).slice(0, 4).map((item) => `<span>${htmlSafe(item)}</span>`).join('')}</div>
+          </div>`
+        : '';
 
       return `
         <div class="detail-product-info">
@@ -4147,11 +5382,13 @@
           <div class="detail-info-grid">
             ${infoCards}
           </div>
+          ${toolsHtml}
+          ${relatedHtml}
         </div>
         <div class="detail-trust-row">
-          <div class="detail-trust-item">✅ Probado</div>
-          <div class="detail-trust-item">🚚 Envío rápido</div>
-          <div class="detail-trust-item">🔒 Pago seguro</div>
+          <div class="detail-trust-item">Probado</div>
+          <div class="detail-trust-item">Compatible</div>
+          <div class="detail-trust-item">Pago seguro</div>
         </div>
       `;
     }
@@ -4178,48 +5415,65 @@
       }
       // Fallback if no images
       if (images.length === 0) {
-        images = [{ lg: '', md: '', sm: '' }];
+        images = [];
       }
 
       const priceStr = '$' + Number(product.price).toLocaleString('es-CO', {minimumFractionDigits: 0});
       const escapedName = (product.name || '').replace(/'/g, "\\'");
       const description = product.description || 'Sin descripción disponible.';
       const categoryLabel = getCategoryLabel(product.category);
+      const hasRealImages = images.some((img) => img.lg || img.md || img.sm);
 
       // Build gallery panel
       const galleryEl = modal.querySelector('.detail-gallery');
       if (galleryEl) {
         const imgCount = images.length;
-        let mainImgs = images.map((img, idx) =>
-          `<img src="${img.lg || img.md || ''}" alt="${escapedName}" class="${idx === 0 ? 'active' : ''}" data-gallery-idx="${idx}" />`
-        ).join('');
-        let thumbs = images.map((img, idx) =>
-          `<img src="${img.sm || img.md || img.lg || ''}" alt="" class="${idx === 0 ? 'active' : ''}" data-gallery-idx="${idx}" onclick="setGalleryImage(${idx})" loading="lazy" />`
-        ).join('');
-        const navArrows = imgCount > 1
-          ? `<button class="gallery-nav-btn prev" onclick="prevGalleryImage()">‹</button><button class="gallery-nav-btn next" onclick="nextGalleryImage()">›</button>`
-          : '';
-        const counter = imgCount > 1
-          ? `<div class="gallery-counter"><span id="galleryCurrentIdx">1</span> / ${imgCount}</div>`
-          : '';
-        galleryEl.innerHTML = `
-          <button class="product-detail-close-btn" onclick="closeProductDetail()">✕</button>
-          <div class="gallery-main">
-            ${mainImgs}
-            ${navArrows}
-            ${counter}
-            <div class="gallery-zoom-controls" onclick="event.stopPropagation()" onpointerdown="event.stopPropagation()">
-              <button class="gallery-zoom-btn" type="button" onclick="nudgeDetailZoom(-0.5)" aria-label="Alejar">−</button>
-              <input class="gallery-zoom-range" id="detailZoomRange" type="range" min="1" max="5" step="0.05" value="1" oninput="setDetailZoom(this.value)" aria-label="Zoom de imagen" />
-              <button class="gallery-zoom-btn" type="button" onclick="nudgeDetailZoom(0.5)" aria-label="Acercar">+</button>
-              <button class="gallery-zoom-reset" id="detailZoomReset" type="button" onclick="resetDetailZoom()" aria-label="Restablecer zoom">100%</button>
+        if (!hasRealImages) {
+          galleryEl.innerHTML = `
+            <button class="product-detail-close-btn" onclick="closeProductDetail()">✕</button>
+            <div class="gallery-main">
+              <div class="gallery-placeholder">
+                <div>
+                  <div class="gallery-placeholder-icon">📦</div>
+                  <strong>Imagen pendiente</strong>
+                  <span>${htmlSafe(categoryLabel)} listo para completar con foto de producto.</span>
+                </div>
+              </div>
             </div>
-          </div>
-          <div class="gallery-thumbs">${thumbs}</div>
-        `;
-        bindDetailPanHandlers();
-        resetDetailZoom();
-        autoFitProductImages(galleryEl);
+            <div class="gallery-thumbs"></div>
+          `;
+        } else {
+          let mainImgs = images.map((img, idx) =>
+            `<img src="${img.lg || img.md || ''}" alt="${escapedName}" class="${idx === 0 ? 'active' : ''}" data-gallery-idx="${idx}" />`
+          ).join('');
+          let thumbs = images.map((img, idx) =>
+            `<img src="${img.sm || img.md || img.lg || ''}" alt="" class="${idx === 0 ? 'active' : ''}" data-gallery-idx="${idx}" onclick="setGalleryImage(${idx})" loading="lazy" />`
+          ).join('');
+          const navArrows = imgCount > 1
+            ? `<button class="gallery-nav-btn prev" onclick="prevGalleryImage()">‹</button><button class="gallery-nav-btn next" onclick="nextGalleryImage()">›</button>`
+            : '';
+          const counter = imgCount > 1
+            ? `<div class="gallery-counter"><span id="galleryCurrentIdx">1</span> / ${imgCount}</div>`
+            : '';
+          galleryEl.innerHTML = `
+            <button class="product-detail-close-btn" onclick="closeProductDetail()">✕</button>
+            <div class="gallery-main">
+              ${mainImgs}
+              ${navArrows}
+              ${counter}
+              <div class="gallery-zoom-controls" onclick="event.stopPropagation()" onpointerdown="event.stopPropagation()">
+                <button class="gallery-zoom-btn" type="button" onclick="nudgeDetailZoom(-0.5)" aria-label="Alejar">−</button>
+                <input class="gallery-zoom-range" id="detailZoomRange" type="range" min="1" max="5" step="0.05" value="1" oninput="setDetailZoom(this.value)" aria-label="Zoom de imagen" />
+                <button class="gallery-zoom-btn" type="button" onclick="nudgeDetailZoom(0.5)" aria-label="Acercar">+</button>
+                <button class="gallery-zoom-reset" id="detailZoomReset" type="button" onclick="resetDetailZoom()" aria-label="Restablecer zoom">100%</button>
+              </div>
+            </div>
+            <div class="gallery-thumbs">${thumbs}</div>
+          `;
+          bindDetailPanHandlers();
+          resetDetailZoom();
+          autoFitProductImages(galleryEl);
+        }
       }
 
       // Build info panel (checkout-style)
@@ -4443,23 +5697,35 @@
       const products = activeProductCategory
         ? storefrontProducts.filter((product) => product.category === activeProductCategory)
         : storefrontProducts.slice();
+      const searchBase = activeSearchQuery ? storefrontProducts.slice() : products;
+      const rankedSearch = rankedProductsForSearch(searchBase, activeSearchQuery);
+      const visibleProducts = activeSearchQuery ? rankedSearch.products : products;
 
       if (info) {
-        info.textContent = activeProductCategory
-          ? `Mostrando ${getCategoryLabel(activeProductCategory).toLowerCase()} del catálogo.`
-          : 'Mostrando todo el catálogo disponible.';
+        if (activeSearchQuery) {
+          if (visibleProducts.length > 0) {
+            const mode = rankedSearch.exactCount > 0 ? 'coincidencias relevantes' : 'productos relacionados';
+            info.textContent = `${visibleProducts.length} ${mode} para "${activeSearchQuery}".`;
+          } else {
+            info.textContent = `No encontramos "${activeSearchQuery}". Prueba por modelo, categoría o tipo de repuesto.`;
+          }
+        } else {
+          info.textContent = activeProductCategory
+            ? `Mostrando ${getCategoryLabel(activeProductCategory).toLowerCase()} del catálogo.`
+            : 'Mostrando todo el catálogo disponible.';
+        }
       }
 
       renderProductFilters(storefrontProducts);
 
-      if (products.length === 0) {
+      if (visibleProducts.length === 0) {
         grid.innerHTML = '<p style="grid-column:1/-1;text-align:center;color:#86868b;">No hay productos cargados para esta categoría todavía.</p>';
         return;
       }
 
       const badges = ['🔥 Más vendido','Nuevo','⭐ Destacado','💥 Oferta','🔥 Popular','Nuevo','💎 Premium','⚡','🔥 Más vendido','Nuevo','⭐ Destacado','💥 Oferta'];
 
-      grid.innerHTML = products.map((p, i) => {
+      grid.innerHTML = visibleProducts.map((p, i) => {
         const delay = (i % 4) + 1;
         const badge = badges[i % badges.length];
         const priceStr = '$' + Number(p.price).toLocaleString('es-CO', {minimumFractionDigits: 0});
@@ -4530,13 +5796,34 @@
           compatibility: Array.isArray(p.compatibility) ? p.compatibility : [],
           shippingTime: p.shippingTime || '',
           warranty: p.warranty || '',
+          repairDifficulty: p.repairDifficulty || p.difficulty || '',
+          repairTime: p.repairTime || '',
+          requiredTools: Array.isArray(p.requiredTools) ? p.requiredTools : [],
+          productCondition: p.productCondition || p.condition || '',
+          related: Array.isArray(p.related) ? p.related : [],
           stock: p.stock || 0,
           images: p.images || (p.imageUrl ? [p.imageUrl] : []),
           imageUrl: p.imageUrl || ''
         }).replace(/'/g, "\\'");
+        const stockCount = Number(p.stock);
+        const outOfStock = Number.isFinite(stockCount) && stockCount <= 0;
+        const cardMetaHtml = renderProductCardMeta(p);
+        const searchTerms = [
+          p.name,
+          p.description,
+          getCategoryLabel(p.category),
+          p.quality,
+          p.shippingTime,
+          p.warranty,
+          p.repairDifficulty,
+          p.repairTime,
+          p.productCondition,
+          ...(Array.isArray(p.requiredTools) ? p.requiredTools : []),
+          ...(Array.isArray(p.compatibility) ? p.compatibility : [])
+        ].filter(Boolean).join(' ');
 
         return `
-          <div class="product-card reveal reveal-delay-${delay}" data-card-id="${cardId}"
+          <div class="product-card reveal reveal-delay-${delay}" data-card-id="${cardId}" data-search="${htmlSafe(searchTerms)}"
                onmouseenter="startCardRotation('${cardId}')"
                onmouseleave="stopCardRotation('${cardId}')">
             <div class="product-image" style="background:${imgBg};">
@@ -4546,11 +5833,12 @@
             <div class="product-body">
               <h3>${p.name}</h3>
               <p>${p.description || getCategoryLabel(p.category) || ''}</p>
+              ${cardMetaHtml}
               <div class="product-footer">
                 <span class="product-price">${priceStr} <span>COP</span></span>
                 <div class="product-card-actions">
-                  <button class="btn-details btn-sm" onclick='openProductDetail(${productJsonForModal})'>📋 Detalles</button>
-                  <button class="btn btn-gradient btn-sm" onclick='addToCart({productId:"${p.productId}",name:${JSON.stringify(p.name)},price:${p.price}})'>🛒 Agregar</button>
+                  <button class="btn-details btn-sm" onclick='openProductDetail(${productJsonForModal})' aria-label="Ver detalles de ${htmlSafe(p.name)}">Detalles</button>
+                  <button class="btn btn-gradient btn-sm${outOfStock ? ' is-disabled' : ''}" ${outOfStock ? 'disabled' : ''} onclick='addToCart({productId:"${p.productId}",name:${JSON.stringify(p.name)},price:${p.price}})' aria-label="Agregar ${htmlSafe(p.name)} al carrito">${outOfStock ? 'Agotado' : 'Agregar'}</button>
                 </div>
               </div>
             </div>
@@ -4565,16 +5853,27 @@
 
     async function loadProducts() {
       try {
+        renderProductSkeletons();
         const res = await fetch('/api/products?_t=' + Date.now());
         const data = await res.json();
         storefrontProducts = data.products || [];
         if (storefrontProducts.length === 0) {
+          if (isLocalPreview()) {
+            storefrontProducts = localPreviewProducts();
+            renderStorefrontProducts();
+            return;
+          }
           document.getElementById('productsGrid').innerHTML = '<p style="grid-column:1/-1;text-align:center;color:#86868b;">Próximamente — nuevos componentes en camino.</p>';
           return;
         }
         renderStorefrontProducts();
       } catch (err) {
         console.log('Error cargando productos:', err);
+        if (isLocalPreview()) {
+          storefrontProducts = localPreviewProducts();
+          renderStorefrontProducts();
+          return;
+        }
         document.getElementById('productsGrid').innerHTML = '<p style="grid-column:1/-1;text-align:center;color:#86868b;">Próximamente — nuevos componentes en camino.</p>';
       }
     }
