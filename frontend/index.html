@@ -155,7 +155,7 @@
       font-weight: 600;
       border: none;
       cursor: pointer;
-      transition: all 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
+      transition: transform 180ms cubic-bezier(0.16, 1, 0.3, 1), box-shadow 180ms cubic-bezier(0.16, 1, 0.3, 1), background 180ms cubic-bezier(0.16, 1, 0.3, 1), border-color 180ms cubic-bezier(0.16, 1, 0.3, 1), opacity 180ms cubic-bezier(0.16, 1, 0.3, 1);
       position: relative;
       overflow: hidden;
       letter-spacing: -0.01em;
@@ -172,13 +172,13 @@
       background: #f5f5f7;
       color: #0a0a0f;
     }
-    .btn-primary:hover {
-      transform: scale(1.04);
-      box-shadow: 0 8px 32px rgba(245, 245, 247, 0.2);
+    @media (hover: hover) and (pointer: fine) {
+      .btn-primary:hover {
+        transform: scale(1.04);
+        box-shadow: 0 8px 32px rgba(245, 245, 247, 0.2);
+      }
     }
-    .btn-primary:active {
-      transform: scale(0.97);
-    }
+    .btn-primary:active { transform: scale(0.97); }
     .btn-secondary {
       background: rgba(245, 245, 247, 0.08);
       color: #f5f5f7;
@@ -186,26 +186,26 @@
       -webkit-backdrop-filter: blur(12px);
       border: 1px solid rgba(245, 245, 247, 0.12);
     }
-    .btn-secondary:hover {
-      background: rgba(245, 245, 247, 0.15);
-      transform: scale(1.04);
-      border-color: rgba(245, 245, 247, 0.25);
+    @media (hover: hover) and (pointer: fine) {
+      .btn-secondary:hover {
+        background: rgba(245, 245, 247, 0.15);
+        transform: scale(1.04);
+        border-color: rgba(245, 245, 247, 0.25);
+      }
     }
-    .btn-secondary:active {
-      transform: scale(0.97);
-    }
+    .btn-secondary:active { transform: scale(0.97); }
     .btn-gradient {
       background: linear-gradient(135deg, #6366f1, #8b5cf6, #a855f7);
       color: #fff;
       text-shadow: 0 1px 2px rgba(0,0,0,0.2);
     }
-    .btn-gradient:hover {
-      transform: scale(1.05) translateY(-2px);
-      box-shadow: 0 14px 40px rgba(99, 102, 241, 0.4), 0 0 30px rgba(168, 85, 247, 0.15);
+    @media (hover: hover) and (pointer: fine) {
+      .btn-gradient:hover {
+        transform: scale(1.04) translateY(-2px);
+        box-shadow: 0 14px 40px rgba(99, 102, 241, 0.4), 0 0 30px rgba(168, 85, 247, 0.15);
+      }
     }
-    .btn-gradient:active {
-      transform: scale(0.96);
-    }
+    .btn-gradient:active { transform: scale(0.97); }
     .btn-sm {
       padding: 10px 22px;
       font-size: 0.8125rem;
@@ -226,19 +226,19 @@
       font-family: inherit;
       font-size: 0.8125rem;
       font-weight: 500;
-      transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+      transition: transform 160ms cubic-bezier(0.16, 1, 0.3, 1), background 160ms cubic-bezier(0.16, 1, 0.3, 1), border-color 160ms cubic-bezier(0.16, 1, 0.3, 1), color 160ms cubic-bezier(0.16, 1, 0.3, 1), box-shadow 160ms cubic-bezier(0.16, 1, 0.3, 1);
       white-space: nowrap;
     }
-    .btn-details:hover {
-      background: rgba(99, 102, 241, 0.1);
-      border-color: rgba(99, 102, 241, 0.2);
-      color: #c4b5fd;
-      transform: translateY(-1px);
-      box-shadow: 0 4px 12px rgba(99, 102, 241, 0.12);
+    @media (hover: hover) and (pointer: fine) {
+      .btn-details:hover {
+        background: rgba(99, 102, 241, 0.1);
+        border-color: rgba(99, 102, 241, 0.2);
+        color: #c4b5fd;
+        transform: translateY(-1px);
+        box-shadow: 0 4px 12px rgba(99, 102, 241, 0.12);
+      }
     }
-    .btn-details:active {
-      transform: translateY(0px);
-    }
+    .btn-details:active { transform: scale(0.97); }
 
     /* Product card action row */
     .product-card-actions {
@@ -287,18 +287,32 @@
     /* Scroll reveal */
     .reveal {
       opacity: 0;
-      transform: translateY(30px);
-      transition: opacity 0.8s cubic-bezier(0.16, 1, 0.3, 1),
-                  transform 0.8s cubic-bezier(0.16, 1, 0.3, 1);
+      transform: translateY(20px);
+      transition: opacity 0.5s cubic-bezier(0.16, 1, 0.3, 1),
+                  transform 0.5s cubic-bezier(0.16, 1, 0.3, 1);
     }
     .reveal.visible {
       opacity: 1;
       transform: translateY(0);
     }
-    .reveal-delay-1 { transition-delay: 0.1s; }
-    .reveal-delay-2 { transition-delay: 0.2s; }
-    .reveal-delay-3 { transition-delay: 0.3s; }
-    .reveal-delay-4 { transition-delay: 0.4s; }
+    .reveal-delay-1 { transition-delay: 0.06s; }
+    .reveal-delay-2 { transition-delay: 0.12s; }
+    .reveal-delay-3 { transition-delay: 0.18s; }
+    .reveal-delay-4 { transition-delay: 0.24s; }
+
+    @media (prefers-reduced-motion: reduce) {
+      .reveal {
+        transition: opacity 0.2s ease;
+        transform: none;
+      }
+      *, *::before, *::after {
+        animation-duration: 0.01ms !important;
+        animation-iteration-count: 1 !important;
+        transition-duration: 0.01ms !important;
+      }
+      .hero-badge-dot,
+      .product-badge::before { animation: none; }
+    }
 
     /* ==============================
        NAVBAR
@@ -310,7 +324,7 @@
       right: 0;
       z-index: 1000;
       padding: 16px 0;
-      transition: all 0.4s ease;
+      transition: background 220ms cubic-bezier(0.16, 1, 0.3, 1), backdrop-filter 220ms cubic-bezier(0.16, 1, 0.3, 1), border-color 220ms cubic-bezier(0.16, 1, 0.3, 1), padding 220ms cubic-bezier(0.16, 1, 0.3, 1), box-shadow 220ms cubic-bezier(0.16, 1, 0.3, 1);
     }
     .navbar.scrolled {
       background: rgba(10, 10, 15, 0.8);
@@ -367,8 +381,10 @@
       transition: width 0.3s ease;
       border-radius: 2px;
     }
-    .nav-links a:hover { color: #f5f5f7; }
-    .nav-links a:hover::after { width: 100%; }
+    @media (hover: hover) and (pointer: fine) {
+      .nav-links a:hover { color: #f5f5f7; }
+      .nav-links a:hover::after { width: 100%; }
+    }
 
     .nav-cta {
       display: flex;
@@ -395,9 +411,11 @@
       position: relative;
       font-size: 1.125rem;
     }
-    .cart-trigger:hover {
-      background: rgba(245, 245, 247, 0.15);
-      border-color: rgba(245, 245, 247, 0.25);
+    @media (hover: hover) and (pointer: fine) {
+      .cart-trigger:hover {
+        background: rgba(245, 245, 247, 0.15);
+        border-color: rgba(245, 245, 247, 0.25);
+      }
     }
     .hamburger {
       display: none;
@@ -548,7 +566,7 @@
       border-radius: 20px;
       background: rgba(255, 255, 255, 0.03);
       border: 1px solid rgba(255, 255, 255, 0.06);
-      transition: all 0.5s cubic-bezier(0.34, 1.56, 0.64, 1);
+      transition: transform 220ms cubic-bezier(0.16, 1, 0.3, 1), border-color 220ms cubic-bezier(0.16, 1, 0.3, 1), box-shadow 220ms cubic-bezier(0.16, 1, 0.3, 1);
       cursor: pointer;
       position: relative;
       overflow: hidden;
@@ -559,13 +577,15 @@
       inset: 0;
       background: linear-gradient(135deg, rgba(99, 102, 241, 0.08), rgba(168, 85, 247, 0.04));
       opacity: 0;
-      transition: opacity 0.4s ease;
+      transition: opacity 220ms cubic-bezier(0.16, 1, 0.3, 1);
     }
-    .category-card:hover::before { opacity: 1; }
-    .category-card:hover {
-      transform: translateY(-6px) scale(1.02);
-      border-color: rgba(99, 102, 241, 0.3);
-      box-shadow: 0 20px 60px rgba(99, 102, 241, 0.1);
+    @media (hover: hover) and (pointer: fine) {
+      .category-card:hover::before { opacity: 1; }
+      .category-card:hover {
+        transform: translateY(-4px);
+        border-color: rgba(99, 102, 241, 0.3);
+        box-shadow: 0 20px 60px rgba(99, 102, 241, 0.1);
+      }
     }
     .category-icon {
       width: 48px;
@@ -664,16 +684,19 @@
       font: inherit;
       font-size: 0.8125rem;
       font-weight: 500;
-      transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+      transition: transform 160ms cubic-bezier(0.16, 1, 0.3, 1), background 160ms cubic-bezier(0.16, 1, 0.3, 1), border-color 160ms cubic-bezier(0.16, 1, 0.3, 1), color 160ms cubic-bezier(0.16, 1, 0.3, 1);
       backdrop-filter: blur(8px);
       -webkit-backdrop-filter: blur(8px);
     }
-    .filter-chip:hover {
-      background: rgba(99, 102, 241, 0.1);
-      border-color: rgba(99, 102, 241, 0.2);
-      color: #c4b5fd;
-      transform: translateY(-1px);
+    @media (hover: hover) and (pointer: fine) {
+      .filter-chip:hover {
+        background: rgba(99, 102, 241, 0.1);
+        border-color: rgba(99, 102, 241, 0.2);
+        color: #c4b5fd;
+        transform: translateY(-1px);
+      }
     }
+    .filter-chip:active { transform: scale(0.97); }
     .filter-chip.active {
       background: linear-gradient(135deg, rgba(99, 102, 241, 0.18), rgba(168, 85, 247, 0.12));
       border-color: rgba(139, 92, 246, 0.4);
@@ -685,7 +708,7 @@
       overflow: hidden;
       background: linear-gradient(170deg, rgba(255,255,255,0.05) 0%, rgba(255,255,255,0.01) 100%);
       border: 1px solid rgba(255, 255, 255, 0.06);
-      transition: all 0.6s cubic-bezier(0.34, 1.56, 0.64, 1);
+      transition: transform 240ms cubic-bezier(0.16, 1, 0.3, 1), border-color 240ms cubic-bezier(0.16, 1, 0.3, 1), box-shadow 240ms cubic-bezier(0.16, 1, 0.3, 1);
       position: relative;
       box-shadow: 0 8px 32px rgba(0,0,0,0.08);
     }
@@ -697,24 +720,24 @@
       background: linear-gradient(135deg, #6366f1, #8b5cf6, #a855f7, #ec4899);
       background-size: 300% 300%;
       z-index: -1;
-      transition: opacity 0.6s ease;
+      transition: opacity 240ms cubic-bezier(0.16, 1, 0.3, 1);
       opacity: 0;
-      animation: gradientShift 4s ease infinite;
+      animation: gradientShift 4s linear infinite;
     }
-    .product-card:hover::before {
-      opacity: 1;
+    @media (hover: hover) and (pointer: fine) {
+      .product-card:hover::before { opacity: 1; }
+      .product-card:hover {
+        transform: translateY(-8px) scale(1.01);
+        border-color: transparent;
+        box-shadow:
+          0 24px 80px rgba(99, 102, 241, 0.18),
+          0 0 40px rgba(168, 85, 247, 0.08);
+      }
     }
     @keyframes gradientShift {
       0% { background-position: 0% 50%; }
       50% { background-position: 100% 50%; }
       100% { background-position: 0% 50%; }
-    }
-    .product-card:hover {
-      transform: translateY(-12px) scale(1.02);
-      border-color: transparent;
-      box-shadow:
-        0 32px 100px rgba(99, 102, 241, 0.18),
-        0 0 60px rgba(168, 85, 247, 0.08);
     }
     .product-card::after {
       content: '';
@@ -725,10 +748,10 @@
       height: 1px;
       background: linear-gradient(90deg, transparent, rgba(255,255,255,0.08), transparent);
       opacity: 0;
-      transition: opacity 0.4s ease;
+      transition: opacity 240ms cubic-bezier(0.16, 1, 0.3, 1);
     }
-    .product-card:hover::after {
-      opacity: 1;
+    @media (hover: hover) and (pointer: fine) {
+      .product-card:hover::after { opacity: 1; }
     }
     .product-image {
       height: 240px;
@@ -756,10 +779,10 @@
       background: linear-gradient(135deg, rgba(99,102,241,0.08), transparent 50%);
       z-index: 2;
       opacity: 0;
-      transition: opacity 0.5s ease;
+      transition: opacity 220ms cubic-bezier(0.16, 1, 0.3, 1);
     }
-    .product-card:hover .product-image::before {
-      opacity: 1;
+    @media (hover: hover) and (pointer: fine) {
+      .product-card:hover .product-image::before { opacity: 1; }
     }
     .product-img {
       width: 100%;
@@ -767,7 +790,7 @@
       object-fit: contain;
       padding: 0;
       cursor: pointer;
-      transition: transform 0.8s cubic-bezier(0.34, 1.56, 0.64, 1);
+      transition: transform 280ms cubic-bezier(0.16, 1, 0.3, 1);
       position: relative;
       z-index: 0;
       filter: drop-shadow(0 22px 28px rgba(0,0,0,0.42));
@@ -776,15 +799,17 @@
       --fit-y: 0px;
       transform: translate(var(--fit-x), var(--fit-y)) scale(calc(var(--fit-scale) * 1.08));
     }
-    .product-card:hover .product-img:not(.product-img-rotatable) {
-      transform: translate(var(--fit-x), var(--fit-y)) scale(calc(var(--fit-scale) * 1.16));
+    @media (hover: hover) and (pointer: fine) {
+      .product-card:hover .product-img:not(.product-img-rotatable) {
+        transform: translate(var(--fit-x), var(--fit-y)) scale(calc(var(--fit-scale) * 1.16));
+      }
     }
     /* Rotatable images overlap */
     .product-img-rotatable {
       position: absolute !important;
       inset: 0;
       opacity: 0;
-      transition: opacity 0.6s ease, transform 0.8s cubic-bezier(0.34, 1.56, 0.64, 1);
+      transition: opacity 200ms cubic-bezier(0.16, 1, 0.3, 1), transform 280ms cubic-bezier(0.16, 1, 0.3, 1);
       z-index: 0;
     }
     .product-img-rotatable.active {
@@ -792,8 +817,10 @@
       z-index: 1;
       transform: translate(var(--fit-x), var(--fit-y)) scale(calc(var(--fit-scale) * 1.08));
     }
-    .product-card:hover .product-img-rotatable.active {
-      transform: translate(var(--fit-x), var(--fit-y)) scale(calc(var(--fit-scale) * 1.16));
+    @media (hover: hover) and (pointer: fine) {
+      .product-card:hover .product-img-rotatable.active {
+        transform: translate(var(--fit-x), var(--fit-y)) scale(calc(var(--fit-scale) * 1.16));
+      }
     }
     /* Image zoom modal */
     #imageZoomModal {
@@ -1117,14 +1144,17 @@
       display: flex;
       align-items: center;
       justify-content: center;
-      transition: background 0.2s ease, transform 0.2s ease;
+      transition: background 160ms cubic-bezier(0.16, 1, 0.3, 1), transform 160ms cubic-bezier(0.16, 1, 0.3, 1);
       backdrop-filter: blur(8px);
       -webkit-backdrop-filter: blur(8px);
     }
-    .detail-gallery .gallery-nav-btn:hover {
-      background: rgba(99,102,241,0.7);
-      transform: translateY(-50%) scale(1.08);
+    @media (hover: hover) and (pointer: fine) {
+      .detail-gallery .gallery-nav-btn:hover {
+        background: rgba(99,102,241,0.7);
+        transform: translateY(-50%) scale(1.08);
+      }
     }
+    .detail-gallery .gallery-nav-btn:active { opacity: 0.75; }
     .detail-gallery .gallery-nav-btn.prev { left: 8px; }
     .detail-gallery .gallery-nav-btn.next { right: 8px; }
     .product-detail-close-btn {
@@ -1184,7 +1214,7 @@
       padding: 4px;
       cursor: pointer;
       border: 2px solid transparent;
-      transition: border-color 0.2s, transform 0.2s ease, background 0.2s ease;
+      transition: border-color 160ms cubic-bezier(0.16, 1, 0.3, 1), transform 160ms cubic-bezier(0.16, 1, 0.3, 1), background 160ms cubic-bezier(0.16, 1, 0.3, 1);
       flex-shrink: 0;
       background:
         radial-gradient(circle at 50% 42%, rgba(255,255,255,0.08), transparent 48%),
@@ -1317,12 +1347,14 @@
       border-radius: 16px;
       background: rgba(255,255,255,0.035);
       border: 1px solid rgba(255,255,255,0.06);
-      transition: transform 0.25s ease, border-color 0.25s ease, background 0.25s ease;
+      transition: transform 160ms cubic-bezier(0.16, 1, 0.3, 1), border-color 160ms cubic-bezier(0.16, 1, 0.3, 1), background 160ms cubic-bezier(0.16, 1, 0.3, 1);
     }
-    .detail-info-card:hover {
-      transform: translateY(-1px);
-      border-color: rgba(167,139,250,0.26);
-      background: rgba(167,139,250,0.07);
+    @media (hover: hover) and (pointer: fine) {
+      .detail-info-card:hover {
+        transform: translateY(-1px);
+        border-color: rgba(167,139,250,0.26);
+        background: rgba(167,139,250,0.07);
+      }
     }
     .detail-info-icon {
       width: 30px;
@@ -1556,7 +1588,7 @@
       border-radius: 24px;
       background: rgba(255, 255, 255, 0.03);
       border: 1px solid rgba(255, 255, 255, 0.06);
-      transition: all 0.4s ease;
+      transition: transform 200ms cubic-bezier(0.16, 1, 0.3, 1), border-color 200ms cubic-bezier(0.16, 1, 0.3, 1), box-shadow 200ms cubic-bezier(0.16, 1, 0.3, 1);
       position: relative;
     }
     .pricing-card.featured {
@@ -1633,27 +1665,19 @@
       backdrop-filter: blur(18px);
       -webkit-backdrop-filter: blur(18px);
       z-index: 3000;
-      animation: modalFadeIn 0.3s ease;
+      animation: modalFadeIn 0.22s cubic-bezier(0.16, 1, 0.3, 1);
     }
     .modal-overlay.open {
       display: flex;
     }
     @keyframes modalFadeIn {
-      from {
-        opacity: 0;
-        backdrop-filter: blur(0px);
-        -webkit-backdrop-filter: blur(0px);
-      }
-      to {
-        opacity: 1;
-        backdrop-filter: blur(18px);
-        -webkit-backdrop-filter: blur(18px);
-      }
+      from { opacity: 0; }
+      to { opacity: 1; }
     }
     @keyframes modalSlideUp {
       from {
         opacity: 0;
-        transform: translateY(20px) scale(0.97);
+        transform: translateY(16px) scale(0.97);
       }
       to {
         opacity: 1;
@@ -1661,7 +1685,7 @@
       }
     }
     .modal-overlay.open .modal {
-      animation: modalSlideUp 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
+      animation: modalSlideUp 0.28s cubic-bezier(0.16, 1, 0.3, 1);
     }
     .modal {
       width: min(100%, 560px);
@@ -1698,9 +1722,10 @@
       cursor: pointer;
       font-size: 1rem;
     }
-    .modal-close:hover {
-      background: rgba(255, 255, 255, 0.1);
+    @media (hover: hover) and (pointer: fine) {
+      .modal-close:hover { background: rgba(255, 255, 255, 0.1); }
     }
+    .modal-close:active { transform: scale(0.97); }
     body.modal-open {
       overflow: hidden;
     }
@@ -1807,7 +1832,7 @@
       font-family: inherit;
       font-size: 0.9375rem;
       outline: none;
-      transition: border-color 0.2s ease, background 0.2s ease;
+      transition: border-color 160ms cubic-bezier(0.16, 1, 0.3, 1), background 160ms cubic-bezier(0.16, 1, 0.3, 1), box-shadow 160ms cubic-bezier(0.16, 1, 0.3, 1);
     }
     .checkout-input:focus,
     .checkout-select:focus,
@@ -2092,7 +2117,7 @@
       min-height: 116px;
       display: grid;
       gap: 10px;
-      transition: border-color 0.2s ease, transform 0.2s ease, background 0.2s ease;
+      transition: border-color 160ms cubic-bezier(0.16, 1, 0.3, 1), transform 160ms cubic-bezier(0.16, 1, 0.3, 1), background 160ms cubic-bezier(0.16, 1, 0.3, 1);
     }
     .checkout-provider input:checked + .checkout-provider-card {
       background: linear-gradient(180deg, rgba(99,102,241,0.18), rgba(99,102,241,0.08));
@@ -2172,11 +2197,12 @@
       font-family: inherit;
       font-size: 0.9375rem;
       outline: none;
-      transition: border-color 0.3s ease;
+      transition: border-color 160ms cubic-bezier(0.16, 1, 0.3, 1), box-shadow 160ms cubic-bezier(0.16, 1, 0.3, 1);
     }
     .cta-form input:focus,
     .cta-form textarea:focus {
       border-color: rgba(99, 102, 241, 0.5);
+      box-shadow: 0 0 0 3px rgba(99,102,241,0.12);
     }
     .cta-form input::placeholder,
     .cta-form textarea::placeholder {
@@ -2284,9 +2310,11 @@
       font-size: 0.875rem;
       color: #636366;
       padding: 4px 0;
-      transition: color 0.3s ease;
+      transition: color 160ms cubic-bezier(0.16, 1, 0.3, 1);
     }
-    .footer-col a:hover { color: #f5f5f7; }
+    @media (hover: hover) and (pointer: fine) {
+      .footer-col a:hover { color: #f5f5f7; }
+    }
     .footer-bottom {
       display: flex;
       justify-content: space-between;
@@ -2315,7 +2343,7 @@
       border-bottom: 1px solid rgba(255,255,255,0.06);
       transform: translateY(-100%);
       opacity: 0;
-      transition: transform 0.35s cubic-bezier(0.34, 1.56, 0.64, 1), opacity 0.25s ease;
+      transition: transform 260ms cubic-bezier(0.16, 1, 0.3, 1), opacity 180ms cubic-bezier(0.16, 1, 0.3, 1);
       pointer-events: none;
     }
     .search-bar-wrap.visible {
@@ -2340,10 +2368,11 @@
       font-family: inherit;
       font-size: 0.9375rem;
       outline: none;
-      transition: border-color 0.25s ease;
+      transition: border-color 160ms cubic-bezier(0.16, 1, 0.3, 1), box-shadow 160ms cubic-bezier(0.16, 1, 0.3, 1);
     }
     .search-bar-wrap input:focus {
       border-color: rgba(99,102,241,0.45);
+      box-shadow: 0 0 0 3px rgba(99,102,241,0.12);
     }
     .search-bar-wrap input::placeholder {
       color: #636366;
@@ -2365,9 +2394,11 @@
       font-size: 1.125rem;
       cursor: pointer;
       padding: 6px;
-      transition: color 0.25s ease;
+      transition: color 160ms cubic-bezier(0.16, 1, 0.3, 1);
     }
-    .search-toggle:hover { color: #f5f5f7; }
+    @media (hover: hover) and (pointer: fine) {
+      .search-toggle:hover { color: #f5f5f7; }
+    }
     .no-search-results {
       grid-column: 1 / -1;
       text-align: center;
@@ -2412,18 +2443,18 @@
       align-items: center;
       justify-content: center;
       cursor: pointer;
-      transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+      transition: transform 160ms cubic-bezier(0.16, 1, 0.3, 1), background 160ms cubic-bezier(0.16, 1, 0.3, 1), box-shadow 160ms cubic-bezier(0.16, 1, 0.3, 1), border-color 160ms cubic-bezier(0.16, 1, 0.3, 1);
       box-shadow: 0 4px 16px rgba(99,102,241,0.25);
       line-height: 1;
     }
-    .quick-add-btn:hover {
-      transform: scale(1.12);
-      background: rgba(99,102,241,1);
-      box-shadow: 0 6px 24px rgba(99,102,241,0.4);
+    @media (hover: hover) and (pointer: fine) {
+      .quick-add-btn:hover {
+        transform: scale(1.08);
+        background: rgba(99,102,241,1);
+        box-shadow: 0 6px 24px rgba(99,102,241,0.4);
+      }
     }
-    .quick-add-btn:active {
-      transform: scale(0.92);
-    }
+    .quick-add-btn:active { transform: scale(0.94); }
     .quick-add-btn.added {
       background: rgba(34,197,94,0.85);
       border-color: rgba(34,197,94,0.3);
@@ -2485,7 +2516,7 @@
       display: flex;
       flex-direction: column;
       transform: translateX(100%);
-      transition: transform 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+      transition: transform 280ms cubic-bezier(0.16, 1, 0.3, 1);
       box-shadow: -8px 0 40px rgba(0,0,0,0.3);
     }
     .mobile-nav-panel.open {
@@ -2534,7 +2565,7 @@
       font-size: 1rem;
       font-weight: 500;
       color: #d1d1d6;
-      transition: all 0.25s ease;
+      transition: background 160ms cubic-bezier(0.16, 1, 0.3, 1), color 160ms cubic-bezier(0.16, 1, 0.3, 1), transform 160ms cubic-bezier(0.16, 1, 0.3, 1);
     }
     .mobile-nav-links a:active {
       background: rgba(99,102,241,0.12);
@@ -2578,11 +2609,12 @@
        BUTTON MICRO-INTERACTIONS
     ============================== */
     .btn {
-      transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+      transition: transform 160ms cubic-bezier(0.16, 1, 0.3, 1), box-shadow 160ms cubic-bezier(0.16, 1, 0.3, 1), background 160ms cubic-bezier(0.16, 1, 0.3, 1), border-color 160ms cubic-bezier(0.16, 1, 0.3, 1), opacity 160ms cubic-bezier(0.16, 1, 0.3, 1);
     }
-    .btn:hover {
-      transform: scale(1.02);
+    @media (hover: hover) and (pointer: fine) {
+      .btn:hover { transform: translateY(-1px); }
     }
+    .btn:active { transform: scale(0.97); }
 
     /* ==============================
        TESTIMONIAL CAROUSEL
@@ -2616,7 +2648,7 @@
       background: rgba(255,255,255,0.15);
       border: none;
       cursor: pointer;
-      transition: all 0.3s ease;
+      transition: background 200ms cubic-bezier(0.16, 1, 0.3, 1), width 200ms cubic-bezier(0.16, 1, 0.3, 1), border-radius 200ms cubic-bezier(0.16, 1, 0.3, 1);
       padding: 0;
     }
     .testimonial-dot.active {
@@ -2636,7 +2668,7 @@
       justify-content: center;
       cursor: pointer;
       font-size: 1rem;
-      transition: all 0.25s ease;
+      transition: background 160ms cubic-bezier(0.16, 1, 0.3, 1), border-color 160ms cubic-bezier(0.16, 1, 0.3, 1), transform 160ms cubic-bezier(0.16, 1, 0.3, 1);
     }
     .testimonial-scroll-btn:active {
       background: rgba(99,102,241,0.2);
@@ -2719,12 +2751,10 @@
       border: none;
       cursor: pointer;
       white-space: nowrap;
-      transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+      transition: transform 160ms cubic-bezier(0.16, 1, 0.3, 1), box-shadow 160ms cubic-bezier(0.16, 1, 0.3, 1), background 160ms cubic-bezier(0.16, 1, 0.3, 1);
       min-height: 44px;
     }
-    .floating-cart-btn:active {
-      transform: scale(0.96);
-    }
+    .floating-cart-btn:active { transform: scale(0.97); }
     body.cart-bar-visible {
       padding-bottom: 72px;
     }
@@ -3187,10 +3217,12 @@
       box-shadow: inset 0 1px 0 rgba(255,255,255,0.04);
       transition: transform 220ms var(--ease-out), border-color 220ms var(--ease-out), background 220ms var(--ease-out), box-shadow 220ms var(--ease-out);
     }
-    .category-card:hover {
-      transform: translateY(-4px);
-      border-color: rgba(141,124,255,0.34);
-      box-shadow: var(--shadow-card);
+    @media (hover: hover) and (pointer: fine) {
+      .category-card:hover {
+        transform: translateY(-4px);
+        border-color: rgba(141,124,255,0.34);
+        box-shadow: var(--shadow-card);
+      }
     }
     .category-card::before {
       background: radial-gradient(circle at top right, rgba(141,124,255,0.14), transparent 46%);
@@ -3239,11 +3271,13 @@
       font-weight: 650;
       transition: transform 180ms var(--ease-out), border-color 180ms var(--ease-out), background 180ms var(--ease-out), color 180ms var(--ease-out);
     }
-    .filter-chip:hover {
-      transform: translateY(-1px);
-      background: rgba(255,255,255,0.06);
-      border-color: rgba(255,255,255,0.14);
-      color: #f5f7fb;
+    @media (hover: hover) and (pointer: fine) {
+      .filter-chip:hover {
+        transform: translateY(-1px);
+        background: rgba(255,255,255,0.06);
+        border-color: rgba(255,255,255,0.14);
+        color: #f5f7fb;
+      }
     }
     .filter-chip.active {
       color: #fff;
@@ -3272,10 +3306,12 @@
     .product-card::after {
       display: none;
     }
-    .product-card:hover {
-      transform: translateY(-5px);
-      border-color: rgba(141,124,255,0.32);
-      box-shadow: var(--shadow-card);
+    @media (hover: hover) and (pointer: fine) {
+      .product-card:hover {
+        transform: translateY(-5px);
+        border-color: rgba(141,124,255,0.32);
+        box-shadow: var(--shadow-card);
+      }
     }
     .product-image {
       height: clamp(260px, 26vw, 330px);
@@ -3293,9 +3329,11 @@
     .product-img-rotatable.active {
       transform: translate(var(--fit-x), var(--fit-y)) scale(calc(var(--fit-scale) * 1.16));
     }
-    .product-card:hover .product-img:not(.product-img-rotatable),
-    .product-card:hover .product-img-rotatable.active {
-      transform: translate(var(--fit-x), var(--fit-y)) scale(calc(var(--fit-scale) * 1.23));
+    @media (hover: hover) and (pointer: fine) {
+      .product-card:hover .product-img:not(.product-img-rotatable),
+      .product-card:hover .product-img-rotatable.active {
+        transform: translate(var(--fit-x), var(--fit-y)) scale(calc(var(--fit-scale) * 1.23));
+      }
     }
     .product-badge {
       top: 18px;
