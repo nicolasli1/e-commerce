@@ -5076,6 +5076,10 @@
       }
 
       tokens.forEach((token) => {
+        if (name === token) {
+          score += /^\d+$/.test(token) ? 64 : 34;
+          exact = true;
+        }
         if (name.includes(token)) score += 18;
         if (compatibility.includes(token)) score += 16;
         if (category.includes(token)) score += 10;
