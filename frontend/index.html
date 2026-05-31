@@ -4364,7 +4364,9 @@
        CART MODAL
   ============================ -->
   <div class="modal-overlay" id="cartModal">
-    <div class="modal cart-modal-inner" style="max-width:480px;">
+    <div class="modal cart-modal-inner" style="max-width:480px;position:relative;overflow:hidden;">
+      <canvas id="cartParticleCanvas" aria-hidden="true" style="position:absolute;inset:0;width:100%;height:100%;pointer-events:none;z-index:0;border-radius:inherit;"></canvas>
+      <div style="position:relative;z-index:1;">
       <div class="modal-header cart-header">
         <div class="cart-header-left">
           <h2 class="modal-title">Tu Carrito</h2>
@@ -4392,6 +4394,7 @@
           <p class="cart-secure-note">🔒 Pago procesado por Mercado Pago · Envío a toda Colombia</p>
         </div>
       </div>
+      </div><!-- /z-index wrapper -->
     </div>
   </div>
 
@@ -4708,15 +4711,68 @@
       document.body.style.overflow = '';
     }
 
+    // ── Cart particle animation ──────────────────────
+    var _cartParticleRAF = null;
+    function startCartParticles() {
+      const canvas = document.getElementById('cartParticleCanvas');
+      if (!canvas) return;
+      const ctx = canvas.getContext('2d');
+      const modal = canvas.closest('.modal');
+
+      function resize() {
+        canvas.width  = modal.offsetWidth;
+        canvas.height = modal.offsetHeight;
+      }
+      resize();
+
+      const COUNT = 55;
+      const COLORS = ['#a78bfa','#818cf8','#c084fc','#f0abfc','#7dd3fc'];
+      const pts = Array.from({length: COUNT}, () => ({
+        x:  Math.random() * canvas.width,
+        y:  Math.random() * canvas.height,
+        r:  Math.random() * 1.8 + 0.4,
+        vx: (Math.random() - 0.5) * 0.35,
+        vy: (Math.random() - 0.5) * 0.35,
+        o:  Math.random() * 0.45 + 0.1,
+        color: COLORS[Math.floor(Math.random() * COLORS.length)]
+      }));
+
+      function draw() {
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        for (const p of pts) {
+          p.x += p.vx; p.y += p.vy;
+          if (p.x < 0) p.x = canvas.width;
+          else if (p.x > canvas.width)  p.x = 0;
+          if (p.y < 0) p.y = canvas.height;
+          else if (p.y > canvas.height) p.y = 0;
+          ctx.beginPath();
+          ctx.arc(p.x, p.y, p.r, 0, Math.PI * 2);
+          ctx.fillStyle = p.color;
+          ctx.globalAlpha = p.o;
+          ctx.fill();
+        }
+        ctx.globalAlpha = 1;
+        _cartParticleRAF = requestAnimationFrame(draw);
+      }
+      draw();
+    }
+    function stopCartParticles() {
+      if (_cartParticleRAF) { cancelAnimationFrame(_cartParticleRAF); _cartParticleRAF = null; }
+      const ctx = document.getElementById('cartParticleCanvas')?.getContext('2d');
+      if (ctx) ctx.clearRect(0, 0, 9999, 9999);
+    }
+
     function openCart() {
       document.getElementById('cartModal')?.classList.add('open');
       document.body.classList.add('modal-open');
       renderCart();
+      startCartParticles();
     }
 
     function closeCart() {
       document.getElementById('cartModal')?.classList.remove('open');
       document.body.classList.remove('modal-open');
+      stopCartParticles();
     }
 
     function openCheckout() {
