@@ -4259,21 +4259,9 @@
                 <label class="checkout-label" for="checkoutPhone">Celular</label>
                 <input class="checkout-input" id="checkoutPhone" placeholder="3001234567" />
               </div>
-              <div class="checkout-field">
-                <label class="checkout-label" for="checkoutLegalIdType">Documento</label>
-                <select class="checkout-select" id="checkoutLegalIdType">
-                  <option value="">Opcional</option>
-                  <option value="CC">CC</option>
-                  <option value="CE">CE</option>
-                  <option value="NIT">NIT</option>
-                  <option value="PP">Pasaporte</option>
-                  <option value="TI">TI</option>
-                  <option value="OTHER">Otro</option>
-                </select>
-              </div>
               <div class="checkout-field checkout-field-wide">
-                <label class="checkout-label" for="checkoutLegalId">Número de documento</label>
-                <input class="checkout-input" id="checkoutLegalId" placeholder="1234567890" />
+                <label class="checkout-label" for="checkoutAddress">Dirección de envío</label>
+                <input class="checkout-input" id="checkoutAddress" type="text" placeholder="Ej: Cra 15 #93-47, Apto 301, Bogotá" />
               </div>
               <div class="checkout-field checkout-field-wide">
                 <label class="checkout-label" for="checkoutNotes">Notas del pedido</label>
@@ -4774,8 +4762,7 @@
       const fullName = document.getElementById('checkoutFullName').value.trim();
       const email = document.getElementById('checkoutEmail').value.trim();
       const phoneNumber = document.getElementById('checkoutPhone').value.trim();
-      const legalIdType = document.getElementById('checkoutLegalIdType').value.trim();
-      const legalId = document.getElementById('checkoutLegalId').value.trim();
+      const shippingAddress = document.getElementById('checkoutAddress').value.trim();
       const notes = document.getElementById('checkoutNotes').value.trim();
 
       return {
@@ -4789,8 +4776,7 @@
           email,
           phoneNumber,
           phoneNumberPrefix: '+57',
-          legalIdType,
-          legalId
+          shippingAddress
         },
         notes,
         userId: isLoggedIn() ? getUserToken() : ''  // Will be resolved server-side
