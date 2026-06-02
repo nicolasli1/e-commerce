@@ -43,14 +43,14 @@ ALLOWED_TYPES = {"image/jpeg", "image/png", "image/webp"}
 MAX_SIZE_BYTES = 5 * 1024 * 1024  # 5 MB
 
 OUTPUT_SIZES = {
-    "lg": (1400, 1400),  # detalle / zoom de producto
+    "lg": (2000, 2000),  # detalle / zoom de producto — 2000px da headroom para zoom 3x sin pixelación
     "md": (700, 700),    # catálogo / carrusel
     "sm": (180, 180),    # carrito / miniatura
 }
 
 # Adaptive compression quality per size (higher res = more quality budget)
 COMPRESSION_QUALITY = {
-    "lg": 88,
+    "lg": 92,  # máxima calidad para zoom de detalle
     "md": 84,
     "sm": 76,
 }
