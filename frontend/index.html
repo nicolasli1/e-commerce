@@ -2364,6 +2364,61 @@
       letter-spacing: 0.06em;
       color: #c4b5fd;
     }
+    .checkout-provider-tag-nequi { color: #34d399; }
+    /* Nequi waiting state */
+    .nequi-waiting {
+      text-align: center;
+      padding: 32px 20px;
+    }
+    .nequi-waiting-icon {
+      font-size: 3rem;
+      animation: nequiPulse 1.6s ease-in-out infinite;
+      display: block;
+      margin-bottom: 16px;
+    }
+    @keyframes nequiPulse {
+      0%, 100% { transform: scale(1);   opacity: 1; }
+      50%       { transform: scale(1.1); opacity: 0.7; }
+    }
+    .nequi-waiting-title {
+      font-size: 1.1rem;
+      font-weight: 700;
+      margin-bottom: 6px;
+    }
+    .nequi-waiting-sub {
+      font-size: 0.82rem;
+      color: #86868b;
+      line-height: 1.5;
+    }
+    .nequi-waiting-steps {
+      margin: 18px auto 0;
+      max-width: 280px;
+      text-align: left;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+    .nequi-step {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      font-size: 0.8rem;
+      color: #cbd5e1;
+    }
+    .nequi-step-num {
+      width: 22px;
+      height: 22px;
+      border-radius: 50%;
+      background: rgba(52,211,153,0.15);
+      border: 1px solid rgba(52,211,153,0.3);
+      color: #34d399;
+      font-size: 0.7rem;
+      font-weight: 700;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+    }
     .checkout-provider-copy {
       color: #cbd5e1;
       font-size: 0.84rem;
@@ -4459,7 +4514,7 @@
           </div>
 
           <div class="checkout-provider-wrap">
-            <span class="checkout-label">Pasarela de pago</span>
+            <span class="checkout-label">Método de pago</span>
             <div class="checkout-provider-grid">
               <label class="checkout-provider">
                 <input type="radio" name="checkoutProvider" value="mercadopago" checked />
@@ -4468,10 +4523,24 @@
                     <span>Mercado Pago</span>
                     <span class="checkout-provider-tag">Checkout Pro</span>
                   </div>
-                  <div class="checkout-provider-copy">Paga en el entorno seguro de Mercado Pago con tarjeta, PSE, Nequi y otros métodos disponibles en Colombia.</div>
-                  <div class="checkout-provider-foot">Ideal si prefieres completar el pago fuera del sitio.</div>
+                  <div class="checkout-provider-copy">Tarjeta, PSE, Nequi y más métodos en un entorno seguro.</div>
                 </div>
               </label>
+              <label class="checkout-provider">
+                <input type="radio" name="checkoutProvider" value="nequi" />
+                <div class="checkout-provider-card">
+                  <div class="checkout-provider-title">
+                    <span>Nequi</span>
+                    <span class="checkout-provider-tag checkout-provider-tag-nequi">Directo</span>
+                  </div>
+                  <div class="checkout-provider-copy">Recibes una notificación en tu app Nequi y apruebas el pago sin salir del sitio.</div>
+                </div>
+              </label>
+            </div>
+            <div id="nequiPhoneWrap" style="display:none;margin-top:10px;">
+              <label class="checkout-label" for="nequiPhone">Número Nequi</label>
+              <input class="checkout-input" id="nequiPhone" type="tel" placeholder="3001234567" maxlength="10" style="margin-top:4px;" />
+              <p style="font-size:0.72rem;color:#86868b;margin-top:4px;">El número celular registrado en tu cuenta Nequi.</p>
             </div>
           </div>
 
@@ -4903,15 +4972,49 @@
     }
 
     function selectedCheckoutProvider() {
-      return 'mercadopago';
+      const el = document.querySelector('input[name="checkoutProvider"]:checked');
+      return el ? el.value : 'mercadopago';
     }
 
     function syncCheckoutProviderUI() {
-      // Siempre Mercado Pago — Wompi temporalmente deshabilitado
+      const provider = selectedCheckoutProvider();
+      const nequiWrap = document.getElementById('nequiPhoneWrap');
       const note = document.getElementById('checkoutInlineNote');
-      if (note) {
-        note.textContent = 'Mercado Pago usa Checkout Pro: el backend crea una preferencia y el comprador es redirigido al entorno seguro de Mercado Pago. El webhook completa el estado final del pedido.';
+      const payBtn = document.getElementById('checkoutPayBtn');
+      if (nequiWrap) nequiWrap.style.display = provider === 'nequi' ? 'block' : 'none';
+      if (payBtn) {
+        payBtn.textContent = provider === 'nequi' ? 'Pagar con Nequi' : 'Pagar con Mercado Pago';
       }
+      if (note) {
+        note.textContent = provider === 'nequi'
+          ? 'Recibirás una notificación push en tu app Nequi. Aprueba el pago desde tu celular.'
+          : 'Mercado Pago usa Checkout Pro: serás redirigido a su entorno seguro para completar el pago.';
+      }
+    }
+
+    function showNequiWaiting(phone) {
+      const form = document.getElementById('checkoutForm');
+      const providerWrap = document.querySelector('.checkout-provider-wrap');
+      const note = document.getElementById('checkoutInlineNote');
+      const shell = document.querySelector('.checkout-shell');
+      if (form) form.style.display = 'none';
+      if (providerWrap) providerWrap.style.display = 'none';
+      if (note) note.style.display = 'none';
+      const existing = document.getElementById('nequiWaitingBlock');
+      if (existing) existing.remove();
+      const block = document.createElement('div');
+      block.id = 'nequiWaitingBlock';
+      block.className = 'nequi-waiting';
+      block.innerHTML = `
+        <span class="nequi-waiting-icon">📲</span>
+        <p class="nequi-waiting-title">Revisa tu app Nequi</p>
+        <p class="nequi-waiting-sub">Enviamos una notificación al número <strong>${htmlSafe(phone)}</strong>.<br>Aprueba el pago para confirmar tu pedido.</p>
+        <div class="nequi-waiting-steps">
+          <div class="nequi-step"><span class="nequi-step-num">1</span>Abre la app Nequi en tu celular</div>
+          <div class="nequi-step"><span class="nequi-step-num">2</span>Acepta la notificación de cobro</div>
+          <div class="nequi-step"><span class="nequi-step-num">3</span>Tu pedido se confirma automáticamente</div>
+        </div>`;
+      shell?.querySelector('.checkout-panel')?.appendChild(block);
     }
 
     function setCheckoutStatus(message, type = '') {
@@ -5126,18 +5229,34 @@
         return;
       }
 
+      const provider = selectedCheckoutProvider();
       const payBtn = document.getElementById('checkoutPayBtn');
       payBtn.disabled = true;
-      payBtn.textContent = 'Preparando checkout...';
+      payBtn.textContent = provider === 'nequi' ? 'Enviando notificación...' : 'Preparando checkout...';
+
+      // Nequi: validate phone field
+      if (provider === 'nequi') {
+        const nequiPhone = (document.getElementById('nequiPhone')?.value || '').trim();
+        if (!nequiPhone || nequiPhone.length < 10) {
+          setCheckoutStatus('Ingresa un número Nequi válido de 10 dígitos.', 'error');
+          payBtn.disabled = false;
+          syncCheckoutProviderUI();
+          return;
+        }
+      }
 
       try {
+        const payload = checkoutPayload();
+        if (provider === 'nequi') {
+          payload.nequiPhone = (document.getElementById('nequiPhone')?.value || '').trim();
+        }
         const res = await fetch('/api/checkout/session', {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
             ...(API_KEY ? { 'x-api-key': API_KEY } : {})
           },
-          body: JSON.stringify(checkoutPayload())
+          body: JSON.stringify(payload)
         });
         const data = await res.json();
         if (!res.ok) {
@@ -5145,18 +5264,44 @@
         }
 
         localStorage.setItem(CHECKOUT_REFERENCE_STORAGE_KEY, data.reference);
-        const provider = data.order?.provider || selectedCheckoutProvider();
-        setCheckoutStatus(
-          'Preferencia creada. Te vamos a redirigir a Mercado Pago con la referencia real del pedido.',
-          'success'
-        );
-        showCheckoutResult(data.order);
-        await launchMercadoPago(data);
+
+        if (provider === 'nequi') {
+          const phone = payload.nequiPhone;
+          showNequiWaiting(phone);
+          setCheckoutStatus('Notificación enviada. Esperando aprobación...', 'warning');
+          // Poll order status every 4s until approved/rejected (max 3 min)
+          const ref = data.reference;
+          let polls = 0;
+          const poll = setInterval(async () => {
+            polls++;
+            if (polls > 45) { clearInterval(poll); return; }
+            try {
+              const r = await fetch(`/api/checkout/orders/${encodeURIComponent(ref)}?_t=${Date.now()}`);
+              const d = await r.json();
+              const status = (d.order?.status || '').toLowerCase();
+              if (status === 'approved') {
+                clearInterval(poll);
+                showCheckoutResult(d.order);
+                setCheckoutMode('confirmed');
+                setCheckoutStatus('¡Pago aprobado! Tu pedido está confirmado.', 'success');
+                cart = []; localStorage.removeItem('nexcore_cart'); updateCartCount();
+              } else if (['rejected','declined','error'].includes(status)) {
+                clearInterval(poll);
+                setCheckoutStatus('El pago fue rechazado o cancelado en Nequi.', 'error');
+                setCheckoutMode('form');
+              }
+            } catch (_) {}
+          }, 4000);
+        } else {
+          setCheckoutStatus('Preferencia creada. Te vamos a redirigir a Mercado Pago con la referencia real del pedido.', 'success');
+          showCheckoutResult(data.order);
+          await launchMercadoPago(data);
+        }
       } catch (err) {
         setCheckoutStatus(err.message || 'No pudimos iniciar el pago.', 'error');
       } finally {
         payBtn.disabled = false;
-        syncCheckoutProviderUI();
+        if (provider !== 'nequi') syncCheckoutProviderUI();
       }
     }
 

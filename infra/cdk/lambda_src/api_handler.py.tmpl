@@ -35,6 +35,9 @@ WOMPI_EVENTS_SECRET_PARAM = os.environ.get("WOMPI_EVENTS_SECRET_PARAM", "")
 MERCADOPAGO_PUBLIC_KEY_PARAM = os.environ.get("MERCADOPAGO_PUBLIC_KEY_PARAM", "")
 MERCADOPAGO_ACCESS_TOKEN_PARAM = os.environ.get("MERCADOPAGO_ACCESS_TOKEN_PARAM", "")
 MERCADOPAGO_WEBHOOK_SECRET_PARAM = os.environ.get("MERCADOPAGO_WEBHOOK_SECRET_PARAM", "")
+NEQUI_API_KEY_PARAM = os.environ.get("NEQUI_API_KEY_PARAM", "")
+NEQUI_CLIENT_ID_PARAM = os.environ.get("NEQUI_CLIENT_ID_PARAM", "")
+NEQUI_CLIENT_SECRET_PARAM = os.environ.get("NEQUI_CLIENT_SECRET_PARAM", "")
 ORDER_NOTIFICATIONS_FROM_EMAIL_PARAM = os.environ.get("ORDER_NOTIFICATIONS_FROM_EMAIL_PARAM", "")
 ORDER_ALERTS_TO_EMAIL_PARAM = os.environ.get("ORDER_ALERTS_TO_EMAIL_PARAM", "")
 FRONTEND_URL = os.environ.get("FRONTEND_URL", "").rstrip("/")
@@ -513,6 +516,131 @@ def wompi_enabled():
 
 def mercadopago_enabled():
     return bool(get_mercadopago_access_token())
+
+
+def get_nequi_api_key():
+    try:
+        return get_parameter(NEQUI_API_KEY_PARAM, decrypt=True)
+    except Exception:
+        return ""
+
+
+def get_nequi_client_id():
+    try:
+        return get_parameter(NEQUI_CLIENT_ID_PARAM, decrypt=False)
+    except Exception:
+        return ""
+
+
+def get_nequi_client_secret():
+    try:
+        return get_parameter(NEQUI_CLIENT_SECRET_PARAM, decrypt=True)
+    except Exception:
+        return ""
+
+
+def nequi_enabled():
+    return bool(get_nequi_api_key() and get_nequi_client_id())
+
+
+def get_nequi_token():
+    """Exchange client credentials for Nequi OAuth2 access token."""
+    import base64
+    client_id = get_nequi_client_id()
+    client_secret = get_nequi_client_secret()
+    credentials = base64.b64encode(f"{client_id}:{client_secret}".encode()).decode()
+    resp = urllib_request(
+        "https://oauth.nequi.com.co/token",
+        method="POST",
+        headers={
+            "Authorization": f"Basic {credentials}",
+            "Content-Type": "application/x-www-form-urlencoded",
+        },
+        body="grant_type=client_credentials".encode(),
+    )
+    return (resp.get("access_token") or "") if isinstance(resp, dict) else ""
+
+
+def initiate_nequi_push_payment(phone_number, amount_cop, reference):
+    """
+    Push a payment notification to the customer's Nequi app.
+    Docs: https://docs.conecta.nequi.com.co
+    The user receives a push notification and approves in-app.
+    Returns (success: bool, transaction_id: str, error: str)
+    """
+    import uuid, datetime
+    api_key = get_nequi_api_key()
+    token = get_nequi_token()
+    if not token:
+        return False, "", "nequi_token_error"
+
+    message_id = str(uuid.uuid4()).replace("-", "")[:12].upper()
+    now = datetime.datetime.now(datetime.timezone(datetime.timedelta(hours=-5)))
+    request_date = now.strftime("%Y-%m-%dT%H:%M:%S.000-05:00")
+
+    payload = {
+        "RequestMessage": {
+            "RequestHeader": {
+                "Channel": "BT",
+                "RequestDate": request_date,
+                "MessageID": message_id,
+                "ClientID": get_nequi_client_id(),
+                "Destination": {
+                    "Name": "PaymentGateway",
+                    "NameSpace": "co.com.nequi.integration.payment",
+                    "ServiceName": "PaymentGatewayService",
+                    "ServiceOperation": "pushPayment",
+                    "ServiceRegion": "C001",
+                    "ServiceVersion": "1.2.0",
+                },
+            },
+            "RequestBody": {
+                "any": {
+                    "pushPaymentRQ": {
+                        "phoneNumber": phone_number.strip().lstrip("+57").replace(" ", ""),
+                        "code": reference,
+                        "value": str(int(amount_cop)),
+                        "messageOTP": f"NexCore: confirma tu pago de ${int(amount_cop):,} COP",
+                    }
+                }
+            },
+        }
+    }
+    try:
+        resp = urllib_request(
+            "https://api.nequi.com.co/payments/-/push-payments",
+            method="POST",
+            headers={
+                "Authorization": f"Bearer {token}",
+                "x-api-key": api_key,
+                "Content-Type": "application/json",
+                "Accept": "application/json",
+            },
+            body=json.dumps(payload).encode(),
+        )
+        # Nequi returns ResponseMessage.ResponseHeader.responseCode == "00" on success
+        code = (
+            resp.get("ResponseMessage", {})
+            .get("ResponseHeader", {})
+            .get("ResponseCode", "99")
+        )
+        tx_id = (
+            resp.get("ResponseMessage", {})
+            .get("ResponseBody", {})
+            .get("any", {})
+            .get("pushPaymentRS", {})
+            .get("transactionId", reference)
+        )
+        if code == "00":
+            return True, tx_id, ""
+        err = (
+            resp.get("ResponseMessage", {})
+            .get("ResponseHeader", {})
+            .get("ResponseMessage", "nequi_push_error")
+        )
+        return False, "", err
+    except Exception as e:
+        return False, "", str(e)
 
 
 def wompi_base_url(public_key=None):
@@ -1763,18 +1891,14 @@ def create_checkout_session(event):
     if not body:
         return response(400, {"error": "invalid_json"})
     provider = (body.get("provider") or "mercadopago").strip().lower()
-    if provider not in ("wompi", "mercadopago"):
+    if provider not in ("wompi", "mercadopago", "nequi"):
         return response(400, {"error": "unsupported_provider"})
     if provider == "wompi" and not wompi_enabled():
-        return response(503, {
-            "error": "checkout_unavailable",
-            "message": "Wompi no está configurado todavía en este entorno.",
-        })
+        return response(503, {"error": "checkout_unavailable", "message": "Wompi no está configurado."})
     if provider == "mercadopago" and not mercadopago_enabled():
-        return response(503, {
-            "error": "checkout_unavailable",
-            "message": "Mercado Pago no está configurado todavía en este entorno.",
-        })
+        return response(503, {"error": "checkout_unavailable", "message": "Mercado Pago no está configurado."})
+    if provider == "nequi" and not nequi_enabled():
+        return response(503, {"error": "checkout_unavailable", "message": "Nequi no está configurado todavía en este entorno."})
     try:
         customer = normalize_customer(body)
         shipping = normalize_shipping(body)
@@ -1794,6 +1918,15 @@ def create_checkout_session(event):
             "environment": "sandbox" if get_wompi_public_key().startswith("pub_test_") else "production",
             "transactionId": "",
         }
+    elif provider == "nequi":
+        nequi_phone = (body.get("nequiPhone") or customer.get("phoneNumber") or "").strip()
+        if not nequi_phone:
+            return response(400, {"error": "nequi_phone_required", "message": "Ingresa el número de celular Nequi."})
+        amount_cop = total_cents / 100
+        ok, tx_id, err = initiate_nequi_push_payment(nequi_phone, amount_cop, reference)
+        if not ok:
+            return response(502, {"error": "nequi_push_failed", "message": f"No pudimos enviar la notificación Nequi: {err}"})
+        provider_data["nequi"] = {"transactionId": tx_id, "phone": nequi_phone}
     else:
         api_gateway_origin = get_api_gateway_origin(event)
         preference = build_mercadopago_preference(reference, items, customer, shipping, origin, api_gateway_origin=api_gateway_origin)
@@ -2041,6 +2174,56 @@ def verify_mercadopago_signature(event):
     return hmac.compare_digest(expected, v1)
 
 
+def handle_nequi_webhook(event):
+    """Receive Nequi payment status notification and update the order."""
+    try:
+        body = get_json_body(event) or {}
+        # Nequi sends a ResponseMessage with the transaction result
+        resp_header = body.get("ResponseMessage", {}).get("ResponseHeader", {})
+        resp_body = (
+            body.get("ResponseMessage", {})
+            .get("ResponseBody", {})
+            .get("any", {})
+            .get("pushPaymentRS", {})
+        )
+        code = resp_header.get("ResponseCode", "")
+        reference = resp_body.get("code", "") or resp_header.get("MessageID", "")
+        tx_id = resp_body.get("transactionId", "")
+
+        if not reference:
+            return response(400, {"error": "missing_reference"})
+
+        order_item = orders_table.get_item(Key={"reference": reference}).get("Item")
+        if not order_item:
+            return response(404, {"error": "order_not_found"})
+
+        if code == "00":
+            new_status = "approved"
+        elif code in ("AC", "PD"):
+            new_status = "pending"
+        else:
+            new_status = "rejected"
+
+        orders_table.update_item(
+            Key={"reference": reference},
+            UpdateExpression="SET #s = :s, paymentId = :pid, updatedAt = :u",
+            ExpressionAttributeNames={"#s": "status"},
+            ExpressionAttributeValues={
+                ":s": new_status,
+                ":pid": tx_id,
+                ":u": datetime.datetime.utcnow().isoformat(),
+            },
+        )
+        if new_status == "approved":
+            try:
+                notify_order(order_item, reference)
+            except Exception:
+                pass
+        return response(200, {"ok": True})
+    except Exception as e:
+        return response(500, {"error": str(e)})
+
+
 def handle_mercadopago_webhook(event):
     if not verify_mercadopago_signature(event):
         return response(401, {"error": "invalid_signature"})
@@ -2117,6 +2300,9 @@ def handler(event, context):
 
     if method == "POST" and path == "/api/webhooks/mercadopago":
         return handle_mercadopago_webhook(event)
+
+    if method == "POST" and path == "/api/webhooks/nequi":
+        return handle_nequi_webhook(event)
 
     # --- Auth endpoints (no API key required — user-facing) ---
     if method == "POST" and path == "/api/auth/register":
