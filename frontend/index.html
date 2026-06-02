@@ -1614,7 +1614,7 @@
        PRICING
     ============================== */
     .pricing {
-      padding: 100px 0;
+      padding: 80px 0 60px;
       background: rgba(255, 255, 255, 0.02);
     }
     .pricing-grid {
@@ -2449,7 +2449,7 @@
        CTA / CONTACT
     ============================== */
     .cta {
-      padding: 92px 0 72px;
+      padding: 60px 0 56px;
       text-align: center;
       position: relative;
       overflow: hidden;
@@ -5787,21 +5787,19 @@
 
     function renderProductCardMeta(product) {
       const chips = [];
+      // 1. Stock
       const stock = shortStockMeta(product.stock);
       if (stock) chips.push(`<span class="product-meta-chip ${stock.tone}">${htmlSafe(stock.text)}</span>`);
+      // 2. Category
       if (product.category) chips.push(`<span class="product-meta-chip category">${htmlSafe(getCategoryLabel(product.category))}</span>`);
-      if (product.quality) chips.push(`<span class="product-meta-chip quality">${htmlSafe(product.quality)}</span>`);
+      // 3. Variants count OR quality — pick whichever is more informative, max 1 more chip
       if (Array.isArray(product.variants) && product.variants.length > 0) {
         chips.push(`<span class="product-meta-chip">${product.variants.length} modelos</span>`);
-      } else if (Array.isArray(product.compatibility) && product.compatibility.filter(Boolean).length > 0) {
-        const model = product.compatibility.filter(Boolean)[0];
-        const more = product.compatibility.filter(Boolean).length - 1;
-        chips.push(`<span class="product-meta-chip">${htmlSafe(model)}${more > 0 ? ` +${more}` : ''}</span>`);
+      } else if (product.quality) {
+        chips.push(`<span class="product-meta-chip quality">${htmlSafe(product.quality)}</span>`);
       }
-      if (product.repairDifficulty) chips.push(`<span class="product-meta-chip">${htmlSafe(product.repairDifficulty)}</span>`);
-      if (product.shippingTime) chips.push(`<span class="product-meta-chip">${htmlSafe(product.shippingTime)}</span>`);
       if (chips.length === 0) return '';
-      return `<div class="product-card-meta">${chips.slice(0, 5).join('')}</div>`;
+      return `<div class="product-card-meta">${chips.join('')}</div>`;
     }
 
     function renderProductSkeletons() {
@@ -5920,14 +5918,15 @@
       if (galleryEl) {
         const imgCount = images.length;
         if (!hasRealImages) {
+          const catEmoji = {'pantallas':'🖥️','baterias':'🔋','flex-y-conectores':'🔌','camaras':'📷','camaras-y-modulos':'📷','tapas':'🛡️','tapas-y-carcasa':'🛡️','accesorios':'🎧','herramientas':'🔧','herramientas-diy':'🔧','back-glass':'🪟','face-id':'🔬','charging-ports':'⚡','speakers':'🔊','adhesivos':'🧴'}[product.category] || '📱';
           galleryEl.innerHTML = `
             <button class="product-detail-close-btn" onclick="closeProductDetail()">✕</button>
             <div class="gallery-main">
               <div class="gallery-placeholder">
                 <div>
-                  <div class="gallery-placeholder-icon">📦</div>
-                  <strong>Imagen pendiente</strong>
-                  <span>${htmlSafe(categoryLabel)} listo para completar con foto de producto.</span>
+                  <div class="gallery-placeholder-icon">${catEmoji}</div>
+                  <strong>${htmlSafe(categoryLabel)}</strong>
+                  <span>Foto del producto próximamente</span>
                 </div>
               </div>
             </div>
@@ -5977,7 +5976,13 @@
               <div class="detail-variant-label">Selecciona tu modelo:</div>
               <div class="detail-variant-pills">
                 ${variants.map(v => {
-                  const label = htmlSafe([v.deviceFamily, v.model].filter(Boolean).join(' '));
+                  const vParts = [v.deviceFamily, v.model].filter(Boolean);
+                  // Avoid "iPhone 12 12" if model duplicates the end of deviceFamily
+                  const label = htmlSafe(
+                    vParts.length === 2 && v.deviceFamily.trim().toLowerCase().endsWith(v.model.trim().toLowerCase())
+                      ? v.deviceFamily
+                      : vParts.join(' ')
+                  );
                   return `<button type="button" class="variant-pill" data-variant-id="${htmlSafe(v.variantId)}" onclick="selectDetailVariant('${htmlSafe(v.variantId)}')">${label}</button>`;
                 }).join('')}
               </div>
@@ -5994,7 +5999,7 @@
           <div class="detail-desc">${htmlSafe(description)}</div>
           ${renderProductInfo(product)}
           <div class="detail-actions">
-            <button class="btn btn-gradient" onclick='(function(){const v=selectedVariant;const vImg=v&&v.images&&v.images[0]?(v.images[0].sm||v.images[0].md||""):"";addToCart({productId:"${product.productId}",name:${JSON.stringify(product.name)},price:v!=null&&v.price!=null?v.price:${product.price},image:vImg||${JSON.stringify(images[0]?.sm||images[0]?.md||"")},variantId:v?v.variantId:null,variantLabel:v?[v.deviceFamily,v.model].filter(Boolean).join(" "):null});closeProductDetail();})()'>🛒 Agregar al carrito</button>
+            <button class="btn btn-gradient" onclick='(function(){const v=selectedVariant;const vImg=v&&v.images&&v.images[0]?(v.images[0].sm||v.images[0].md||""):"";addToCart({productId:"${product.productId}",name:${JSON.stringify(product.name)},price:v!=null&&v.price!=null?v.price:${product.price},image:vImg||${JSON.stringify(images[0]?.sm||images[0]?.md||"")},variantId:v?v.variantId:null,variantLabel:v?(function(){const p=[v.deviceFamily,v.model].filter(Boolean);return p.length===2&&v.deviceFamily.trim().toLowerCase().endsWith(v.model.trim().toLowerCase())?v.deviceFamily:p.join(" ")})():null});closeProductDetail();})()'>🛒 Agregar al carrito</button>
           </div>
         `;
       }
@@ -6351,7 +6356,7 @@
             </div>
             <div class="product-body">
               <h3>${htmlSafe(p.name)}</h3>
-              <p>${htmlSafe(p.description || getCategoryLabel(p.category) || '')}</p>
+              <p>${htmlSafe((p.description && p.description.trim().toLowerCase() !== p.name.trim().toLowerCase() ? p.description : '') || getCategoryLabel(p.category) || '')}</p>
               ${cardMetaHtml}
               <div class="product-footer${priceStr.includes('–') ? ' has-range' : ''}">
                 <span class="product-price${priceStr.includes('–') ? ' product-price-range' : ''}">${priceStr} <span>COP</span></span>
