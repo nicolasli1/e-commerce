@@ -936,9 +936,21 @@
     }
     /* Price range — slightly smaller so both numbers fit */
     .product-price-range {
-      font-size: 0.92rem;
-      letter-spacing: -0.01em;
-      white-space: nowrap;
+      font-size: 1rem;
+      letter-spacing: -0.02em;
+      flex-shrink: 1;
+      white-space: normal;
+      line-height: 1.2;
+    }
+    /* Footer stacks vertically when price range needs full width */
+    .product-footer.has-range {
+      flex-direction: column;
+      align-items: flex-start;
+      gap: 10px;
+    }
+    .product-footer.has-range .product-card-actions {
+      width: 100%;
+      justify-content: flex-start;
     }
 
     /* ==============================
@@ -6341,7 +6353,7 @@
               <h3>${htmlSafe(p.name)}</h3>
               <p>${htmlSafe(p.description || getCategoryLabel(p.category) || '')}</p>
               ${cardMetaHtml}
-              <div class="product-footer">
+              <div class="product-footer${priceStr.includes('–') ? ' has-range' : ''}">
                 <span class="product-price${priceStr.includes('–') ? ' product-price-range' : ''}">${priceStr} <span>COP</span></span>
                 <div class="product-card-actions">
                   <button class="btn-details btn-sm" onclick='openProductDetail(${productJsonForModal})' aria-label="Ver detalles de ${htmlSafe(p.name)}">Detalles</button>
