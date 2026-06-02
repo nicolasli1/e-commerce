@@ -935,7 +935,11 @@
       letter-spacing: 0;
     }
     /* Price range — slightly smaller so both numbers fit */
-    .product-price-range { font-size: 1.15rem; letter-spacing: -0.02em; }
+    .product-price-range {
+      font-size: 0.92rem;
+      letter-spacing: -0.01em;
+      white-space: nowrap;
+    }
 
     /* ==============================
        PRODUCT DETAILS / GALLERY MODAL
@@ -6341,7 +6345,10 @@
                 <span class="product-price${priceStr.includes('–') ? ' product-price-range' : ''}">${priceStr} <span>COP</span></span>
                 <div class="product-card-actions">
                   <button class="btn-details btn-sm" onclick='openProductDetail(${productJsonForModal})' aria-label="Ver detalles de ${htmlSafe(p.name)}">Detalles</button>
-                  <button class="btn btn-gradient btn-sm${outOfStock ? ' is-disabled' : ''}" ${outOfStock ? 'disabled' : ''} onclick='addToCart({productId:"${p.productId}",name:${JSON.stringify(p.name)},price:${p.price},image:${JSON.stringify(allImages[0]?.sm || allImages[0]?.md || '')}})' aria-label="Agregar ${htmlSafe(p.name)} al carrito">${outOfStock ? 'Agotado' : 'Agregar'}</button>
+                  ${p.variants && p.variants.length > 0
+                    ? `<button class="btn btn-gradient btn-sm" onclick='openProductDetail(${productJsonForModal})' aria-label="Seleccionar modelo de ${htmlSafe(p.name)}">Ver modelos</button>`
+                    : `<button class="btn btn-gradient btn-sm${outOfStock ? ' is-disabled' : ''}" ${outOfStock ? 'disabled' : ''} onclick='addToCart({productId:"${p.productId}",name:${JSON.stringify(p.name)},price:${p.price},image:${JSON.stringify(allImages[0]?.sm || allImages[0]?.md || '')}})' aria-label="Agregar ${htmlSafe(p.name)} al carrito">${outOfStock ? 'Agotado' : 'Agregar'}</button>`
+                  }
                 </div>
               </div>
             </div>

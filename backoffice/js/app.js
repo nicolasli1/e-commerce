@@ -630,11 +630,17 @@ const App = (() => {
                 <span class="form-section-icon">🗂️</span>
                 <div>
                   <h3>Variantes por dispositivo</h3>
-                  <p>Agrega variantes si este repuesto aplica a múltiples modelos con precios o stocks distintos.</p>
+                  <p>Activa si este repuesto tiene distintos precios o stocks según el modelo (ej: iPhone 11, iPhone 12…).</p>
                 </div>
+                <label class="toggle-switch" style="margin-left:auto;flex-shrink:0;">
+                  <input type="checkbox" id="variantToggle" />
+                  <span class="toggle-track"></span>
+                </label>
               </div>
-              <div id="variantsList"></div>
-              <button type="button" class="btn btn-secondary btn-sm" id="addVariantBtn" style="margin-top:8px;">+ Agregar variante</button>
+              <div id="variantsBody" style="display:none;margin-top:12px;">
+                <div id="variantsList"></div>
+                <button type="button" class="btn btn-secondary btn-sm" id="addVariantBtn" style="margin-top:8px;">+ Agregar variante</button>
+              </div>
             </div>
 
             <div class="product-form-section product-live-preview">
@@ -1013,9 +1019,14 @@ const App = (() => {
       }
       renderImagePreviews();
 
-      // Restore variant rows
+      // Restore variant rows and toggle state
       variantRows = Array.isArray(product?.variants) ? product.variants.map(newVariantRow) : [];
       renderVariantRows();
+      const toggle = document.getElementById('variantToggle');
+      if (toggle) {
+        toggle.checked = variantRows.length > 0;
+        syncVariantToggle();
+      }
 
       modal.classList.add('open');
     }
@@ -1026,6 +1037,8 @@ const App = (() => {
       compatibilityTags = [];
       variantRows = [];
       productForm.reset();
+      const toggle = document.getElementById('variantToggle');
+      if (toggle) { toggle.checked = false; syncVariantToggle(); }
     }
 
     document.getElementById('newProductBtn').addEventListener('click', () => openModal());
@@ -1045,6 +1058,27 @@ const App = (() => {
       variantRows.push(newVariantRow());
       renderVariantRows();
     });
+
+    function syncVariantToggle() {
+      const toggle = document.getElementById('variantToggle');
+      const body = document.getElementById('variantsBody');
+      const priceRow = document.getElementById('pPrice')?.closest('.form-row');
+      const qualityGroup = document.getElementById('pQuality')?.closest('.form-group');
+      const hasVariants = toggle?.checked;
+      if (body) body.style.display = hasVariants ? 'block' : 'none';
+      if (priceRow) {
+        priceRow.style.opacity = hasVariants ? '0.4' : '1';
+        priceRow.title = hasVariants ? 'El precio se define por variante' : '';
+        const priceInput = document.getElementById('pPrice');
+        if (priceInput) priceInput.required = !hasVariants;
+      }
+      if (qualityGroup) {
+        qualityGroup.style.opacity = hasVariants ? '0.4' : '1';
+        qualityGroup.title = hasVariants ? 'La calidad se define por variante' : '';
+      }
+    }
+
+    document.getElementById('variantToggle')?.addEventListener('change', syncVariantToggle);
 
     document.getElementById('modalCloseBtn').addEventListener('click', closeModal);
     document.getElementById('modalCancelBtn').addEventListener('click', closeModal);
