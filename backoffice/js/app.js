@@ -541,21 +541,78 @@ const App = (() => {
             <button class="modal-close" id="modalCloseBtn">✕</button>
           </div>
           <form id="productForm">
+
+            <!-- ① Tipo de producto — siempre primero, como Shopify/WooCommerce -->
+            <div class="product-form-section">
+              <div class="form-section-heading" style="margin-bottom:12px;">
+                <span class="form-section-icon">🏷️</span>
+                <div><h3>Tipo de producto</h3><p>Define cómo se gestiona el precio y stock.</p></div>
+              </div>
+              <div class="product-type-grid">
+                <label class="product-type-card" id="typeCardSimple">
+                  <input type="radio" name="productType" value="simple" checked />
+                  <div class="product-type-inner">
+                    <span class="product-type-icon">📦</span>
+                    <strong>Producto simple</strong>
+                    <span>Un precio y un stock único. Ideal para repuestos de un solo modelo.</span>
+                  </div>
+                </label>
+                <label class="product-type-card" id="typeCardVariant">
+                  <input type="radio" name="productType" value="variants" />
+                  <div class="product-type-inner">
+                    <span class="product-type-icon">🗂️</span>
+                    <strong>Con variantes por modelo</strong>
+                    <span>Precio y stock distintos por cada modelo de dispositivo (iPhone 11, 12, Samsung…).</span>
+                  </div>
+                </label>
+              </div>
+            </div>
+
+            <!-- ② Info base — nombre, descripción, categoría (siempre visible) -->
             <div class="product-form-section">
               <div class="form-section-heading">
-                <span class="form-section-icon">📦</span>
-                <div>
-                  <h3>Información principal</h3>
-                  <p>Datos visibles en catálogo y detalle del producto.</p>
-                </div>
+                <span class="form-section-icon">📝</span>
+                <div><h3>Información del producto</h3><p>Datos visibles en catálogo y detalle.</p></div>
               </div>
               <div class="form-group">
                 <label class="form-label">Nombre del producto</label>
-                <input class="form-input" id="pName" required placeholder="Ej: Pantalla OLED iPhone 11" />
+                <input class="form-input" id="pName" required placeholder="Ej: Pantalla OLED para iPhone" />
               </div>
               <div class="form-group">
                 <label class="form-label">Descripción corta</label>
-                <textarea class="form-textarea" id="pDesc" placeholder="Describe calidad, modelo, instalación o notas importantes"></textarea>
+                <textarea class="form-textarea" id="pDesc" placeholder="Describe compatibilidad, calidad, instalación o notas importantes"></textarea>
+              </div>
+              <div class="form-row">
+                <div class="form-group">
+                  <label class="form-label">Categoría</label>
+                  <select class="form-select" id="pCategory"></select>
+                </div>
+                <div class="form-group">
+                  <label class="form-label">Tiempo de envío</label>
+                  <input class="form-input" id="pShippingTime" placeholder="Ej: 2-4 días hábiles" />
+                </div>
+              </div>
+              <div class="form-row">
+                <div class="form-group">
+                  <label class="form-label">Garantía</label>
+                  <input class="form-input" id="pWarranty" placeholder="Ej: 30 días" />
+                </div>
+                <div class="form-group">
+                  <label class="form-label">Compatibilidad general</label>
+                  <div class="tag-input-shell" id="pCompatibilityShell">
+                    <div class="tag-list" id="pCompatibilityTags"></div>
+                    <input class="tag-input" id="pCompatibilityInput" placeholder="Buscar o agregar modelo…" />
+                  </div>
+                  <div class="form-helper">Enter o coma. Ej: iPhone 11, iPhone XR.</div>
+                </div>
+              </div>
+            </div>
+
+            <!-- ③ Modo SIMPLE: precio, stock, calidad, imágenes -->
+            <div class="product-form-section" id="simpleFields">
+              <div class="form-section-heading">
+                <span class="form-section-icon">💰</span>
+                <div><h3>Precio, stock e imágenes</h3><p>Aplica a este producto único.</p></div>
               </div>
               <div class="form-row">
                 <div class="form-group">
@@ -566,30 +623,6 @@ const App = (() => {
                   <label class="form-label">Stock</label>
                   <input class="form-input" type="number" id="pStock" placeholder="0" />
                   <div class="stock-hint" id="pStockHint">Define unidades disponibles para mostrar confianza.</div>
-                </div>
-              </div>
-              <div class="form-row">
-                <div class="form-group">
-                  <label class="form-label">Categoría</label>
-                  <select class="form-select" id="pCategory"></select>
-                </div>
-                <div class="form-group">
-                  <label class="form-label">Imágenes</label>
-                  <div class="image-upload-area">
-                    <input type="file" accept="image/*" id="pImageInput" style="display:none" />
-                    <button type="button" class="btn btn-secondary btn-sm" id="pImageUploadBtn">📷 Agregar imagen</button>
-                  </div>
-                  <div class="product-images" id="pImagesPreview"></div>
-                </div>
-              </div>
-            </div>
-
-            <div class="product-form-section">
-              <div class="form-section-heading">
-                <span class="form-section-icon">🧪</span>
-                <div>
-                  <h3>Información técnica</h3>
-                  <p>Ayuda al comprador a validar compatibilidad, calidad y garantía.</p>
                 </div>
               </div>
               <div class="form-row">
@@ -605,42 +638,34 @@ const App = (() => {
                   </select>
                 </div>
                 <div class="form-group">
-                  <label class="form-label">Tiempo de envío</label>
-                  <input class="form-input" id="pShippingTime" placeholder="Ej: 2-4 días hábiles" />
-                </div>
-              </div>
-              <div class="form-row">
-                <div class="form-group">
-                  <label class="form-label">Garantía</label>
-                  <input class="form-input" id="pWarranty" placeholder="Ej: Garantía de 30 días" />
-                </div>
-                <div class="form-group">
-                  <label class="form-label">Compatibilidad</label>
-                  <div class="tag-input-shell" id="pCompatibilityShell">
-                    <div class="tag-list" id="pCompatibilityTags"></div>
-                    <input class="tag-input" id="pCompatibilityInput" placeholder="Buscar o agregar modelo…" />
+                  <label class="form-label">Imágenes</label>
+                  <div class="image-upload-area">
+                    <input type="file" accept="image/*" id="pImageInput" style="display:none" />
+                    <button type="button" class="btn btn-secondary btn-sm" id="pImageUploadBtn">📷 Agregar imagen</button>
                   </div>
-                  <div class="form-helper">Enter o coma para agregar. Ej: iPhone 11, iPhone XR.</div>
+                  <div class="product-images" id="pImagesPreview"></div>
                 </div>
               </div>
             </div>
 
-            <div class="product-form-section">
+            <!-- ③ Modo VARIANTES: tabla con headers -->
+            <div class="product-form-section" id="variantFields" style="display:none;">
               <div class="form-section-heading">
                 <span class="form-section-icon">🗂️</span>
-                <div>
-                  <h3>Variantes por dispositivo</h3>
-                  <p>Activa si este repuesto tiene distintos precios o stocks según el modelo (ej: iPhone 11, iPhone 12…).</p>
-                </div>
-                <label class="toggle-switch" style="margin-left:auto;flex-shrink:0;">
-                  <input type="checkbox" id="variantToggle" />
-                  <span class="toggle-track"></span>
-                </label>
+                <div><h3>Variantes por modelo</h3><p>Cada fila es un dispositivo compatible con su propio precio, stock e imagen.</p></div>
               </div>
-              <div id="variantsBody" style="display:none;margin-top:12px;">
-                <div id="variantsList"></div>
-                <button type="button" class="btn btn-secondary btn-sm" id="addVariantBtn" style="margin-top:8px;">+ Agregar variante</button>
+              <div class="variant-table-headers">
+                <span>Marca</span>
+                <span>Modelo</span>
+                <span>Sub-modelo</span>
+                <span>Precio COP</span>
+                <span>Stock</span>
+                <span>Calidad</span>
+                <span>Imagen</span>
+                <span></span>
               </div>
+              <div id="variantsList"></div>
+              <button type="button" class="btn btn-secondary btn-sm" id="addVariantBtn" style="margin-top:12px;">+ Agregar modelo</button>
             </div>
 
             <div class="product-form-section product-live-preview">
@@ -1019,14 +1044,13 @@ const App = (() => {
       }
       renderImagePreviews();
 
-      // Restore variant rows and toggle state
+      // Restore variant rows and set product type
       variantRows = Array.isArray(product?.variants) ? product.variants.map(newVariantRow) : [];
       renderVariantRows();
-      const toggle = document.getElementById('variantToggle');
-      if (toggle) {
-        toggle.checked = variantRows.length > 0;
-        syncVariantToggle();
-      }
+      const isVariants = variantRows.length > 0;
+      const typeRadio = document.querySelector(`input[name="productType"][value="${isVariants ? 'variants' : 'simple'}"]`);
+      if (typeRadio) typeRadio.checked = true;
+      syncVariantToggle();
 
       modal.classList.add('open');
     }
@@ -1037,8 +1061,9 @@ const App = (() => {
       compatibilityTags = [];
       variantRows = [];
       productForm.reset();
-      const toggle = document.getElementById('variantToggle');
-      if (toggle) { toggle.checked = false; syncVariantToggle(); }
+      const simpleRadio = document.querySelector('input[name="productType"][value="simple"]');
+      if (simpleRadio) simpleRadio.checked = true;
+      syncVariantToggle();
     }
 
     document.getElementById('newProductBtn').addEventListener('click', () => openModal());
@@ -1060,25 +1085,19 @@ const App = (() => {
     });
 
     function syncVariantToggle() {
-      const toggle = document.getElementById('variantToggle');
-      const body = document.getElementById('variantsBody');
-      const priceRow = document.getElementById('pPrice')?.closest('.form-row');
-      const qualityGroup = document.getElementById('pQuality')?.closest('.form-group');
-      const hasVariants = toggle?.checked;
-      if (body) body.style.display = hasVariants ? 'block' : 'none';
-      if (priceRow) {
-        priceRow.style.opacity = hasVariants ? '0.4' : '1';
-        priceRow.title = hasVariants ? 'El precio se define por variante' : '';
-        const priceInput = document.getElementById('pPrice');
-        if (priceInput) priceInput.required = !hasVariants;
-      }
-      if (qualityGroup) {
-        qualityGroup.style.opacity = hasVariants ? '0.4' : '1';
-        qualityGroup.title = hasVariants ? 'La calidad se define por variante' : '';
-      }
+      const isVariants = document.querySelector('input[name="productType"]:checked')?.value === 'variants';
+      const simpleFields = document.getElementById('simpleFields');
+      const variantFields = document.getElementById('variantFields');
+      const pPrice = document.getElementById('pPrice');
+      if (simpleFields) simpleFields.style.display = isVariants ? 'none' : 'block';
+      if (variantFields) variantFields.style.display = isVariants ? 'block' : 'none';
+      if (pPrice) pPrice.required = !isVariants;
+      // Highlight selected type card
+      document.getElementById('typeCardSimple')?.classList.toggle('active', !isVariants);
+      document.getElementById('typeCardVariant')?.classList.toggle('active', isVariants);
     }
 
-    document.getElementById('variantToggle')?.addEventListener('change', syncVariantToggle);
+    document.querySelectorAll('input[name="productType"]').forEach(r => r.addEventListener('change', syncVariantToggle));
 
     document.getElementById('modalCloseBtn').addEventListener('click', closeModal);
     document.getElementById('modalCancelBtn').addEventListener('click', closeModal);
