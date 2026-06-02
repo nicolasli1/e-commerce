@@ -691,6 +691,11 @@ def handler(event, context):
     if not product_id or not image_b64:
         return response(400, {"error": "productId_and_image_required"})
 
+    # Prevent S3 path traversal — only allow alphanumeric, hyphens and underscores
+    import re as _re
+    if not _re.match(r'^[a-zA-Z0-9_\-]{1,128}$', product_id):
+        return response(400, {"error": "invalid_product_id"})
+
     # Decode base64 image
     try:
         image_data = base64.b64decode(image_b64)

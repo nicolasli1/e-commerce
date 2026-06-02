@@ -176,6 +176,7 @@ class BackendStack(Stack):
                 "NEQUI_API_KEY_PARAM": f"/{project_name}/{environment}/nequi-api-key",
                 "NEQUI_CLIENT_ID_PARAM": f"/{project_name}/{environment}/nequi-client-id",
                 "NEQUI_CLIENT_SECRET_PARAM": f"/{project_name}/{environment}/nequi-client-secret",
+                "NEQUI_WEBHOOK_SECRET_PARAM": f"/{project_name}/{environment}/nequi-webhook-secret",
                 "ORDER_NOTIFICATIONS_FROM_EMAIL_PARAM": f"/{project_name}/{environment}/order-notifications-from-email",
                 "ORDER_ALERTS_TO_EMAIL_PARAM": f"/{project_name}/{environment}/order-alerts-to-email",
                 "API_KEY_PARAM": f"/{project_name}/{environment}/api-key",

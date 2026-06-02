@@ -38,6 +38,7 @@ MERCADOPAGO_WEBHOOK_SECRET_PARAM = os.environ.get("MERCADOPAGO_WEBHOOK_SECRET_PA
 NEQUI_API_KEY_PARAM = os.environ.get("NEQUI_API_KEY_PARAM", "")
 NEQUI_CLIENT_ID_PARAM = os.environ.get("NEQUI_CLIENT_ID_PARAM", "")
 NEQUI_CLIENT_SECRET_PARAM = os.environ.get("NEQUI_CLIENT_SECRET_PARAM", "")
+NEQUI_WEBHOOK_SECRET_PARAM = os.environ.get("NEQUI_WEBHOOK_SECRET_PARAM", "")
 ORDER_NOTIFICATIONS_FROM_EMAIL_PARAM = os.environ.get("ORDER_NOTIFICATIONS_FROM_EMAIL_PARAM", "")
 ORDER_ALERTS_TO_EMAIL_PARAM = os.environ.get("ORDER_ALERTS_TO_EMAIL_PARAM", "")
 FRONTEND_URL = os.environ.get("FRONTEND_URL", "").rstrip("/")
@@ -412,6 +413,34 @@ def get_json_body(event):
         return None
 
 
+def _hash_password(password: str) -> str:
+    """Hash password with PBKDF2-HMAC-SHA256 + random salt.
+    Format: pbkdf2:sha256:{iterations}:{hex_salt}:{hex_hash}
+    """
+    import os as _os
+    salt = _os.urandom(16).hex()
+    iterations = 260000
+    dk = hashlib.pbkdf2_hmac("sha256", password.encode("utf-8"), bytes.fromhex(salt), iterations)
+    return f"pbkdf2:sha256:{iterations}:{salt}:{dk.hex()}"
+
+
+def _verify_password(password: str, stored: str) -> bool:
+    """Verify password against stored PBKDF2 hash.
+    Falls back to legacy SHA-256 for existing hashes during migration.
+    """
+    if not stored:
+        return False
+    if stored.startswith("pbkdf2:sha256:"):
+        try:
+            _, _, iters, salt, stored_hash = stored.split(":", 4)
+            dk = hashlib.pbkdf2_hmac("sha256", password.encode("utf-8"), bytes.fromhex(salt), int(iters))
+            return hmac.compare_digest(dk.hex(), stored_hash)
+        except Exception:
+            return False
+    # Legacy SHA-256 fallback (migration path — remove after all users re-hash)
+    return hmac.compare_digest(hashlib.sha256(password.encode()).hexdigest(), stored)
+
+
 def get_parameter(name, decrypt=False):
     if not name:
         return ""
@@ -537,6 +566,28 @@ def get_nequi_client_secret():
         return get_parameter(NEQUI_CLIENT_SECRET_PARAM, decrypt=True)
     except Exception:
         return ""
+
+
+def get_nequi_webhook_secret():
+    try:
+        return get_parameter(NEQUI_WEBHOOK_SECRET_PARAM, decrypt=True)
+    except Exception:
+        return ""
+
+
+def verify_nequi_webhook_signature(event):
+    """Verify Nequi webhook using shared secret in Authorization header.
+    Configure the same secret in Nequi Conecta portal as the webhook auth token.
+    """
+    secret = get_nequi_webhook_secret()
+    if not secret:
+        # If no secret configured, block all Nequi webhooks to fail safe
+        return False
+    headers = event.get("headers") or {}
+    auth = headers.get("authorization") or headers.get("Authorization") or ""
+    # Support both "Bearer <secret>" and raw secret
+    token = auth.replace("Bearer ", "").strip()
+    return hmac.compare_digest(token, secret)
 
 
 def nequi_enabled():
@@ -758,7 +809,7 @@ def register_user(event):
         "email": email,
         "name": name,
         "phone": phone,
-        "passwordHash": hashlib.sha256(password.encode()).hexdigest(),
+        "passwordHash": _hash_password(password),
         "createdAt": now,
         "updatedAt": now,
     }
@@ -789,7 +840,7 @@ def login_user(event):
     if not existing:
         return response(401, {"error": "invalid_credentials"})
     user = existing[0]
-    if user.get("passwordHash") != hashlib.sha256(password.encode()).hexdigest():
+    if not _verify_password(password, user.get("passwordHash", "")):
         return response(401, {"error": "invalid_credentials"})
     token = generate_token(user["userId"], ttl_days=30)
     return response(200, {
@@ -1304,24 +1355,24 @@ def update_order_admin(reference, body):
 def get_origin(event):
     """
     Determine the public-facing origin URL for redirects and MP back_urls.
-    Uses FRONTEND_URL env var when set (preferred), otherwise falls back to request headers.
+    Always uses FRONTEND_URL env var when set.
+    When not set, falls back to request headers but validates against an
+    allowlist to prevent open-redirect attacks via attacker-controlled Origin.
     """
     if FRONTEND_URL:
         return FRONTEND_URL
     headers = event.get("headers", {}) or {}
-    origin = headers.get("origin") or headers.get("Origin") or ""
-    if origin:
-        return origin.rstrip("/")
-    referer = headers.get("referer") or headers.get("Referer") or ""
-    if referer:
-        parsed = urllib.parse.urlsplit(referer)
-        if parsed.scheme and parsed.netloc:
-            return f"{parsed.scheme}://{parsed.netloc}"
+    # Build candidate from headers
     proto = headers.get("x-forwarded-proto") or headers.get("X-Forwarded-Proto") or "https"
-    host = headers.get("x-forwarded-host") or headers.get("X-Forwarded-Host") or headers.get("host") or headers.get("Host")
-    if not host:
-        return ""
-    return f"{proto}://{host}"
+    host = headers.get("x-forwarded-host") or headers.get("X-Forwarded-Host") or headers.get("host") or headers.get("Host") or ""
+    candidate = f"{proto}://{host}".rstrip("/") if host else ""
+    # Only allow *.cloudfront.net and localhost (dev)
+    allowed = (
+        candidate.endswith(".cloudfront.net")
+        or candidate.startswith("http://localhost")
+        or candidate.startswith("http://127.0.0.1")
+    )
+    return candidate if allowed else ""
 
 
 def generate_order_reference():
@@ -2100,7 +2151,22 @@ def get_checkout_order(reference, transaction_id=None):
             transaction = fetch_wompi_transaction(transaction_id)
             if transaction and transaction.get("reference") == reference:
                 order = update_order_from_transaction(reference, transaction) or order
-    return response(200, {"ok": True, "order": order})
+    # Strip PII — public tracking endpoint only returns non-sensitive fields
+    public_order = {
+        "reference": order.get("reference"),
+        "status": order.get("status"),
+        "fulfillmentStatus": order.get("fulfillmentStatus"),
+        "trackingNumber": order.get("trackingNumber"),
+        "courier": order.get("courier"),
+        "provider": order.get("provider"),
+        "createdAt": order.get("createdAt"),
+        "updatedAt": order.get("updatedAt"),
+        "items": [
+            {"name": i.get("name"), "quantity": i.get("quantity"), "price": i.get("price")}
+            for i in (order.get("items") or [])
+        ],
+    }
+    return response(200, {"ok": True, "order": public_order})
 
 
 def get_nested(data, path):
@@ -2176,6 +2242,8 @@ def verify_mercadopago_signature(event):
 
 def handle_nequi_webhook(event):
     """Receive Nequi payment status notification and update the order."""
+    if not verify_nequi_webhook_signature(event):
+        return response(401, {"error": "invalid_signature"})
     try:
         body = get_json_body(event) or {}
         # Nequi sends a ResponseMessage with the transaction result
