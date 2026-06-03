@@ -504,7 +504,6 @@ const App = (() => {
         </div>
         <div style="display:flex;gap:8px;">
           <button class="btn btn-secondary" id="refreshProductsBtn">🔄 Actualizar</button>
-          <button class="btn btn-secondary" id="seedProductsBtn">🧪 Poblar ejemplos</button>
           <button class="btn btn-gradient" id="newProductBtn">+ Nuevo Producto</button>
         </div>
       </div>
@@ -1085,17 +1084,6 @@ const App = (() => {
 
     document.getElementById('newProductBtn').addEventListener('click', () => openModal());
     document.getElementById('refreshProductsBtn').addEventListener('click', () => renderProducts());
-    document.getElementById('seedProductsBtn').addEventListener('click', async () => {
-      if (!confirm('Esto poblará productos de ejemplo para el catálogo. ¿Continuar?')) return;
-      try {
-        const result = await Api.post('/api/admin/products/seed', {});
-        showToast(`Catálogo de ejemplo listo (${result.seeded || 0} productos)`);
-        renderProducts();
-      } catch (err) {
-        showToast(err.message, 'error');
-      }
-    });
-
     document.getElementById('addVariantBtn').addEventListener('click', () => {
       variantRows.push(newVariantRow());
       renderVariantRows();
