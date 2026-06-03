@@ -1441,41 +1441,6 @@ const App = (() => {
     refreshOrderTable();
   }
 
-  async function renderUsers() {
-    showLoading();
-    try {
-      const data = await Api.get('/api/admin/users');
-      renderUsersTable(data.users || []);
-    } catch (err) {
-      $main.innerHTML = `<div class="empty-state"><p>${err.message}</p></div>`;
-    }
-  }
-
-  function renderUsersTable(users) {
-    $main.innerHTML = `
-      <div class="page-header">
-        <div>
-          <h2>Usuarios</h2>
-          <p>${users.length} cuentas registradas</p>
-        </div>
-      </div>
-      <div class="card">
-        <table class="table">
-          <thead><tr><th>Nombre</th><th>Email</th><th>Teléfono</th><th>Registro</th></tr></thead>
-          <tbody>
-            ${users.map(u => `
-              <tr>
-                <td><strong>${u.name || '—'}</strong></td>
-                <td>${u.email || '—'}</td>
-                <td>${u.phone || '—'}</td>
-                <td style="font-size:0.8125rem;color:var(--text-secondary);">${u.createdAt ? new Date(u.createdAt).toLocaleDateString('es-CO') : '—'}</td>
-              </tr>
-            `).join('') || '<tr><td colspan="4" style="text-align:center;color:var(--text-secondary);">No hay usuarios registrados.</td></tr>'}
-          </tbody>
-        </table>
-      </div>
-    `;
-  }
 
   function formatCurrencyCopFromCents(cents) {
     return '$' + Number((Number(cents) || 0) / 100).toLocaleString('es-CO', {
@@ -1763,7 +1728,6 @@ const App = (() => {
     registerRoute('#/leads', renderLeads);
     registerRoute('#/quotes', renderQuotes);
     registerRoute('#/orders', renderOrders);
-    registerRoute('#/users', renderUsers);
 
     // Router listening
     window.addEventListener('hashchange', () => {

@@ -22,7 +22,6 @@ leads_table = dynamodb.Table("__LEADS_TABLE_NAME__")
 products_table = dynamodb.Table("__PRODUCTS_TABLE_NAME__")
 quotes_table = dynamodb.Table("__QUOTES_TABLE_NAME__")
 orders_table = dynamodb.Table("__ORDERS_TABLE_NAME__")
-users_table = dynamodb.Table("__USERS_TABLE_NAME__")
 
 ADMIN_USER_PARAM = os.environ.get("ADMIN_USER_PARAM", "")
 ADMIN_PASSWORD_PARAM = os.environ.get("ADMIN_PASSWORD_PARAM", "")
@@ -781,116 +780,6 @@ def handle_login(event):
     return response(401, {"error": "invalid_credentials"})
 
 
-def register_user(event):
-    """POST /api/auth/register — Create a new customer account."""
-    body = get_json_body(event)
-    if not body:
-        return response(400, {"error": "invalid_json"})
-    name = (body.get("name") or "").strip()
-    email = (body.get("email") or "").strip().lower()
-    phone = (body.get("phone") or "").strip()
-    password = (body.get("password") or "").strip()
-    if not name or not email or not password:
-        return response(400, {"error": "name_email_password_required"})
-    if len(password) < 6:
-        return response(400, {"error": "password_too_short"})
-    # Check duplicate email
-    existing = users_table.query(
-        IndexName="email-index",
-        KeyConditionExpression="email = :e",
-        ExpressionAttributeValues={":e": email},
-    ).get("Items", [])
-    if existing:
-        return response(409, {"error": "email_already_registered"})
-    user_id = str(uuid.uuid4())
-    now = now_iso()
-    item = {
-        "userId": user_id,
-        "email": email,
-        "name": name,
-        "phone": phone,
-        "passwordHash": _hash_password(password),
-        "createdAt": now,
-        "updatedAt": now,
-    }
-    users_table.put_item(Item=item)
-    token = generate_token(user_id, ttl_days=30)
-    return response(201, {
-        "ok": True,
-        "userId": user_id,
-        "token": token,
-        "user": {"name": name, "email": email},
-    })
-
-
-def login_user(event):
-    """POST /api/auth/login — Authenticate a customer."""
-    body = get_json_body(event)
-    if not body:
-        return response(400, {"error": "invalid_json"})
-    email = (body.get("email") or "").strip().lower()
-    password = (body.get("password") or "").strip()
-    if not email or not password:
-        return response(400, {"error": "email_and_password_required"})
-    existing = users_table.query(
-        IndexName="email-index",
-        KeyConditionExpression="email = :e",
-        ExpressionAttributeValues={":e": email},
-    ).get("Items", [])
-    if not existing:
-        return response(401, {"error": "invalid_credentials"})
-    user = existing[0]
-    if not _verify_password(password, user.get("passwordHash", "")):
-        return response(401, {"error": "invalid_credentials"})
-    token = generate_token(user["userId"], ttl_days=30)
-    return response(200, {
-        "ok": True,
-        "token": token,
-        "user": {"name": user.get("name", ""), "email": user.get("email", "")},
-    })
-
-
-def auth_required(event):
-    """Extract authenticated user ID from Authorization header.
-    Returns userId string or None."""
-    headers = event.get("headers", {}) or {}
-    auth = headers.get("authorization", "") or headers.get("Authorization", "")
-    if auth.startswith("Bearer "):
-        return verify_token(auth[7:])
-    return None
-
-
-def get_user_orders(event):
-    """GET /api/orders — List orders for the authenticated user."""
-    user_id = auth_required(event)
-    if not user_id:
-        return response(401, {"error": "unauthorized"})
-    # Scan orders and filter by customer email (linked via userId or email)
-    user_item = users_table.get_item(Key={"userId": user_id}).get("Item")
-    if not user_item:
-        return response(404, {"error": "user_not_found"})
-    user_email = user_item.get("email", "")
-    all_orders = orders_table.scan().get("Items", [])
-    # Match by customer email
-    user_orders = [
-        o for o in all_orders
-        if (o.get("customer") or {}).get("email", "").lower() == user_email
-    ]
-    user_orders.sort(key=lambda x: x.get("createdAt", ""), reverse=True)
-    safe = [{
-        "reference": o.get("reference", ""),
-        "status": o.get("status", ""),
-        "fulfillmentStatus": o.get("fulfillmentStatus", ""),
-        "amountInCents": o.get("amountInCents", 0),
-        "items": o.get("items", []),
-        "customer": o.get("customer", {}),
-        "shippingAddress": o.get("shippingAddress", {}),
-        "trackingNumber": o.get("trackingNumber", ""),
-        "courier": o.get("courier", ""),
-        "createdAt": o.get("createdAt", ""),
-        "updatedAt": o.get("updatedAt", ""),
-    } for o in user_orders]
-    return response(200, {"ok": True, "orders": safe})
 
 
 def admin_auth_required(event):
@@ -1209,7 +1098,6 @@ def handle_dashboard():
     leads = leads_table.scan().get("Items", [])
     quotes = quotes_table.scan().get("Items", [])
     orders = orders_table.scan().get("Items", [])
-    users = users_table.scan().get("Items", [])
     active_products = [p for p in products if p.get("status", "active") != "deleted"]
     quotes_sorted = sorted(quotes, key=lambda x: x.get("createdAt", ""), reverse=True)
     orders_sorted = sorted(orders, key=lambda x: x.get("createdAt", ""), reverse=True)
@@ -1273,7 +1161,7 @@ def handle_dashboard():
         "ok": True,
         "totalProducts": len(active_products),
         "totalLeads": len(leads),
-        "totalUsers": len(users),
+        "totalUsers": 0,
         "totalQuotes": len(quotes),
         "totalOrders": len(orders),
         "pendingOrders": len(pending_orders),
@@ -1310,18 +1198,6 @@ def list_orders():
     items.sort(key=lambda x: x.get("createdAt", ""), reverse=True)
     return response(200, {"ok": True, "orders": items})
 
-
-def list_users():
-    items = users_table.scan().get("Items", [])
-    items.sort(key=lambda x: x.get("createdAt", ""), reverse=True)
-    safe = [{
-        "userId": u.get("userId", ""),
-        "email": u.get("email", ""),
-        "name": u.get("name", ""),
-        "phone": u.get("phone", ""),
-        "createdAt": u.get("createdAt", ""),
-    } for u in items]
-    return response(200, {"ok": True, "users": safe})
 
 
 def update_order_admin(reference, body):
@@ -1993,14 +1869,6 @@ def create_checkout_session(event):
             "paymentId": "",
             "initPoint": preference.get("init_point", ""),
         }
-    # Optionally link to user account
-    user_id = (body.get("userId") or "").strip()
-    if user_id:
-        # Verify the user exists
-        user_item = users_table.get_item(Key={"userId": user_id}).get("Item")
-        if not user_item:
-            user_id = ""  # Invalid userId, ignore
-
     order = {
         "reference": reference,
         "orderId": str(uuid.uuid4()),
@@ -2373,35 +2241,6 @@ def handler(event, context):
     if method == "POST" and path == "/api/webhooks/nequi":
         return handle_nequi_webhook(event)
 
-    # --- Auth endpoints (no API key required — user-facing) ---
-    if method == "POST" and path == "/api/auth/register":
-        return register_user(event)
-
-    if method == "POST" and path == "/api/auth/login":
-        return login_user(event)
-
-    if method == "GET" and path == "/api/auth/me":
-        user_id = auth_required(event)
-        if not user_id:
-            return response(401, {"error": "unauthorized"})
-        user_item = users_table.get_item(Key={"userId": user_id}).get("Item")
-        if not user_item:
-            return response(404, {"error": "user_not_found"})
-        return response(200, {
-            "ok": True,
-            "user": {
-                "userId": user_item["userId"],
-                "name": user_item.get("name", ""),
-                "email": user_item.get("email", ""),
-                "phone": user_item.get("phone", ""),
-                "createdAt": user_item.get("createdAt", ""),
-            }
-        })
-
-    # --- User orders (authenticated) ---
-    if method == "GET" and path == "/api/orders":
-        return get_user_orders(event)
-
     # --- Public order tracking (no auth — by reference) ---
     if path.startswith("/api/checkout/orders/") and method == "GET":
         reference = path.replace("/api/checkout/orders/", "").split("/")[0]
@@ -2466,7 +2305,5 @@ def handler(event, context):
             return response(400, {"error": "missing_reference"})
         return update_order_admin(reference, get_json_body(event))
 
-    if path == "/api/admin/users" and method == "GET":
-        return list_users()
 
     return response(404, {"error": "not_found"})
