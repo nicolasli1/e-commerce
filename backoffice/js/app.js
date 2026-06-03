@@ -1467,6 +1467,26 @@ const App = (() => {
     }) + ' COP';
   }
 
+  function paymentBadge(status) {
+    return ({
+      APPROVED: 'badge-active',
+      PENDING: 'badge-pending',
+      DECLINED: 'badge-inactive',
+      CHECKOUT_CREATED: 'badge-pending',
+    })[status] || 'badge-pending';
+  }
+
+  function fulfillmentBadge(status) {
+    return ({
+      READY_TO_FULFILL: 'badge-pending',
+      PROCESSING: 'badge-contacted',
+      SHIPPED: 'badge-active',
+      DELIVERED: 'badge-active',
+      CANCELLED: 'badge-inactive',
+      PENDING_PAYMENT: 'badge-pending',
+    })[status] || 'badge-pending';
+  }
+
   function renderOrderRows(orders, tbody) {
     orders.forEach((order) => {
       const tr = $el('tr', { dataset: { reference: order.reference || '' } });
@@ -1537,31 +1557,11 @@ const App = (() => {
       return;
     }
 
-    function paymentBadge(status) {
-      return ({
-        APPROVED: 'badge-active',
-        PENDING: 'badge-pending',
-        DECLINED: 'badge-inactive',
-        CHECKOUT_CREATED: 'badge-pending',
-      })[status] || 'badge-pending';
-    }
-
     function notificationLabel(order) {
       const status = order?.notifications?.customerConfirmation?.status || '';
       if (status === 'SENT') return 'Enviado';
       if (status === 'FAILED') return 'Falló';
       return 'Pendiente';
-    }
-
-    function fulfillmentBadge(status) {
-      return ({
-        READY_TO_FULFILL: 'badge-pending',
-        PROCESSING: 'badge-contacted',
-        SHIPPED: 'badge-active',
-        DELIVERED: 'badge-active',
-        CANCELLED: 'badge-inactive',
-        PENDING_PAYMENT: 'badge-pending',
-      })[status] || 'badge-pending';
     }
 
     function closeModal() {
