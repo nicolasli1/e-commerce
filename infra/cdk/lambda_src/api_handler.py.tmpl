@@ -1038,6 +1038,7 @@ def create_product(body):
         "shippingTime": (body.get("shippingTime") or "").strip(),
         "warranty": (body.get("warranty") or "").strip(),
         "status": body.get("status", "active").strip(),
+        "heroFeatured": bool(body.get("heroFeatured", False)),
         "variants": _parse_variants(body.get("variants") or []),
         "deviceFamilies": _extract_device_families(body.get("variants") or []),
         "createdAt": now_iso(),
@@ -1054,7 +1055,7 @@ def update_product(product_id, body):
     if not existing:
         return response(404, {"error": "not_found"})
     updates = {}
-    for field in ["name", "description", "imageUrl", "status", "quality", "shippingTime", "warranty"]:
+    for field in ["name", "description", "imageUrl", "status", "quality", "shippingTime", "warranty", "heroFeatured"]:
         if field in body:
             updates[field] = body[field]
     if "compatibility" in body:

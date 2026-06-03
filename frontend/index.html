@@ -3490,32 +3490,104 @@
       border-color: rgba(141,124,255,0.34);
       background: rgba(255,255,255,0.055);
     }
-    .finder-grid {
-      display: grid;
-      grid-template-columns: repeat(2, minmax(0, 1fr));
-      gap: 10px;
+    /* Hero product carousel */
+    .hero-carousel {
       margin-top: 14px;
-    }
-    .finder-grid > div {
-      min-height: 88px;
-      padding: 13px;
       border-radius: 18px;
+      overflow: hidden;
       background: rgba(255,255,255,0.04);
       border: 1px solid rgba(255,255,255,0.07);
+      min-height: 120px;
+      position: relative;
     }
-    .finder-grid span {
-      display: block;
-      margin-bottom: 8px;
-      color: #778092;
-      font-size: 0.68rem;
-      font-weight: 800;
-      letter-spacing: 0.07em;
+    .hero-carousel-slide {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      padding: 14px;
+      cursor: pointer;
+      transition: background 160ms;
+    }
+    @media (hover: hover) and (pointer: fine) {
+      .hero-carousel-slide:hover { background: rgba(255,255,255,0.04); }
+    }
+    .hero-carousel-img {
+      width: 72px;
+      height: 72px;
+      border-radius: 12px;
+      background: rgba(255,255,255,0.06);
+      flex-shrink: 0;
+      overflow: hidden;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1.8rem;
+    }
+    .hero-carousel-img img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+    }
+    .hero-carousel-body { flex: 1; min-width: 0; }
+    .hero-carousel-cat {
+      font-size: 0.65rem;
+      font-weight: 700;
       text-transform: uppercase;
+      letter-spacing: 0.07em;
+      color: #778092;
+      margin-bottom: 4px;
     }
-    .finder-grid strong {
-      color: #e5e7eb;
-      font-size: 0.86rem;
-      line-height: 1.35;
+    .hero-carousel-name {
+      font-size: 0.9rem;
+      font-weight: 600;
+      color: #f5f5f7;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+    .hero-carousel-price {
+      font-size: 0.8rem;
+      font-weight: 700;
+      color: #a78bfa;
+      margin-top: 4px;
+    }
+    .hero-carousel-arrow {
+      color: #52525b;
+      font-size: 1rem;
+      flex-shrink: 0;
+    }
+    .hero-carousel-skeleton {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      padding: 14px;
+    }
+    .hero-carousel-skeleton .hero-carousel-img {
+      background: rgba(255,255,255,0.06);
+    }
+    .hero-carousel-skeleton .hero-carousel-body {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+    .hero-carousel-dots {
+      display: flex;
+      justify-content: center;
+      gap: 5px;
+      margin-top: 10px;
+    }
+    .hero-carousel-dot {
+      width: 5px;
+      height: 5px;
+      border-radius: 50%;
+      background: rgba(255,255,255,0.2);
+      cursor: pointer;
+      transition: background 200ms, transform 200ms;
+    }
+    .hero-carousel-dot.active {
+      background: #a78bfa;
+      transform: scale(1.3);
     }
     .finder-parts {
       display: flex;
@@ -4157,31 +4229,19 @@
             <span>🔍</span>
             <span>iPhone 11 pantalla GX, puerto de carga A52...</span>
           </button>
-          <div class="finder-grid">
-            <div>
-              <span>Dispositivo</span>
-              <strong>iPhone, Samsung, Xiaomi</strong>
-            </div>
-            <div>
-              <span>Pieza</span>
-              <strong>Pantalla, batería, flex</strong>
-            </div>
-            <div>
-              <span>Calidad</span>
-              <strong>Original, OEM, AAA, GX</strong>
-            </div>
-            <div>
-              <span>Instalación</span>
-              <strong>Tiempo, dificultad, herramientas</strong>
+          <!-- Hero carousel: populated by JS from heroFeatured products -->
+          <div class="hero-carousel" id="heroCarousel">
+            <!-- Skeleton while loading -->
+            <div class="hero-carousel-skeleton">
+              <div class="hero-carousel-img skeleton-block"></div>
+              <div class="hero-carousel-body">
+                <div class="skeleton-block" style="height:14px;width:60%;border-radius:6px;"></div>
+                <div class="skeleton-block" style="height:20px;width:80%;border-radius:6px;margin-top:8px;"></div>
+                <div class="skeleton-block" style="height:14px;width:40%;border-radius:6px;margin-top:6px;"></div>
+              </div>
             </div>
           </div>
-          <div class="finder-parts">
-            <span>Pantallas</span>
-            <span>Baterías</span>
-            <span>Face ID</span>
-            <span>Charging ports</span>
-            <span>Adhesivos</span>
-          </div>
+          <div class="hero-carousel-dots" id="heroCarouselDots"></div>
         </div>
       </div>
     </div>
@@ -6469,6 +6529,68 @@
       newReveals.forEach(el => observer.observe(el));
     }
 
+    // ── Hero product carousel ────────────────────────
+    let heroCarouselIdx = 0;
+    let heroCarouselTimer = null;
+
+    function initHeroCarousel(products) {
+      const featured = products.filter(p => p.heroFeatured && p.status !== 'deleted');
+      const el = document.getElementById('heroCarousel');
+      const dots = document.getElementById('heroCarouselDots');
+      if (!el) return;
+
+      if (featured.length === 0) {
+        // Fallback: show top 4 by stock
+        const fallback = [...products].sort((a,b) => (b.stock||0)-(a.stock||0)).slice(0,4);
+        renderHeroCarousel(fallback, el, dots);
+      } else {
+        renderHeroCarousel(featured, el, dots);
+      }
+    }
+
+    function renderHeroCarousel(items, el, dots) {
+      if (!items.length) return;
+
+      function showSlide(idx) {
+        heroCarouselIdx = ((idx % items.length) + items.length) % items.length;
+        const p = items[heroCarouselIdx];
+        const img = p.images?.[0]?.sm || p.images?.[0]?.md || '';
+        const catEmoji = {'pantallas':'🖥️','baterias':'🔋','flex-y-conectores':'🔌','camaras':'📷','tapas':'🛡️','tapas-y-carcasa':'🛡️','accesorios':'🎧','herramientas':'🔧','herramientas-diy':'🔧'}[p.category] || '📱';
+        const price = p.variants?.length > 0
+          ? (() => { const ps = p.variants.map(v=>Number(v.price)).filter(n=>n>0); return ps.length ? 'Desde $'+Math.min(...ps).toLocaleString('es-CO') : '$'+Number(p.price).toLocaleString('es-CO'); })()
+          : '$'+Number(p.price||0).toLocaleString('es-CO');
+
+        el.innerHTML = `
+          <div class="hero-carousel-slide" onclick="openProductDetail(${JSON.stringify(p).replace(/"/g,'&quot;')})">
+            <div class="hero-carousel-img">${img ? `<img src="${htmlSafe(img)}" alt="" loading="lazy">` : catEmoji}</div>
+            <div class="hero-carousel-body">
+              <div class="hero-carousel-cat">${htmlSafe(getCategoryLabel(p.category))}</div>
+              <div class="hero-carousel-name">${htmlSafe(p.name)}</div>
+              <div class="hero-carousel-price">${htmlSafe(price)} COP</div>
+            </div>
+            <span class="hero-carousel-arrow">›</span>
+          </div>`;
+
+        if (dots) {
+          dots.innerHTML = items.map((_,i) =>
+            `<span class="hero-carousel-dot${i===heroCarouselIdx?' active':''}" onclick="showHeroSlide(${i})"></span>`
+          ).join('');
+        }
+      }
+
+      window.showHeroSlide = showSlide;
+      showSlide(0);
+
+      if (items.length > 1) {
+        clearInterval(heroCarouselTimer);
+        heroCarouselTimer = setInterval(() => showSlide(heroCarouselIdx + 1), 3500);
+        el.addEventListener('mouseenter', () => clearInterval(heroCarouselTimer));
+        el.addEventListener('mouseleave', () => {
+          heroCarouselTimer = setInterval(() => showSlide(heroCarouselIdx + 1), 3500);
+        });
+      }
+    }
+
     async function loadProducts() {
       try {
         renderProductSkeletons();
@@ -6485,17 +6607,19 @@
           return;
         }
         renderStorefrontProducts();
+        initHeroCarousel(storefrontProducts);
       } catch (err) {
         console.log('Error cargando productos:', err);
         if (isLocalPreview()) {
           storefrontProducts = localPreviewProducts();
           renderStorefrontProducts();
+          initHeroCarousel(storefrontProducts);
           return;
         }
         document.getElementById('productsGrid').innerHTML = '<p style="grid-column:1/-1;text-align:center;color:#86868b;">Próximamente — nuevos componentes en camino.</p>';
       }
     }
-    
+
     loadProducts();
 
     document.querySelectorAll('.category-card[data-category]').forEach((card) => {

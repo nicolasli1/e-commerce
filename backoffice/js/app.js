@@ -608,6 +608,21 @@ const App = (() => {
               </div>
             </div>
 
+            <!-- Hero featured toggle -->
+            <div class="product-form-section">
+              <div class="form-section-heading" style="margin-bottom:0;">
+                <span class="form-section-icon">⭐</span>
+                <div>
+                  <h3>Destacar en el hero</h3>
+                  <p>Muestra este producto en el carrusel principal de la página de inicio.</p>
+                </div>
+                <label class="toggle-switch" style="margin-left:auto;flex-shrink:0;">
+                  <input type="checkbox" id="pHeroFeatured" />
+                  <span class="toggle-track"></span>
+                </label>
+              </div>
+            </div>
+
             <!-- ③ Modo SIMPLE: precio, stock, calidad, imágenes -->
             <div class="product-form-section" id="simpleFields">
               <div class="form-section-heading">
@@ -1031,6 +1046,8 @@ const App = (() => {
       pQuality.value = product ? (product.quality || '') : '';
       pShippingTime.value = product ? (product.shippingTime || '') : '';
       pWarranty.value = product ? (product.warranty || '') : '';
+      const heroToggle = document.getElementById('pHeroFeatured');
+      if (heroToggle) heroToggle.checked = product ? !!product.heroFeatured : false;
       compatibilityTags = Array.isArray(product?.compatibility) ? product.compatibility.slice() : [];
       renderCompatibilityTags();
       updateTechPreview();
@@ -1137,6 +1154,7 @@ const App = (() => {
         warranty: pWarranty.value.trim(),
         images: uploadedImages,
         variants: collectVariants(),
+        heroFeatured: document.getElementById('pHeroFeatured')?.checked || false,
       };
 
       try {
