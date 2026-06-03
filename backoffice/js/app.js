@@ -1379,6 +1379,7 @@ const App = (() => {
   // ---- ORDERS ----
   let allOrdersCache = [];
   let activeOrderFilter = 'ALL';
+  let orderSortDir = 'desc'; // 'desc' = más recientes primero
 
   const ORDER_FILTERS = [
     { key: 'ALL',              label: 'Todos' },
@@ -1396,32 +1397,48 @@ const App = (() => {
       const data = await Api.get('/api/admin/orders');
       allOrdersCache = data.orders || [];
       activeOrderFilter = 'ALL';
+      orderSortDir = 'desc';
       renderOrdersTable(allOrdersCache);
     } catch (err) {
       $main.innerHTML = `<div class="empty-state"><p>${err.message}</p></div>`;
     }
   }
 
+  function getFilteredSortedOrders() {
+    const filtered = activeOrderFilter === 'ALL'
+      ? allOrdersCache.slice()
+      : allOrdersCache.filter(o =>
+          o.status === activeOrderFilter || o.fulfillmentStatus === activeOrderFilter
+        );
+    filtered.sort((a, b) => {
+      const ta = new Date(a.createdAt || 0).getTime();
+      const tb = new Date(b.createdAt || 0).getTime();
+      return orderSortDir === 'desc' ? tb - ta : ta - tb;
+    });
+    return filtered;
+  }
+
+  function refreshOrderTable() {
+    const orders = getFilteredSortedOrders();
+    const tbody = document.getElementById('ordersBody');
+    const countEl = document.getElementById('ordersCount');
+    const sortBtn = document.getElementById('orderSortBtn');
+    if (countEl) countEl.textContent = orders.length + ' total';
+    if (sortBtn) sortBtn.textContent = orderSortDir === 'desc' ? '↓ Más recientes' : '↑ Más antiguos';
+    if (tbody) { tbody.innerHTML = ''; renderOrderRows(orders, tbody); }
+  }
+
   function applyOrderFilter(key) {
     activeOrderFilter = key;
-    // Update button active states
     document.querySelectorAll('.order-filter-btn').forEach(btn => {
       btn.classList.toggle('active', btn.dataset.filter === key);
     });
-    // Filter orders
-    const filtered = key === 'ALL'
-      ? allOrdersCache
-      : allOrdersCache.filter(o =>
-          o.status === key || o.fulfillmentStatus === key
-        );
-    // Re-render only the table body + count
-    const tbody = document.getElementById('ordersBody');
-    const countEl = document.getElementById('ordersCount');
-    if (countEl) countEl.textContent = filtered.length + ' total';
-    if (tbody) {
-      tbody.innerHTML = '';
-      renderOrderRows(filtered, tbody);
-    }
+    refreshOrderTable();
+  }
+
+  function toggleOrderSort() {
+    orderSortDir = orderSortDir === 'desc' ? 'asc' : 'desc';
+    refreshOrderTable();
   }
 
   async function renderUsers() {
@@ -1517,8 +1534,9 @@ const App = (() => {
         <span id="ordersCount" style="font-size:0.875rem;color:var(--text-secondary);">${orders.length} total</span>
       </div>
 
-      <div style="display:flex;flex-wrap:wrap;gap:8px;margin-bottom:16px;">
+      <div style="display:flex;flex-wrap:wrap;align-items:center;gap:8px;margin-bottom:16px;">
         ${filterBtns}
+        <button id="orderSortBtn" class="order-filter-btn order-sort-btn" style="margin-left:auto;">↓ Más recientes</button>
       </div>
 
       <div class="table-container">
@@ -1669,12 +1687,14 @@ const App = (() => {
       });
     }
 
-    renderOrderRows(orders, tbody);
+    refreshOrderTable();
 
-    // Filter buttons
+    // Filter + sort buttons
     $main.addEventListener('click', (e) => {
+      const sortBtn = e.target.closest('#orderSortBtn');
+      if (sortBtn) { toggleOrderSort(); return; }
       const filterBtn = e.target.closest('.order-filter-btn');
-      if (filterBtn) { applyOrderFilter(filterBtn.dataset.filter); return; }
+      if (filterBtn && filterBtn.dataset.filter) { applyOrderFilter(filterBtn.dataset.filter); return; }
       const manageBtn = e.target.closest('.order-manage-btn');
       if (manageBtn) {
         const order = allOrdersCache.find(o => o.reference === manageBtn.dataset.reference);
