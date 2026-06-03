@@ -1377,13 +1377,50 @@ const App = (() => {
   }
 
   // ---- ORDERS ----
+  let allOrdersCache = [];
+  let activeOrderFilter = 'ALL';
+
+  const ORDER_FILTERS = [
+    { key: 'ALL',              label: 'Todos' },
+    { key: 'APPROVED',         label: '✅ Aprobados' },
+    { key: 'READY_TO_FULFILL', label: '📦 Por despachar' },
+    { key: 'SHIPPED',          label: '🚚 En camino' },
+    { key: 'DELIVERED',        label: '🏠 Entregados' },
+    { key: 'CHECKOUT_CREATED', label: '⏳ Pendientes' },
+    { key: 'CANCELLED',        label: '❌ Cancelados' },
+  ];
+
   async function renderOrders() {
     showLoading();
     try {
       const data = await Api.get('/api/admin/orders');
-      renderOrdersTable(data.orders || []);
+      allOrdersCache = data.orders || [];
+      activeOrderFilter = 'ALL';
+      renderOrdersTable(allOrdersCache);
     } catch (err) {
       $main.innerHTML = `<div class="empty-state"><p>${err.message}</p></div>`;
+    }
+  }
+
+  function applyOrderFilter(key) {
+    activeOrderFilter = key;
+    // Update button active states
+    document.querySelectorAll('.order-filter-btn').forEach(btn => {
+      btn.classList.toggle('active', btn.dataset.filter === key);
+    });
+    // Filter orders
+    const filtered = key === 'ALL'
+      ? allOrdersCache
+      : allOrdersCache.filter(o =>
+          o.status === key || o.fulfillmentStatus === key
+        );
+    // Re-render only the table body + count
+    const tbody = document.getElementById('ordersBody');
+    const countEl = document.getElementById('ordersCount');
+    if (countEl) countEl.textContent = filtered.length + ' total';
+    if (tbody) {
+      tbody.innerHTML = '';
+      renderOrderRows(filtered, tbody);
     }
   }
 
@@ -1430,14 +1467,38 @@ const App = (() => {
     }) + ' COP';
   }
 
+  function renderOrderRows(orders, tbody) {
+    orders.forEach((order) => {
+      const tr = $el('tr', { dataset: { reference: order.reference || '' } });
+      tr.innerHTML = `
+        <td><span style="display:inline-flex;align-items:center;padding:6px 10px;border-radius:9999px;background:rgba(99,102,241,0.14);border:1px solid rgba(99,102,241,0.28);color:#c4b5fd;font-size:0.75rem;font-weight:700;">${esc(order.reference || '—')}</span><br><span style="color:var(--text-secondary);font-size:0.75rem;">${esc(order.provider || '—')}</span></td>
+        <td>${esc(order.customer?.fullName || '—')}<br><span style="color:var(--text-secondary);font-size:0.75rem;">${esc(order.customer?.email || '—')}</span></td>
+        <td><span class="badge ${paymentBadge(order.status)}">${esc(order.status || '—')}</span></td>
+        <td><span class="badge ${fulfillmentBadge(order.fulfillmentStatus)}">${esc(order.fulfillmentStatus || '—')}</span></td>
+        <td>${formatCurrencyCopFromCents(order.amountInCents || 0)}</td>
+        <td style="color:var(--text-secondary);font-size:0.8125rem;">${formatDate(order.createdAt)}</td>
+        <td><button class="btn btn-secondary btn-sm order-manage-btn" data-reference="${order.reference}">Gestionar</button></td>
+      `;
+      tbody.appendChild(tr);
+    });
+  }
+
   function renderOrdersTable(orders) {
+    const filterBtns = ORDER_FILTERS.map(f =>
+      `<button class="btn btn-sm order-filter-btn${f.key === activeOrderFilter ? ' active' : ''}" data-filter="${f.key}">${f.label}</button>`
+    ).join('');
+
     $main.innerHTML = `
       <div class="page-header">
         <div>
           <h1 class="page-title">Pedidos</h1>
           <p class="page-subtitle">Pedidos aprobados, preparación y despacho</p>
         </div>
-        <span style="font-size:0.875rem;color:var(--text-secondary);">${orders.length} total</span>
+        <span id="ordersCount" style="font-size:0.875rem;color:var(--text-secondary);">${orders.length} total</span>
+      </div>
+
+      <div style="display:flex;flex-wrap:wrap;gap:8px;margin-bottom:16px;">
+        ${filterBtns}
       </div>
 
       <div class="table-container">
@@ -1525,13 +1586,23 @@ const App = (() => {
         <div class="form-row">
           <div class="form-group">
             <label class="form-label">Cliente</label>
-            <div>${esc(order.customer?.fullName || '—')}<br><span style="color:var(--text-secondary);">${esc(order.customer?.email || '—')}</span></div>
+            <div>${esc(order.customer?.fullName || '—')}<br>
+            <span style="color:var(--text-secondary);">${esc(order.customer?.email || '—')}</span><br>
+            ${order.customer?.phoneNumber ? `<span style="color:var(--text-secondary);">${esc(order.customer.phoneNumber)}</span>` : ''}
+            </div>
           </div>
           <div class="form-group">
             <label class="form-label">Total</label>
             <div>${formatCurrencyCopFromCents(order.amountInCents || 0)}</div>
           </div>
         </div>
+        ${order.customer?.shippingAddress ? `
+        <div class="form-group">
+          <label class="form-label">📍 Dirección de envío</label>
+          <div style="padding:10px 14px;border-radius:10px;background:rgba(99,102,241,0.07);border:1px solid rgba(99,102,241,0.18);color:var(--text-primary);font-size:0.875rem;">
+            ${esc(order.customer.shippingAddress)}
+          </div>
+        </div>` : ''}
         <div class="form-row">
           <div class="form-group">
             <label class="form-label">Estado de pago</label>
@@ -1598,28 +1669,21 @@ const App = (() => {
       });
     }
 
-    orders.forEach((order) => {
-      const tr = $el('tr', { dataset: { reference: order.reference || '' } });
-      tr.innerHTML = `
-        <td><span style="display:inline-flex;align-items:center;padding:6px 10px;border-radius:9999px;background:rgba(99,102,241,0.14);border:1px solid rgba(99,102,241,0.28);color:#c4b5fd;font-size:0.75rem;font-weight:700;">${esc(order.reference || '—')}</span><br><span style="color:var(--text-secondary);font-size:0.75rem;">${esc(order.provider || '—')}</span></td>
-        <td>${esc(order.customer?.fullName || '—')}<br><span style="color:var(--text-secondary);font-size:0.75rem;">${esc(order.customer?.email || '—')}</span></td>
-        <td><span class="badge ${paymentBadge(order.status)}">${esc(order.status || '—')}</span></td>
-        <td><span class="badge ${fulfillmentBadge(order.fulfillmentStatus)}">${esc(order.fulfillmentStatus || '—')}</span></td>
-        <td>${formatCurrencyCopFromCents(order.amountInCents || 0)}</td>
-        <td style="color:var(--text-secondary);font-size:0.8125rem;">${formatDate(order.createdAt)}</td>
-        <td><button class="btn btn-secondary btn-sm order-manage-btn" data-reference="${order.reference}">Gestionar</button></td>
-      `;
-      tbody.appendChild(tr);
+    renderOrderRows(orders, tbody);
+
+    // Filter buttons
+    $main.addEventListener('click', (e) => {
+      const filterBtn = e.target.closest('.order-filter-btn');
+      if (filterBtn) { applyOrderFilter(filterBtn.dataset.filter); return; }
+      const manageBtn = e.target.closest('.order-manage-btn');
+      if (manageBtn) {
+        const order = allOrdersCache.find(o => o.reference === manageBtn.dataset.reference);
+        if (order) openModal(order);
+      }
     });
 
     document.getElementById('orderModalCloseBtn')?.addEventListener('click', closeModal);
     modal.addEventListener('click', (e) => { if (e.target === modal) closeModal(); });
-    tbody.addEventListener('click', (e) => {
-      const btn = e.target.closest('.order-manage-btn');
-      if (!btn) return;
-      const order = orders.find((entry) => entry.reference === btn.dataset.reference);
-      if (order) openModal(order);
-    });
   }
 
   /* =========================================================
