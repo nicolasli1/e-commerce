@@ -19,10 +19,12 @@ class TestSiteAlive:
         assert len(errors) == 0, f"Errores JS: {errors}"
 
     def test_hero_section(self, page, base_url):
-        """El hero debe tener título y botón CTA."""
+        """El hero debe tener título y botones CTA."""
         page.goto(base_url, wait_until="networkidle")
         body = page.content()
-        assert "Repara mejor" in body or "repuestos" in body.lower()
+        # Verificar copy actual del hero
+        assert "repuesto" in body.lower() or "dispositivo" in body.lower(), \
+            "Hero no contiene copy esperado"
         btns = page.locator("button, .btn, a.btn").all()
         assert len(btns) >= 3, f"Esperaba ≥3 botones, encontré {len(btns)}"
 
@@ -94,10 +96,10 @@ class TestSiteFunctional:
 
 
 class TestAuthUI:
-    """Tests de la UI de autenticación."""
+    """Tests de UI — autenticación de cliente fue removida, se valida navegación."""
 
-    def test_login_button_exists(self, page, base_url):
-        """Debe haber un botón Ingresar/Iniciar sesión."""
+    def test_rastrear_button_exists(self, page, base_url):
+        """El CTA de rastreo debe estar en el navbar."""
         page.goto(base_url, wait_until="networkidle")
-        auth = page.locator("#authBtn, [id*='auth'], button:has-text('Ingresar'), a:has-text('Ingresar')").all()
-        assert len(auth) >= 1, "No se encontró botón de login"
+        rastrear = page.locator("text=Rastrear, text=Rastrea").all()
+        assert len(rastrear) >= 1, "No se encontró botón/link de rastreo en navbar"

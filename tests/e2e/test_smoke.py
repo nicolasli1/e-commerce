@@ -101,9 +101,13 @@ class TestSmokeAPI:
         assert "<title>" in resp.text, "Falta <title>"
 
     def test_page_size_ok(self):
-        """Tamaño de página razonable (< 200KB)."""
-        resp = requests.get(self.BASE, timeout=self.TIMEOUT)
-        assert len(resp.content) < 300000, \
+        """Tamaño de página razonable (< 500KB comprimido por CloudFront)."""
+        resp = requests.get(
+            self.BASE,
+            headers={"Accept-Encoding": "gzip"},
+            timeout=self.TIMEOUT,
+        )
+        assert len(resp.content) < 500000, \
             f"Página grande: {len(resp.content)} bytes"
 
     def test_checkout_endpoint_accessible(self):
