@@ -3405,6 +3405,19 @@
       border-top-color: rgba(255,255,255,0.08);
       flex-wrap: wrap;
     }
+    /* Full-width stats row below the hero grid */
+    .hero-stats-full {
+      justify-content: center;
+      margin-top: 32px;
+      padding-top: 28px;
+      border-top: 1px solid rgba(255,255,255,0.08);
+    }
+    .hero-stats-full .hero-stat {
+      flex: 1;
+      min-width: 160px;
+      max-width: 260px;
+      text-align: center;
+    }
     .hero-stat {
       min-width: 150px;
       padding: 16px 18px;
@@ -4200,24 +4213,6 @@
             </div>
           </div>
 
-          <div class="hero-stats reveal visible reveal-delay-2">
-            <div class="hero-stat">
-              <h3>12+</h3>
-              <p>familias de repuestos</p>
-            </div>
-            <div class="hero-stat">
-              <h3>OEM</h3>
-              <p>calidad visible</p>
-            </div>
-            <div class="hero-stat">
-              <h3>24-48h</h3>
-              <p>despacho nacional</p>
-            </div>
-            <div class="hero-stat">
-              <h3>30d</h3>
-              <p>garantía disponible</p>
-            </div>
-          </div>
         </div>
 
         <div class="hero-finder reveal visible reveal-delay-1" aria-label="Buscador técnico de repuestos">
@@ -4249,6 +4244,24 @@
             <span data-search-pick="Charging ports">Charging ports</span>
             <span data-search-pick="Adhesivos">Adhesivos</span>
           </div>
+        </div>
+      </div>
+      <div class="hero-stats hero-stats-full reveal visible reveal-delay-2">
+        <div class="hero-stat">
+          <h3>5.000+</h3>
+          <p>repuestos vendidos</p>
+        </div>
+        <div class="hero-stat">
+          <h3>OEM</h3>
+          <p>calidad visible</p>
+        </div>
+        <div class="hero-stat">
+          <h3>24-48h</h3>
+          <p>despacho nacional</p>
+        </div>
+        <div class="hero-stat">
+          <h3>30d</h3>
+          <p>garantía disponible</p>
         </div>
       </div>
     </div>
