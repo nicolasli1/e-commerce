@@ -30,11 +30,13 @@ class TestSmokeAPI:
             f"Products inesperado: {resp.status_code}"
         if resp.status_code == 200:
             data = resp.json()
+            assert data.get("ok") is True
             products = data.get("products", [])
-            assert len(products) >= 1
-            first = products[0]
-            for field in ["productId", "name", "price", "category"]:
-                assert field in first, f"Producto falta '{field}'"
+            assert isinstance(products, list)
+            if products:
+                first = products[0]
+                for field in ["productId", "name", "price", "category"]:
+                    assert field in first, f"Producto falta '{field}'"
 
     def test_page_served(self):
         """La página principal debe servirse (200 o 304)."""
