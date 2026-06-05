@@ -683,6 +683,16 @@ def _parse_variants(variants_raw):
         if not isinstance(v, dict):
             continue
         variant_id = (v.get("variantId") or str(uuid.uuid4())).strip()
+        raw_price = v.get("price")
+        raw_stock = v.get("stock")
+        try:
+            price = Decimal(str(raw_price)) if raw_price not in (None, "") else None
+        except Exception:
+            price = None
+        try:
+            stock = int(raw_stock) if raw_stock not in (None, "") else None
+        except Exception:
+            stock = None
         # Parse variant images
         images_raw = v.get("images") or []
         images_parsed = []
@@ -694,8 +704,8 @@ def _parse_variants(variants_raw):
             "deviceBrand": (v.get("deviceBrand") or "").strip(),
             "deviceFamily": (v.get("deviceFamily") or "").strip(),
             "model": (v.get("model") or "").strip(),
-            "price": Decimal(str(v["price"])) if v.get("price") is not None else None,
-            "stock": int(v["stock"]) if v.get("stock") is not None else None,
+            "price": price,
+            "stock": stock,
             "quality": (v.get("quality") or "").strip(),
             "images": images_parsed,
         })
@@ -716,6 +726,40 @@ def _extract_device_families(variants_raw):
             seen.add(fam)
             families.append(fam)
     return families
+
+
+def _derive_product_fields_from_variants(variants):
+    """Return product-level price, stock and quality defaults from variants."""
+    prices = [
+        v.get("price")
+        for v in variants
+        if isinstance(v, dict) and v.get("price") is not None and v.get("price") > 0
+    ]
+    stocks = [
+        int(v.get("stock") or 0)
+        for v in variants
+        if isinstance(v, dict) and v.get("stock") is not None
+    ]
+    qualities = [
+        (v.get("quality") or "").strip()
+        for v in variants
+        if isinstance(v, dict) and (v.get("quality") or "").strip()
+    ]
+    unique_qualities = list(dict.fromkeys(qualities))
+    return {
+        "price": min(prices) if prices else None,
+        "stock": sum(stocks) if stocks else 0,
+        "quality": unique_qualities[0] if len(unique_qualities) == 1 else "",
+    }
+
+
+def _parse_price(value):
+    if value in (None, ""):
+        return None
+    try:
+        return Decimal(str(value))
+    except Exception:
+        return None
 
 
 def list_public_products():
@@ -744,9 +788,17 @@ def list_public_products():
 def create_product(body):
     if not body:
         return response(400, {"error": "invalid_json"})
-    for field in ["name", "price"]:
-        if not body.get(field):
-            return response(400, {"error": f"missing_field: {field}"})
+    if not body.get("name"):
+        return response(400, {"error": "missing_field: name"})
+    variants = _parse_variants(body.get("variants") or [])
+    variant_defaults = _derive_product_fields_from_variants(variants)
+    raw_price = body.get("price")
+    price = _parse_price(raw_price) or variant_defaults["price"]
+    if price is None or price <= 0:
+        return response(400, {"error": "missing_field: price"})
+    raw_stock = body.get("stock")
+    stock = int(raw_stock) if raw_stock not in (None, "") else variant_defaults["stock"]
+    quality = (body.get("quality") or variant_defaults["quality"] or "").strip()
     images_raw = body.get("images") or []
     images_parsed = []
     for img in images_raw:
@@ -761,12 +813,12 @@ def create_product(body):
         "productId": str(uuid.uuid4()),
         "name": body["name"].strip(),
         "description": (body.get("description") or "").strip(),
-        "price": Decimal(str(body["price"])),
+        "price": price,
         "category": normalize_category(body.get("category")),
         "imageUrl": image_url,
         "images": images_parsed,
-        "stock": int(body.get("stock", 0)),
-        "quality": (body.get("quality") or "").strip(),
+        "stock": stock,
+        "quality": quality,
         "compatibility": [
             str(model).strip()
             for model in (body.get("compatibility") or [])
@@ -776,7 +828,7 @@ def create_product(body):
         "warranty": (body.get("warranty") or "").strip(),
         "status": body.get("status", "active").strip(),
         "heroFeatured": bool(body.get("heroFeatured", False)),
-        "variants": _parse_variants(body.get("variants") or []),
+        "variants": variants,
         "deviceFamilies": _extract_device_families(body.get("variants") or []),
         "createdAt": now_iso(),
         "updatedAt": now_iso(),
@@ -818,12 +870,23 @@ def update_product(product_id, body):
     if "category" in body:
         updates["category"] = normalize_category(body.get("category"))
     if "price" in body:
-        updates["price"] = Decimal(str(body["price"]))
+        price = _parse_price(body.get("price"))
+        if price is None or price <= 0:
+            return response(400, {"error": "missing_field: price"})
+        updates["price"] = price
     if "stock" in body:
         updates["stock"] = int(body["stock"])
     if "variants" in body:
-        updates["variants"] = _parse_variants(body.get("variants") or [])
+        variants = _parse_variants(body.get("variants") or [])
+        updates["variants"] = variants
         updates["deviceFamilies"] = _extract_device_families(body.get("variants") or [])
+        variant_defaults = _derive_product_fields_from_variants(variants)
+        if "price" not in body and variant_defaults["price"] is not None:
+            updates["price"] = variant_defaults["price"]
+        if "stock" not in body:
+            updates["stock"] = variant_defaults["stock"]
+        if "quality" not in body and variant_defaults["quality"]:
+            updates["quality"] = variant_defaults["quality"]
     updates["updatedAt"] = now_iso()
     update_expr = "SET " + ", ".join(f"#{k}=:v{k}" for k in updates)
     attr_names = {f"#{k}": k for k in updates}

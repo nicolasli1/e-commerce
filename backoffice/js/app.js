@@ -829,11 +829,13 @@ const App = (() => {
           const idx = parseInt(e.target.dataset.idx);
           const field = e.target.dataset.field;
           variantRows[idx][field] = e.target.value;
+          updateTechPreview();
         });
         input.addEventListener('change', (e) => {
           const idx = parseInt(e.target.dataset.idx);
           const field = e.target.dataset.field;
           variantRows[idx][field] = e.target.value;
+          updateTechPreview();
         });
       });
 
@@ -876,6 +878,7 @@ const App = (() => {
           const idx = parseInt(btn.dataset.idx);
           variantRows.splice(idx, 1);
           renderVariantRows();
+          updateTechPreview();
         });
       });
     }
@@ -891,6 +894,28 @@ const App = (() => {
         quality: row.quality,
         images: row.images,
       }));
+    }
+
+    function deriveVariantSummary(variants) {
+      const prices = variants
+        .map((variant) => Number(variant.price))
+        .filter((price) => Number.isFinite(price) && price > 0);
+      const stocks = variants
+        .map((variant) => Number(variant.stock))
+        .filter((stock) => Number.isFinite(stock) && stock >= 0);
+      const qualities = variants
+        .map((variant) => (variant.quality || '').trim())
+        .filter(Boolean);
+      const uniqueQualities = [...new Set(qualities)];
+      return {
+        price: prices.length ? Math.min(...prices) : null,
+        stock: stocks.reduce((sum, stock) => sum + stock, 0),
+        quality: uniqueQualities.length === 1 ? uniqueQualities[0] : '',
+      };
+    }
+
+    function isVariantMode() {
+      return document.querySelector('input[name="productType"]:checked')?.value === 'variants';
     }
 
     function stockLabel(stock) {
@@ -933,7 +958,10 @@ const App = (() => {
 
     function updateTechPreview() {
       updateStockHint();
-      const stock = stockLabel(pStock.value);
+      const variants = isVariantMode() ? collectVariants() : [];
+      const variantSummary = variants.length ? deriveVariantSummary(variants) : null;
+      const stock = stockLabel(variantSummary ? variantSummary.stock : pStock.value);
+      const quality = variantSummary?.quality || pQuality.value || 'Calidad sin especificar';
       const shown = compatibilityTags.slice(0, 3);
       const more = compatibilityTags.length - shown.length;
       pTechPreview.innerHTML = `
@@ -943,7 +971,7 @@ const App = (() => {
         </div>
         <div class="tech-preview-item">
           <span>🏷️</span>
-          <strong>${esc(pQuality.value || 'Calidad sin especificar')}</strong>
+          <strong>${esc(quality)}</strong>
         </div>
         <div class="tech-preview-item">
           <span>📱</span>
@@ -1087,10 +1115,11 @@ const App = (() => {
     document.getElementById('addVariantBtn').addEventListener('click', () => {
       variantRows.push(newVariantRow());
       renderVariantRows();
+      updateTechPreview();
     });
 
     function syncVariantToggle() {
-      const isVariants = document.querySelector('input[name="productType"]:checked')?.value === 'variants';
+      const isVariants = isVariantMode();
       const simpleFields = document.getElementById('simpleFields');
       const variantFields = document.getElementById('variantFields');
       const pPrice = document.getElementById('pPrice');
@@ -1100,6 +1129,7 @@ const App = (() => {
       // Highlight selected type card
       document.getElementById('typeCardSimple')?.classList.toggle('active', !isVariants);
       document.getElementById('typeCardVariant')?.classList.toggle('active', isVariants);
+      updateTechPreview();
     }
 
     document.querySelectorAll('input[name="productType"]').forEach(r => r.addEventListener('change', syncVariantToggle));
@@ -1130,18 +1160,39 @@ const App = (() => {
         showToast('Espera a que termine la subida de imagen', 'error');
         return;
       }
+      const usingVariants = isVariantMode();
+      const variants = usingVariants ? collectVariants() : [];
+      if (usingVariants) {
+        if (!variants.length) {
+          showToast('Agrega al menos una variante por modelo', 'error');
+          return;
+        }
+        const incompleteVariant = variants.find((variant) => (
+          !String(variant.deviceFamily || '').trim()
+          || !Number.isFinite(Number(variant.price))
+          || Number(variant.price) <= 0
+          || variant.stock === null
+          || !Number.isFinite(Number(variant.stock))
+          || Number(variant.stock) < 0
+        ));
+        if (incompleteVariant) {
+          showToast('Revisa las variantes: cada modelo necesita modelo, precio y stock válido', 'error');
+          return;
+        }
+      }
+      const variantSummary = usingVariants ? deriveVariantSummary(variants) : null;
       const payload = {
         name: pName.value.trim(),
         description: pDesc.value.trim(),
-        price: parseFloat(pPrice.value),
-        stock: parseInt(pStock.value) || 0,
+        price: usingVariants ? variantSummary.price : parseFloat(pPrice.value),
+        stock: usingVariants ? variantSummary.stock : parseInt(pStock.value) || 0,
         category: pCategory.value,
-        quality: pQuality.value,
+        quality: usingVariants ? (variantSummary.quality || pQuality.value) : pQuality.value,
         compatibility: compatibilityTags,
         shippingTime: pShippingTime.value.trim(),
         warranty: pWarranty.value.trim(),
         images: uploadedImages,
-        variants: collectVariants(),
+        variants,
         heroFeatured: document.getElementById('pHeroFeatured')?.checked || false,
       };
 
