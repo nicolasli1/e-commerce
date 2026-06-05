@@ -297,24 +297,36 @@ def nequi_enabled():
     return bool(get_nequi_api_key() and get_nequi_client_id())
 
 
+def _nequi_is_sandbox():
+    """Use sandbox when client_id starts with 'sandbox' or env var set."""
+    cid = get_nequi_client_id().lower()
+    return cid.startswith("sandbox") or os.environ.get("NEQUI_SANDBOX", "") == "true"
+
+def _nequi_token_base():
+    return "https://oauth.sandbox.nequi.com" if _nequi_is_sandbox() else "https://oauth.nequi.com"
+
+def _nequi_api_base():
+    return "https://api.sandbox.nequi.com" if _nequi_is_sandbox() else "https://api.nequi.com"
+
 def get_nequi_token():
     """Exchange client credentials for Nequi OAuth2 access token.
-    Docs: docs.conecta.nequi.com.co → Token de Seguridad
-    grant_type goes as query param, Authorization as Basic base64(id:secret)
+    Source: developer.nequi.com.co/integrate-con-nequi → Token de Seguridad
+    POST /token  |  Authorization: Basic base64(client_id:client_secret)
+    grant_type as query param + body (compatible with both interpretations)
     """
     import base64 as _b64
     client_id = get_nequi_client_id()
     client_secret = get_nequi_client_secret()
     credentials = _b64.b64encode(f"{client_id}:{client_secret}".encode()).decode()
-    # grant_type is a query param per Nequi docs (not body)
+    url = f"{_nequi_token_base()}/token?grant_type=client_credentials"
     resp = urllib_request(
-        "https://api.nequi.com.co/oauth2?grant_type=client_credentials",
+        url,
         method="POST",
         headers={
             "Authorization": f"Basic {credentials}",
             "Content-Type": "application/x-www-form-urlencoded",
         },
-        body=b"",
+        body=b"grant_type=client_credentials",
     )
     return (resp.get("access_token") or "") if isinstance(resp, dict) else ""
 
@@ -367,7 +379,7 @@ def initiate_nequi_push_payment(phone_number, amount_cop, reference):
     }
     try:
         resp = urllib_request(
-            "https://api.nequi.com.co/payments/v2/-services-paymentservice-unregisteredpayment",
+            f"{_nequi_api_base()}/payments/v2/-services-paymentservice-unregisteredpayment",
             method="POST",
             headers={
                 "Authorization": f"Bearer {token}",
@@ -442,7 +454,7 @@ def query_nequi_payment_status(transaction_id):
     }
     try:
         resp = urllib_request(
-            "https://api.nequi.com.co/payments/v2/-services-paymentservice-getstatuspayment",
+            f"{_nequi_api_base()}/payments/v2/-services-paymentservice-getstatuspayment",
             method="POST",
             headers={
                 "Authorization": f"Bearer {token}",
