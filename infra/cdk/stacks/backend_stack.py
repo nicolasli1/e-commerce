@@ -312,6 +312,11 @@ class BackendStack(Stack):
             methods=[apigwv2.HttpMethod.POST],
             integration=lambda_integration,
         )
+        http_api.add_routes(
+            path="/api/webhooks/nequi",
+            methods=[apigwv2.HttpMethod.POST],
+            integration=lambda_integration,
+        )
 
         # ── Auth routes (user registration + login) ──
         http_api.add_routes(
@@ -436,6 +441,7 @@ class BackendStack(Stack):
         CfnOutput(self, "LambdaFunctionName", value=api_lambda.function_name)
         CfnOutput(self, "WompiWebhookUrl", value=f"{http_api.api_endpoint}/api/webhooks/wompi")
         CfnOutput(self, "MercadoPagoWebhookUrl", value=f"{http_api.api_endpoint}/api/webhooks/mercadopago")
+        CfnOutput(self, "NequiWebhookUrl", value=f"{http_api.api_endpoint}/api/webhooks/nequi")
         CfnOutput(self, "BackendEnabled", value="true")
 
     @staticmethod

@@ -294,7 +294,64 @@ def verify_nequi_webhook_signature(event):
 
 
 def nequi_enabled():
-    return bool(get_nequi_api_key() and get_nequi_client_id())
+    return bool(get_nequi_api_key() and get_nequi_client_id() and get_nequi_client_secret())
+
+
+def normalize_nequi_phone(phone_number):
+    digits = "".join(ch for ch in str(phone_number or "") if ch.isdigit())
+    if digits.startswith("57") and len(digits) == 12:
+        digits = digits[2:]
+    return digits if len(digits) == 10 and digits.startswith("3") else ""
+
+
+def map_nequi_status(raw_status="", response_code=""):
+    raw_status = str(raw_status or "").strip()
+    response_code = str(response_code or "").strip()
+    if raw_status == "35" or response_code == "00":
+        return "APPROVED"
+    if raw_status in ("33", "") and response_code in ("", "0", "AC", "PD"):
+        return "PENDING"
+    if raw_status in ("10-455", "10-454", "71"):
+        return "DECLINED"
+    if response_code in ("AC", "PD"):
+        return "PENDING"
+    return "DECLINED" if response_code else "PENDING"
+
+
+def nequi_status_message(status, raw_status="", response_code=""):
+    if status == "APPROVED":
+        return "Pago aprobado por Nequi"
+    if status == "DECLINED":
+        return "Pago rechazado o cancelado en Nequi"
+    if raw_status or response_code:
+        return "Pago pendiente de confirmación en Nequi"
+    return "Esperando aprobación desde la app Nequi"
+
+
+def extract_nequi_payment_status(payload):
+    response_message = (payload or {}).get("ResponseMessage") or {}
+    response_header = response_message.get("ResponseHeader") or {}
+    response_body = ((response_message.get("ResponseBody") or {}).get("any") or {})
+    payment_body = (
+        response_body.get("pushPaymentRS")
+        or response_body.get("unregisteredPaymentRS")
+        or response_body.get("getStatusPaymentRS")
+        or {}
+    )
+    raw_status = payment_body.get("status", "")
+    response_code = (
+        response_header.get("ResponseCode")
+        or (response_header.get("Status") or {}).get("StatusCode", "")
+    )
+    status = map_nequi_status(raw_status, response_code)
+    return {
+        "status": status,
+        "statusMessage": nequi_status_message(status, raw_status, response_code),
+        "rawStatus": raw_status,
+        "responseCode": response_code,
+        "reference": payment_body.get("code") or payment_body.get("reference2") or payment_body.get("reference3") or "",
+        "transactionId": payment_body.get("transactionId") or payment_body.get("codeQR") or "",
+    }
 
 
 def _nequi_is_sandbox():
@@ -347,7 +404,9 @@ def initiate_nequi_push_payment(phone_number, amount_cop, reference):
     message_id = str(uuid.uuid4()).replace("-", "")[:10].upper()
     now = datetime.datetime.now(datetime.timezone(datetime.timedelta(hours=-5)))
     request_date = now.strftime("%Y-%m-%dT%H:%M:%S.000-05:00")
-    clean_phone = phone_number.strip().lstrip("+57").replace(" ", "")
+    clean_phone = normalize_nequi_phone(phone_number)
+    if not clean_phone:
+        return False, "", "nequi_invalid_phone"
 
     payload = {
         "RequestMessage": {
@@ -421,13 +480,18 @@ def query_nequi_payment_status(transaction_id):
     Poll Nequi for payment status.
     Docs: getStatusPayment endpoint
     Status codes: 33=Pending, 35=Approved, 10-455=Cancelled, 10-454=Expired, 71=Failed
-    Returns: 'approved' | 'pending' | 'rejected'
     """
     import uuid, datetime
     token = get_nequi_token()
     api_key = get_nequi_api_key()
     if not token or not transaction_id:
-        return "pending"
+        return {
+            "status": "PENDING",
+            "statusMessage": "Esperando aprobación desde la app Nequi",
+            "rawStatus": "",
+            "responseCode": "",
+            "transactionId": transaction_id or "",
+        }
 
     message_id = str(uuid.uuid4()).replace("-", "")[:10].upper()
     now = datetime.datetime.now(datetime.timezone(datetime.timedelta(hours=-5)))
@@ -464,20 +528,17 @@ def query_nequi_payment_status(transaction_id):
             },
             body=json.dumps(payload).encode(),
         )
-        nequi_status = (
-            resp.get("ResponseMessage", {})
-            .get("ResponseBody", {})
-            .get("any", {})
-            .get("getStatusPaymentRS", {})
-            .get("status", "")
-        )
-        if nequi_status == "35":
-            return "approved"
-        if nequi_status in ("10-455", "10-454", "71"):
-            return "rejected"
-        return "pending"
-    except Exception:
-        return "pending"
+        status_data = extract_nequi_payment_status(resp)
+        status_data["transactionId"] = transaction_id
+        return status_data
+    except Exception as exc:
+        return {
+            "status": "PENDING",
+            "statusMessage": f"No pudimos consultar Nequi todavía: {exc}",
+            "rawStatus": "",
+            "responseCode": "",
+            "transactionId": transaction_id,
+        }
 
 
 def wompi_base_url(public_key=None):
@@ -1612,14 +1673,19 @@ def create_checkout_session(event):
             "transactionId": "",
         }
     elif provider == "nequi":
-        nequi_phone = (body.get("nequiPhone") or customer.get("phoneNumber") or "").strip()
+        nequi_phone = normalize_nequi_phone(body.get("nequiPhone") or customer.get("phoneNumber") or "")
         if not nequi_phone:
             return response(400, {"error": "nequi_phone_required", "message": "Ingresa el número de celular Nequi."})
-        amount_cop = total_cents / 100
+        amount_cop = total_cents // 100
         ok, tx_id, err = initiate_nequi_push_payment(nequi_phone, amount_cop, reference)
         if not ok:
             return response(502, {"error": "nequi_push_failed", "message": f"No pudimos enviar la notificación Nequi: {err}"})
-        provider_data["nequi"] = {"transactionId": tx_id, "phone": nequi_phone}
+        provider_data["nequi"] = {
+            "transactionId": tx_id,
+            "phone": nequi_phone,
+            "status": "PENDING",
+            "statusMessage": "Notificación enviada a la app Nequi",
+        }
     else:
         api_gateway_origin = get_api_gateway_origin(event)
         preference = build_mercadopago_preference(reference, items, customer, shipping, origin, api_gateway_origin=api_gateway_origin)
@@ -1756,6 +1822,50 @@ def update_order_from_mercadopago_payment(reference, payment):
     )
 
 
+def update_order_from_nequi(reference, transaction_id=None, status_payload=None):
+    current = orders_table.get_item(Key={"reference": reference}).get("Item")
+    if not current:
+        return None
+    provider_data = dict(current.get("providerData") or {})
+    nequi_data = dict(provider_data.get("nequi") or {})
+    transaction_id = transaction_id or nequi_data.get("transactionId", "")
+    status_data = extract_nequi_payment_status(status_payload) if status_payload else query_nequi_payment_status(transaction_id)
+    mapped_status = status_data.get("status") or "PENDING"
+    nequi_data.update({
+        "transactionId": status_data.get("transactionId") or transaction_id,
+        "status": mapped_status,
+        "rawStatus": status_data.get("rawStatus", ""),
+        "responseCode": status_data.get("responseCode", ""),
+        "statusMessage": status_data.get("statusMessage", mapped_status),
+        "lastCheckedAt": now_iso(),
+    })
+    provider_data["nequi"] = nequi_data
+    orders_table.update_item(
+        Key={"reference": reference},
+        UpdateExpression="SET #status=:status, #statusMessage=:message, #updatedAt=:updatedAt, #providerData=:providerData, #paymentId=:paymentId, #fulfillmentStatus=if_not_exists(#fulfillmentStatus, :fulfillmentDefault)",
+        ExpressionAttributeNames={
+            "#status": "status",
+            "#statusMessage": "statusMessage",
+            "#updatedAt": "updatedAt",
+            "#providerData": "providerData",
+            "#paymentId": "paymentId",
+            "#fulfillmentStatus": "fulfillmentStatus",
+        },
+        ExpressionAttributeValues={
+            ":status": mapped_status,
+            ":message": nequi_data["statusMessage"],
+            ":updatedAt": now_iso(),
+            ":providerData": provider_data,
+            ":paymentId": nequi_data.get("transactionId", ""),
+            ":fulfillmentDefault": "PENDING_PAYMENT",
+        },
+    )
+    return ensure_post_payment_side_effects(
+        orders_table.get_item(Key={"reference": reference}).get("Item"),
+        previous_order=current,
+    )
+
+
 def fetch_mercadopago_payment(payment_id):
     access_token = get_mercadopago_access_token()
     if not access_token:
@@ -1776,13 +1886,16 @@ def get_checkout_order(reference, transaction_id=None):
         return response(404, {"error": "order_not_found"})
     provider = order.get("provider", "wompi")
     current_status = order.get("status", "")
-    if transaction_id and current_status in ("CHECKOUT_CREATED", "PENDING"):
+    if current_status in ("CHECKOUT_CREATED", "PENDING"):
         if provider == "mercadopago":
-            payment = fetch_mercadopago_payment(transaction_id)
+            payment = fetch_mercadopago_payment(transaction_id) if transaction_id else None
             if payment and payment.get("external_reference") == reference:
                 order = update_order_from_mercadopago_payment(reference, payment) or order
+        elif provider == "nequi":
+            stored_tx = ((order.get("providerData") or {}).get("nequi") or {}).get("transactionId", "")
+            order = update_order_from_nequi(reference, transaction_id or stored_tx) or order
         else:
-            transaction = fetch_wompi_transaction(transaction_id)
+            transaction = fetch_wompi_transaction(transaction_id) if transaction_id else None
             if transaction and transaction.get("reference") == reference:
                 order = update_order_from_transaction(reference, transaction) or order
     # Strip PII — public tracking endpoint only returns non-sensitive fields
@@ -1880,48 +1993,16 @@ def handle_nequi_webhook(event):
         return response(401, {"error": "invalid_signature"})
     try:
         body = get_json_body(event) or {}
-        # Nequi sends a ResponseMessage with the transaction result
-        resp_header = body.get("ResponseMessage", {}).get("ResponseHeader", {})
-        resp_body = (
-            body.get("ResponseMessage", {})
-            .get("ResponseBody", {})
-            .get("any", {})
-            .get("pushPaymentRS", {})
-        )
-        code = resp_header.get("ResponseCode", "")
-        reference = resp_body.get("code", "") or resp_header.get("MessageID", "")
-        tx_id = resp_body.get("transactionId", "")
-
+        status_data = extract_nequi_payment_status(body)
+        reference = status_data.get("reference", "")
+        tx_id = status_data.get("transactionId", "")
         if not reference:
             return response(400, {"error": "missing_reference"})
-
-        order_item = orders_table.get_item(Key={"reference": reference}).get("Item")
-        if not order_item:
-            return response(404, {"error": "order_not_found"})
-
-        if code == "00":
-            new_status = "approved"
-        elif code in ("AC", "PD"):
-            new_status = "pending"
-        else:
-            new_status = "rejected"
-
-        orders_table.update_item(
-            Key={"reference": reference},
-            UpdateExpression="SET #s = :s, paymentId = :pid, updatedAt = :u",
-            ExpressionAttributeNames={"#s": "status"},
-            ExpressionAttributeValues={
-                ":s": new_status,
-                ":pid": tx_id,
-                ":u": datetime.datetime.utcnow().isoformat(),
-            },
-        )
-        if new_status == "approved":
-            try:
-                notify_order(order_item, reference)
-            except Exception:
-                pass
-        return response(200, {"ok": True})
+        existing = orders_table.get_item(Key={"reference": reference}).get("Item")
+        if not existing:
+            return response(200, {"ok": True, "ignored": True})
+        updated = update_order_from_nequi(reference, tx_id, status_payload=body)
+        return response(200, {"ok": True, "order": updated})
     except Exception as e:
         return response(500, {"error": str(e)})
 
