@@ -322,8 +322,8 @@ def get_nequi_token():
 def initiate_nequi_push_payment(phone_number, amount_cop, reference):
     """
     Push a payment notification to the customer's Nequi app.
-    Docs: https://docs.conecta.nequi.com.co
-    The user receives a push notification and approves in-app.
+    Source: docs.conecta.nequi.com.co → Pagos con notificación Push
+    Endpoint: POST /payments/v2/-services-paymentservice-unregisteredpayment
     Returns (success: bool, transaction_id: str, error: str)
     """
     import uuid, datetime
@@ -332,33 +332,34 @@ def initiate_nequi_push_payment(phone_number, amount_cop, reference):
     if not token:
         return False, "", "nequi_token_error"
 
-    message_id = str(uuid.uuid4()).replace("-", "")[:12].upper()
+    message_id = str(uuid.uuid4()).replace("-", "")[:10].upper()
     now = datetime.datetime.now(datetime.timezone(datetime.timedelta(hours=-5)))
     request_date = now.strftime("%Y-%m-%dT%H:%M:%S.000-05:00")
+    clean_phone = phone_number.strip().lstrip("+57").replace(" ", "")
 
     payload = {
         "RequestMessage": {
             "RequestHeader": {
-                "Channel": "BT",
+                "Channel": "PNP04-C001",
                 "RequestDate": request_date,
                 "MessageID": message_id,
                 "ClientID": get_nequi_client_id(),
                 "Destination": {
-                    "Name": "PaymentGateway",
-                    "NameSpace": "co.com.nequi.integration.payment",
-                    "ServiceName": "PaymentGatewayService",
-                    "ServiceOperation": "pushPayment",
+                    "ServiceName": "PaymentsService",
+                    "ServiceOperation": "unregisteredPayment",
                     "ServiceRegion": "C001",
                     "ServiceVersion": "1.2.0",
                 },
             },
             "RequestBody": {
                 "any": {
-                    "pushPaymentRQ": {
-                        "phoneNumber": phone_number.strip().lstrip("+57").replace(" ", ""),
+                    "unregisteredPaymentRQ": {
+                        "phoneNumber": clean_phone,
                         "code": reference,
                         "value": str(int(amount_cop)),
-                        "messageOTP": f"NexCore: confirma tu pago de ${int(amount_cop):,} COP",
+                        "reference1": "NexCore",
+                        "reference2": reference,
+                        "reference3": "",
                     }
                 }
             },
@@ -366,7 +367,7 @@ def initiate_nequi_push_payment(phone_number, amount_cop, reference):
     }
     try:
         resp = urllib_request(
-            "https://api.nequi.com.co/payments/-/push-payments",
+            "https://api.nequi.com.co/payments/v2/-services-paymentservice-unregisteredpayment",
             method="POST",
             headers={
                 "Authorization": f"Bearer {token}",
@@ -376,29 +377,95 @@ def initiate_nequi_push_payment(phone_number, amount_cop, reference):
             },
             body=json.dumps(payload).encode(),
         )
-        # Nequi returns ResponseMessage.ResponseHeader.responseCode == "00" on success
-        code = (
+        # Success: Status.StatusCode == "0"
+        status_code = (
             resp.get("ResponseMessage", {})
             .get("ResponseHeader", {})
-            .get("ResponseCode", "99")
+            .get("Status", {})
+            .get("StatusCode", "")
         )
         tx_id = (
             resp.get("ResponseMessage", {})
             .get("ResponseBody", {})
             .get("any", {})
-            .get("pushPaymentRS", {})
+            .get("unregisteredPaymentRS", {})
             .get("transactionId", reference)
         )
-        if code == "00":
+        if status_code == "0":
             return True, tx_id, ""
-        err = (
+        status_desc = (
             resp.get("ResponseMessage", {})
             .get("ResponseHeader", {})
-            .get("ResponseMessage", "nequi_push_error")
+            .get("Status", {})
+            .get("StatusDesc", "nequi_push_error")
         )
-        return False, "", err
+        return False, "", status_desc
     except Exception as e:
         return False, "", str(e)
+
+
+def query_nequi_payment_status(transaction_id):
+    """
+    Poll Nequi for payment status.
+    Docs: getStatusPayment endpoint
+    Status codes: 33=Pending, 35=Approved, 10-455=Cancelled, 10-454=Expired, 71=Failed
+    Returns: 'approved' | 'pending' | 'rejected'
+    """
+    import uuid, datetime
+    token = get_nequi_token()
+    api_key = get_nequi_api_key()
+    if not token or not transaction_id:
+        return "pending"
+
+    message_id = str(uuid.uuid4()).replace("-", "")[:10].upper()
+    now = datetime.datetime.now(datetime.timezone(datetime.timedelta(hours=-5)))
+    payload = {
+        "RequestMessage": {
+            "RequestHeader": {
+                "Channel": "PNP04-C001",
+                "RequestDate": now.strftime("%Y-%m-%dT%H:%M:%S.000-05:00"),
+                "MessageID": message_id,
+                "ClientID": get_nequi_client_id(),
+                "Destination": {
+                    "ServiceName": "PaymentsService",
+                    "ServiceOperation": "getStatusPayment",
+                    "ServiceRegion": "C001",
+                    "ServiceVersion": "1.0.0",
+                },
+            },
+            "RequestBody": {
+                "any": {
+                    "getStatusPaymentRQ": {"codeQR": transaction_id}
+                }
+            },
+        }
+    }
+    try:
+        resp = urllib_request(
+            "https://api.nequi.com.co/payments/v2/-services-paymentservice-getstatuspayment",
+            method="POST",
+            headers={
+                "Authorization": f"Bearer {token}",
+                "x-api-key": api_key,
+                "Content-Type": "application/json",
+                "Accept": "application/json",
+            },
+            body=json.dumps(payload).encode(),
+        )
+        nequi_status = (
+            resp.get("ResponseMessage", {})
+            .get("ResponseBody", {})
+            .get("any", {})
+            .get("getStatusPaymentRS", {})
+            .get("status", "")
+        )
+        if nequi_status == "35":
+            return "approved"
+        if nequi_status in ("10-455", "10-454", "71"):
+            return "rejected"
+        return "pending"
+    except Exception:
+        return "pending"
 
 
 def wompi_base_url(public_key=None):
