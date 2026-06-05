@@ -766,22 +766,27 @@ def list_public_products():
     items = products_table.scan().get("Items", [])
     active = [p for p in items if p.get("status", "active") != "deleted"]
     active.sort(key=lambda x: x.get("createdAt", ""), reverse=True)
-    safe = [{
-        "productId": p["productId"],
-        "name": p.get("name", ""),
-        "description": p.get("description", ""),
-        "price": p.get("price", 0),
-        "category": p.get("category", "general"),
-        "images": p.get("images", []),
-        "imageUrl": images_to_url(p.get("images", []), p.get("imageUrl", "")),
-        "stock": int(p.get("stock", 0)),
-        "quality": p.get("quality", ""),
-        "compatibility": p.get("compatibility", []),
-        "shippingTime": p.get("shippingTime", ""),
-        "warranty": p.get("warranty", ""),
-        "variants": p.get("variants", []),
-        "deviceFamilies": p.get("deviceFamilies", []),
-    } for p in active]
+    safe = []
+    for p in active:
+        variants = p.get("variants", [])
+        variant_defaults = _derive_product_fields_from_variants(variants)
+        has_variants = isinstance(variants, list) and len(variants) > 0
+        safe.append({
+            "productId": p["productId"],
+            "name": p.get("name", ""),
+            "description": p.get("description", ""),
+            "price": p.get("price") or variant_defaults["price"] or 0,
+            "category": p.get("category", "general"),
+            "images": p.get("images", []),
+            "imageUrl": images_to_url(p.get("images", []), p.get("imageUrl", "")),
+            "stock": variant_defaults["stock"] if has_variants else int(p.get("stock", 0)),
+            "quality": p.get("quality", "") or variant_defaults["quality"],
+            "compatibility": p.get("compatibility", []),
+            "shippingTime": p.get("shippingTime", ""),
+            "warranty": p.get("warranty", ""),
+            "variants": variants,
+            "deviceFamilies": p.get("deviceFamilies", []) or _extract_device_families(variants),
+        })
     return response(200, {"ok": True, "products": safe})
 
 
@@ -1164,24 +1169,49 @@ def build_order_items(cart_items):
     total = 0
     for raw in cart_items:
         product_id = (raw.get("productId") or "").strip()
+        variant_id = (raw.get("variantId") or "").strip()
         quantity = max(1, safe_int(raw.get("quantity"), 1))
         if not product_id:
             raise ValueError("invalid_product")
         product = products_table.get_item(Key={"productId": product_id}).get("Item")
         if not product or product.get("status", "active") == "deleted":
             raise ValueError(f"product_not_found:{product_id}")
+        variants = product.get("variants") if isinstance(product.get("variants"), list) else []
+        variant = None
+        variant_label = ""
+        if variants:
+            if not variant_id:
+                raise ValueError(f"variant_required:{product_id}")
+            variant = next((v for v in variants if (v.get("variantId") or "") == variant_id), None)
+            if not variant:
+                raise ValueError(f"variant_not_found:{product_id}:{variant_id}")
+            variant_stock = safe_int(variant.get("stock"), 0)
+            if variant_stock < quantity:
+                raise ValueError(f"out_of_stock:{product_id}:{variant_id}")
+            variant_parts = [variant.get("deviceFamily", ""), variant.get("model", "")]
+            variant_label = " ".join(part.strip() for part in variant_parts if str(part).strip())
+        else:
+            stock = safe_int(product.get("stock"), 0)
+            if stock < quantity:
+                raise ValueError(f"out_of_stock:{product_id}")
         # Internal convention: prices stored in DB as COP (e.g. 39000 = $39,000).
         # We multiply by 100 for the internal "cents" format (compatible with Wompi).
         # Mercado Pago receives pesos (÷100 back) via cents_to_cop_units() in build_mercadopago_preference().
         # Any new gateway consumer must understand: display = amountInCents / 100.
-        unit_price_cents = int(Decimal(str(product.get("price", 0))) * 100)
+        unit_price = variant.get("price") if variant else product.get("price", 0)
+        image_url = product.get("imageUrl", "")
+        if variant and isinstance(variant.get("images"), list) and variant.get("images"):
+            image_url = images_to_url(variant.get("images"), image_url)
+        unit_price_cents = int(Decimal(str(unit_price or 0)) * 100)
         subtotal_cents = unit_price_cents * quantity
         total += subtotal_cents
         built.append({
             "productId": product_id,
+            "variantId": variant_id,
+            "variantLabel": variant_label,
             "name": product.get("name", ""),
             "category": product.get("category", "general"),
-            "imageUrl": product.get("imageUrl", ""),
+            "imageUrl": image_url,
             "quantity": quantity,
             "unitPriceCents": unit_price_cents,
             "subtotalCents": subtotal_cents,
@@ -1192,8 +1222,9 @@ def build_order_items(cart_items):
 def build_order_summary_lines(order):
     lines = []
     for item in order.get("items", []):
+        label = f" ({item.get('variantLabel')})" if item.get("variantLabel") else ""
         lines.append(
-            f"- {item.get('name', 'Producto')} x{item.get('quantity', 1)} · {cents_to_cop_text(item.get('subtotalCents', 0))}"
+            f"- {item.get('name', 'Producto')}{label} x{item.get('quantity', 1)} · {cents_to_cop_text(item.get('subtotalCents', 0))}"
         )
     return "\n".join(lines) if lines else "- Sin items"
 
@@ -1422,23 +1453,57 @@ def sync_order_inventory(order, previous_order=None):
     errors = []
     for item in order.get("items", []):
         product_id = item.get("productId")
+        variant_id = item.get("variantId") or ""
         quantity = max(1, safe_int(item.get("quantity"), 1))
         if not product_id:
             continue
         try:
-            products_table.update_item(
-                Key={"productId": product_id},
-                UpdateExpression="SET #stock = #stock - :qty, #updatedAt = :updatedAt",
-                ConditionExpression="attribute_exists(productId) AND #stock >= :qty",
-                ExpressionAttributeNames={
-                    "#stock": "stock",
-                    "#updatedAt": "updatedAt",
-                },
-                ExpressionAttributeValues={
-                    ":qty": quantity,
-                    ":updatedAt": now_iso(),
-                },
-            )
+            product = products_table.get_item(Key={"productId": product_id}).get("Item")
+            variants = product.get("variants") if product and isinstance(product.get("variants"), list) else []
+            if variant_id and variants:
+                matched = False
+                updated_variants = []
+                for variant in variants:
+                    variant_copy = dict(variant)
+                    if variant_copy.get("variantId") == variant_id:
+                        matched = True
+                        current_stock = safe_int(variant_copy.get("stock"), 0)
+                        if current_stock < quantity:
+                            raise ValueError("insufficient_variant_stock")
+                        variant_copy["stock"] = current_stock - quantity
+                    updated_variants.append(variant_copy)
+                if not matched:
+                    raise ValueError("variant_not_found")
+                aggregate_stock = _derive_product_fields_from_variants(updated_variants)["stock"]
+                products_table.update_item(
+                    Key={"productId": product_id},
+                    UpdateExpression="SET #variants = :variants, #stock = :stock, #updatedAt = :updatedAt",
+                    ConditionExpression="attribute_exists(productId)",
+                    ExpressionAttributeNames={
+                        "#variants": "variants",
+                        "#stock": "stock",
+                        "#updatedAt": "updatedAt",
+                    },
+                    ExpressionAttributeValues={
+                        ":variants": updated_variants,
+                        ":stock": aggregate_stock,
+                        ":updatedAt": now_iso(),
+                    },
+                )
+            else:
+                products_table.update_item(
+                    Key={"productId": product_id},
+                    UpdateExpression="SET #stock = #stock - :qty, #updatedAt = :updatedAt",
+                    ConditionExpression="attribute_exists(productId) AND #stock >= :qty",
+                    ExpressionAttributeNames={
+                        "#stock": "stock",
+                        "#updatedAt": "updatedAt",
+                    },
+                    ExpressionAttributeValues={
+                        ":qty": quantity,
+                        ":updatedAt": now_iso(),
+                    },
+                )
         except Exception as exc:
             errors.append(f"{product_id}: {exc}")
 
@@ -1633,8 +1698,8 @@ def build_mercadopago_preference(reference, items, customer, shipping, origin, a
     payload = {
         "external_reference": reference,
         "items": [{
-            "id": item["productId"],
-            "title": item["name"],
+            "id": f"{item['productId']}:{item.get('variantId')}" if item.get("variantId") else item["productId"],
+            "title": f"{item['name']} {item.get('variantLabel', '')}".strip(),
             "description": item["category"],
             "quantity": item["quantity"],
             "currency_id": "COP",

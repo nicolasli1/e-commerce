@@ -4784,8 +4784,13 @@
     // API Key for backend auth — injected by CDK during deploy
     // In dev, this can be empty (backend allows requests without key)
     const API_KEY = '__API_KEY__';
+    function cartItemKey(item) {
+      return [item?.productId || '', item?.variantId || 'base'].join('::');
+    }
+
     function addToCart(product) {
-      const existing = cart.find(c => c.productId === product.productId);
+      const key = cartItemKey(product);
+      const existing = cart.find(c => cartItemKey(c) === key);
       if (existing) {
         existing.quantity += 1;
       } else {
@@ -4796,26 +4801,26 @@
       showCartToast(product.name + ' agregado al carrito');
     }
     
-    function removeFromCart(productId) {
-      const el = document.querySelector(`.cart-item[data-id="${productId}"]`);
+    function removeFromCart(key) {
+      const el = document.querySelector(`.cart-item[data-key="${CSS.escape(key)}"]`);
       if (el) {
         el.classList.add('removing');
         setTimeout(() => {
-          cart = cart.filter(c => c.productId !== productId);
+          cart = cart.filter(c => cartItemKey(c) !== key);
           localStorage.setItem('nexcore_cart', JSON.stringify(cart));
           updateCartCount();
           renderCart();
         }, 200);
       } else {
-        cart = cart.filter(c => c.productId !== productId);
+        cart = cart.filter(c => cartItemKey(c) !== key);
         localStorage.setItem('nexcore_cart', JSON.stringify(cart));
         updateCartCount();
         renderCart();
       }
     }
     
-    function updateQuantity(productId, delta) {
-      const item = cart.find(c => c.productId === productId);
+    function updateQuantity(key, delta) {
+      const item = cart.find(c => cartItemKey(c) === key);
       if (item) {
         item.quantity = Math.max(1, item.quantity + delta);
         localStorage.setItem('nexcore_cart', JSON.stringify(cart));
@@ -4864,13 +4869,14 @@
       const total = cart.reduce((sum, c) => sum + (Number(c.price) || 0) * c.quantity, 0);
       
       container.innerHTML = cart.map((c, i) => {
+        const key = cartItemKey(c);
         const img = c.image || '';
         const initial = (c.name || '?')[0].toUpperCase();
         const thumbHtml = img
           ? `<div class="cart-thumb cart-thumb-img"><img src="${htmlSafe(img)}" alt="" loading="lazy"></div>`
           : `<div class="cart-thumb cart-thumb-init">${initial}</div>`;
         return `
-        <div class="cart-item" data-id="${htmlSafe(c.productId)}" style="animation-delay:${i * 45}ms">
+        <div class="cart-item" data-key="${htmlSafe(key)}" style="animation-delay:${i * 45}ms">
           ${thumbHtml}
           <div class="cart-item-info">
             <div class="cart-item-name">${htmlSafe(c.name)}</div>
@@ -4879,12 +4885,12 @@
           </div>
           <div class="cart-item-right">
             <div class="cart-qty">
-              <button class="cart-qty-btn" onclick="updateQuantity('${htmlSafe(c.productId)}', -1)" aria-label="Restar">−</button>
+              <button class="cart-qty-btn" onclick='updateQuantity(${JSON.stringify(key)}, -1)' aria-label="Restar">−</button>
               <span class="cart-qty-count">${c.quantity}</span>
-              <button class="cart-qty-btn" onclick="updateQuantity('${htmlSafe(c.productId)}', 1)" aria-label="Sumar">+</button>
+              <button class="cart-qty-btn" onclick='updateQuantity(${JSON.stringify(key)}, 1)' aria-label="Sumar">+</button>
             </div>
             <div class="cart-item-subtotal">$${(Number(c.price) * c.quantity).toLocaleString('es-CO', {minimumFractionDigits:0})}</div>
-            <button class="cart-remove" onclick="removeFromCart('${htmlSafe(c.productId)}')" aria-label="Eliminar">✕</button>
+            <button class="cart-remove" onclick='removeFromCart(${JSON.stringify(key)})' aria-label="Eliminar">✕</button>
           </div>
         </div>`;
       }).join('');
@@ -5333,6 +5339,7 @@
         provider: selectedCheckoutProvider(),
         cart: cart.map((item) => ({
           productId: item.productId,
+          variantId: item.variantId || '',
           quantity: item.quantity
         })),
         customer: {
@@ -5665,6 +5672,14 @@
     }
 
     function productSearchText(product) {
+      const variantTerms = Array.isArray(product.variants)
+        ? product.variants.flatMap((variant) => [
+            variant.deviceBrand,
+            variant.deviceFamily,
+            variant.model,
+            variant.quality,
+          ])
+        : [];
       return normalizeSearchValue([
         product.name,
         product.description,
@@ -5679,6 +5694,8 @@
         product.condition,
         ...(Array.isArray(product.requiredTools) ? product.requiredTools : []),
         ...(Array.isArray(product.compatibility) ? product.compatibility : []),
+        ...(Array.isArray(product.deviceFamilies) ? product.deviceFamilies : []),
+        ...variantTerms,
         ...(Array.isArray(product.related) ? product.related : []),
       ].filter(Boolean).join(' '));
     }
@@ -5909,6 +5926,26 @@
       })[char]);
     }
 
+    function variantDisplayLabel(variant) {
+      if (!variant) return '';
+      const family = String(variant.deviceFamily || '').trim();
+      const model = String(variant.model || '').trim();
+      if (family && model && family.toLowerCase().endsWith(model.toLowerCase())) return family;
+      return [family, model].filter(Boolean).join(' ');
+    }
+
+    function effectiveProductStock(product) {
+      const variants = Array.isArray(product?.variants) ? product.variants : [];
+      if (variants.length > 0) {
+        return variants.reduce((sum, variant) => {
+          const count = Number(variant.stock);
+          return sum + (Number.isFinite(count) && count > 0 ? count : 0);
+        }, 0);
+      }
+      const count = Number(product?.stock);
+      return Number.isFinite(count) ? count : 0;
+    }
+
     function getStockMeta(stock) {
       const count = Number(stock) || 0;
       if (count <= 0) return { text: 'Agotado', tone: 'danger' };
@@ -5927,7 +5964,7 @@
     function renderProductCardMeta(product) {
       const chips = [];
       // 1. Stock
-      const stock = shortStockMeta(product.stock);
+      const stock = shortStockMeta(effectiveProductStock(product));
       if (stock) chips.push(`<span class="product-meta-chip ${stock.tone}">${htmlSafe(stock.text)}</span>`);
       // 2. Category
       if (product.category) chips.push(`<span class="product-meta-chip category">${htmlSafe(getCategoryLabel(product.category))}</span>`);
@@ -5965,7 +6002,7 @@
     }
 
     function renderProductInfo(product) {
-      const stock = getStockMeta(product.stock);
+      const stock = getStockMeta(effectiveProductStock(product));
       const stats = [];
 
       // Stock — always shown
@@ -6115,13 +6152,7 @@
               <div class="detail-variant-label">Selecciona tu modelo:</div>
               <div class="detail-variant-pills">
                 ${variants.map(v => {
-                  const vParts = [v.deviceFamily, v.model].filter(Boolean);
-                  // Avoid "iPhone 12 12" if model duplicates the end of deviceFamily
-                  const label = htmlSafe(
-                    vParts.length === 2 && v.deviceFamily.trim().toLowerCase().endsWith(v.model.trim().toLowerCase())
-                      ? v.deviceFamily
-                      : vParts.join(' ')
-                  );
+                  const label = htmlSafe(variantDisplayLabel(v));
                   return `<button type="button" class="variant-pill" data-variant-id="${htmlSafe(v.variantId)}" onclick="selectDetailVariant('${htmlSafe(v.variantId)}')">${label}</button>`;
                 }).join('')}
               </div>
@@ -6138,9 +6169,12 @@
           <div class="detail-desc">${htmlSafe(description)}</div>
           ${renderProductInfo(product)}
           <div class="detail-actions">
-            <button class="btn btn-gradient" onclick='(function(){const v=selectedVariant;const vImg=v&&v.images&&v.images[0]?(v.images[0].sm||v.images[0].md||""):"";addToCart({productId:"${product.productId}",name:${JSON.stringify(product.name)},price:v!=null&&v.price!=null?v.price:${product.price},image:vImg||${JSON.stringify(images[0]?.sm||images[0]?.md||"")},variantId:v?v.variantId:null,variantLabel:v?(function(){const p=[v.deviceFamily,v.model].filter(Boolean);return p.length===2&&v.deviceFamily.trim().toLowerCase().endsWith(v.model.trim().toLowerCase())?v.deviceFamily:p.join(" ")})():null});closeProductDetail();})()'>🛒 Agregar al carrito</button>
+            <button class="btn btn-gradient" onclick='(function(){const v=selectedVariant;const vImg=v&&v.images&&v.images[0]?(v.images[0].sm||v.images[0].md||""):"";addToCart({productId:"${product.productId}",name:${JSON.stringify(product.name)},price:v!=null&&v.price!=null?v.price:${product.price},image:vImg||${JSON.stringify(images[0]?.sm||images[0]?.md||"")},variantId:v?v.variantId:null,variantLabel:v?variantDisplayLabel(v):null});closeProductDetail();})()'>🛒 Agregar al carrito</button>
           </div>
         `;
+        if (variants.length > 0) {
+          selectDetailVariant(variants[0].variantId);
+        }
       }
 
       modal.classList.add('open');
@@ -6502,27 +6536,16 @@
           requiredTools: Array.isArray(p.requiredTools) ? p.requiredTools : [],
           productCondition: p.productCondition || p.condition || '',
           related: Array.isArray(p.related) ? p.related : [],
-          stock: p.stock || 0,
+          stock: effectiveProductStock(p),
           images: p.images || (p.imageUrl ? [p.imageUrl] : []),
           imageUrl: p.imageUrl || '',
-          variants: Array.isArray(p.variants) ? p.variants : []
+          variants: Array.isArray(p.variants) ? p.variants : [],
+          deviceFamilies: Array.isArray(p.deviceFamilies) ? p.deviceFamilies : []
         }).replace(/'/g, "\\'");
-        const stockCount = Number(p.stock);
+        const stockCount = effectiveProductStock(p);
         const outOfStock = Number.isFinite(stockCount) && stockCount <= 0;
         const cardMetaHtml = renderProductCardMeta(p);
-        const searchTerms = [
-          p.name,
-          p.description,
-          getCategoryLabel(p.category),
-          p.quality,
-          p.shippingTime,
-          p.warranty,
-          p.repairDifficulty,
-          p.repairTime,
-          p.productCondition,
-          ...(Array.isArray(p.requiredTools) ? p.requiredTools : []),
-          ...(Array.isArray(p.compatibility) ? p.compatibility : [])
-        ].filter(Boolean).join(' ');
+        const searchTerms = productSearchText(p);
 
         return `
           <div class="product-card reveal reveal-delay-${delay}" data-card-id="${cardId}" data-search="${htmlSafe(searchTerms)}"
