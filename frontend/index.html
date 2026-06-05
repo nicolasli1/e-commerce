@@ -5711,6 +5711,8 @@
       const tokens = searchTokens(normalizedQuery);
       const alphaTokens = tokens.filter((token) => !/^\d+$/.test(token));
       const numericTokens = tokens.filter((token) => /^\d+$/.test(token));
+      const textTokenSet = new Set(searchTokens(text));
+      const tokenMatchesText = (token) => (/^\d+$/.test(token) ? textTokenSet.has(token) : text.includes(token));
 
       let score = 0;
       let exact = false;
@@ -5740,14 +5742,14 @@
         if (name.includes(token)) score += 18;
         if (compatibility.includes(token)) score += 16;
         if (category.includes(token)) score += 10;
-        if (text.includes(token)) {
+        if (tokenMatchesText(token)) {
           score += 8;
           related = true;
         }
       });
 
-      const matchedAlpha = alphaTokens.filter((token) => text.includes(token)).length;
-      const matchedNumeric = numericTokens.filter((token) => text.includes(token)).length;
+      const matchedAlpha = alphaTokens.filter((token) => tokenMatchesText(token)).length;
+      const matchedNumeric = numericTokens.filter((token) => tokenMatchesText(token)).length;
       if (alphaTokens.length && matchedAlpha === alphaTokens.length) score += 24;
       if (numericTokens.length && matchedNumeric === numericTokens.length) score += 18;
 
