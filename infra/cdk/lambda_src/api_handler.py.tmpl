@@ -298,19 +298,23 @@ def nequi_enabled():
 
 
 def get_nequi_token():
-    """Exchange client credentials for Nequi OAuth2 access token."""
-    import base64
+    """Exchange client credentials for Nequi OAuth2 access token.
+    Docs: docs.conecta.nequi.com.co → Token de Seguridad
+    grant_type goes as query param, Authorization as Basic base64(id:secret)
+    """
+    import base64 as _b64
     client_id = get_nequi_client_id()
     client_secret = get_nequi_client_secret()
-    credentials = base64.b64encode(f"{client_id}:{client_secret}".encode()).decode()
+    credentials = _b64.b64encode(f"{client_id}:{client_secret}".encode()).decode()
+    # grant_type is a query param per Nequi docs (not body)
     resp = urllib_request(
-        "https://oauth.nequi.com.co/token",
+        "https://api.nequi.com.co/oauth2?grant_type=client_credentials",
         method="POST",
         headers={
             "Authorization": f"Basic {credentials}",
             "Content-Type": "application/x-www-form-urlencoded",
         },
-        body="grant_type=client_credentials".encode(),
+        body=b"",
     )
     return (resp.get("access_token") or "") if isinstance(resp, dict) else ""
 
