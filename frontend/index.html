@@ -4,8 +4,8 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>NexCore — Repuestos para Celulares</title>
-  <meta name="description" content="NexCore: repuestos para celulares en Colombia. Pantallas, baterías, flex, cámaras, tapas y herramientas DIY para reparación de teléfonos. Envíos 24-48h." />
-  <meta name="keywords" content="repuestos celulares colombia, pantallas iPhone, baterías Samsung, reparación celulares, kit reparación, flex carga, NexCore" />
+  <meta name="description" content="NexCore: repuestos para celulares en Colombia. Encuentra pantallas, baterías, flex, cámaras y herramientas para reparar tu celular con confianza. Envíos 24-48h." />
+  <meta name="keywords" content="repuestos celulares colombia, reparar celular, pantallas iPhone, baterías Samsung, kit reparación, flex carga, NexCore" />
   <meta name="robots" content="index, follow" />
   <link rel="canonical" href="https://d1ag0uf6e1dp20.cloudfront.net/" />
   <!-- Open Graph -->
@@ -18,7 +18,7 @@
   <!-- Twitter Cards -->
   <meta name="twitter:card" content="summary_large_image" />
   <meta name="twitter:title" content="NexCore — Repuestos para Celulares" />
-  <meta name="twitter:description" content="Repuestos para reparación de celulares en Colombia. Pantallas, baterías, flex, kits DIY. Envíos 24-48h." />
+  <meta name="twitter:description" content="Encuentra el repuesto correcto para reparar tu celular. Pantallas, baterías, flex, kits DIY y envío en Colombia." />
   <!-- Schema.org JSON-LD -->
   <script type="application/ld+json">
   {
@@ -830,7 +830,7 @@
       position: absolute;
       inset: 0;
       background: linear-gradient(135deg, rgba(99,102,241,0.08), transparent 50%);
-      z-index: 2;
+      z-index: 3;
       opacity: 0;
       transition: opacity 220ms cubic-bezier(0.16, 1, 0.3, 1);
     }
@@ -3816,6 +3816,85 @@
     .product-meta-chip.danger { color: #fecdd3; border-color: rgba(251,113,133,0.2); background: rgba(251,113,133,0.09); }
     .product-meta-chip.quality { color: #ddd6fe; border-color: rgba(141,124,255,0.22); background: rgba(141,124,255,0.1); }
     .product-meta-chip.category { color: #bfdbfe; border-color: rgba(96,165,250,0.18); background: rgba(96,165,250,0.08); }
+    .product-meta-chip.variants { color: #d8f3ff; border-color: rgba(77,195,255,0.18); background: rgba(77,195,255,0.08); }
+    .product-price-stack {
+      display: grid;
+      gap: 4px;
+      min-width: 0;
+    }
+    .product-price-from {
+      font-size: clamp(1.38rem, 2.55vw, 1.82rem);
+      letter-spacing: -0.035em;
+    }
+    .product-price-note {
+      color: #8c92a3;
+      font-size: 0.72rem;
+      font-weight: 750;
+      letter-spacing: 0;
+    }
+    .product-visual-fallback {
+      position: relative;
+      z-index: 2;
+      display: grid;
+      place-items: center;
+      gap: 14px;
+      width: min(72%, 250px);
+      aspect-ratio: 1 / 0.92;
+      border-radius: 28px;
+      background:
+        linear-gradient(180deg, rgba(255,255,255,0.075), rgba(255,255,255,0.024)),
+        radial-gradient(circle at 50% 18%, rgba(141,124,255,0.18), transparent 48%);
+      border: 1px solid rgba(255,255,255,0.1);
+      box-shadow: inset 0 1px 0 rgba(255,255,255,0.06), 0 30px 80px rgba(0,0,0,0.26);
+      isolation: isolate;
+    }
+    .product-visual-fallback::before {
+      content: '';
+      position: absolute;
+      inset: 16px;
+      border-radius: 22px;
+      border: 1px solid rgba(255,255,255,0.075);
+      background-image:
+        linear-gradient(rgba(255,255,255,0.055) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(255,255,255,0.055) 1px, transparent 1px);
+      background-size: 22px 22px;
+      opacity: 0.42;
+      z-index: -1;
+    }
+    .product-visual-ring {
+      width: 82px;
+      height: 82px;
+      display: grid;
+      place-items: center;
+      border-radius: 24px;
+      background: radial-gradient(circle at 50% 35%, rgba(255,255,255,0.18), rgba(141,124,255,0.13) 60%, rgba(255,255,255,0.04));
+      border: 1px solid rgba(255,255,255,0.12);
+      box-shadow: 0 18px 42px rgba(0,0,0,0.28);
+    }
+    .product-visual-icon {
+      color: #e8e6ff;
+      font-size: 2.6rem;
+      font-weight: 800;
+      line-height: 1;
+      text-shadow: 0 0 22px rgba(141,124,255,0.34);
+    }
+    .product-visual-copy {
+      display: grid;
+      gap: 4px;
+      text-align: center;
+      padding-inline: 16px;
+    }
+    .product-visual-copy strong {
+      color: #f6f7fb;
+      font-size: 0.98rem;
+      font-weight: 800;
+      letter-spacing: -0.015em;
+    }
+    .product-visual-copy span {
+      color: #a4acbc;
+      font-size: 0.72rem;
+      font-weight: 750;
+    }
     .product-footer {
       margin-top: auto;
       align-items: flex-end;
@@ -3925,6 +4004,101 @@
       background: rgba(255,255,255,0.032);
       border-color: rgba(255,255,255,0.075);
     }
+    .gallery-placeholder .product-visual-fallback.detail {
+      width: min(76%, 360px);
+      aspect-ratio: 1 / 0.86;
+      border-radius: 34px;
+    }
+    .gallery-placeholder .product-visual-fallback.detail .product-visual-ring {
+      width: 112px;
+      height: 112px;
+      border-radius: 32px;
+    }
+    .gallery-placeholder .product-visual-fallback.detail .product-visual-icon {
+      font-size: 3.4rem;
+    }
+    .detail-variant-pills {
+      display: grid;
+      gap: 8px;
+    }
+    .variant-pill {
+      width: 100%;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 14px;
+      min-height: 56px;
+      padding: 11px 12px;
+      border-radius: 16px;
+      text-align: left;
+      border-color: rgba(255,255,255,0.09);
+      background: rgba(255,255,255,0.038);
+      transition: transform 160ms var(--ease-out), border-color 180ms var(--ease-out), background 180ms var(--ease-out), box-shadow 180ms var(--ease-out);
+    }
+    .variant-pill:active {
+      transform: scale(0.985);
+    }
+    .variant-pill-main,
+    .variant-pill-meta {
+      display: grid;
+      gap: 3px;
+      min-width: 0;
+    }
+    .variant-pill-main strong {
+      color: #f5f6fb;
+      font-size: 0.86rem;
+      font-weight: 800;
+      line-height: 1.15;
+    }
+    .variant-pill-main em,
+    .variant-pill-meta small {
+      color: #8f96a8;
+      font-size: 0.68rem;
+      font-style: normal;
+      font-weight: 750;
+    }
+    .variant-pill-meta {
+      justify-items: end;
+      flex-shrink: 0;
+    }
+    .variant-pill-meta b {
+      color: #d8ccff;
+      font-size: 0.88rem;
+      font-weight: 850;
+      line-height: 1.15;
+    }
+    .variant-pill.active {
+      color: #fff;
+      border-color: rgba(167,139,250,0.54);
+      background: linear-gradient(180deg, rgba(141,124,255,0.22), rgba(141,124,255,0.075));
+      box-shadow: inset 0 1px 0 rgba(255,255,255,0.06), 0 14px 32px rgba(99,102,241,0.14);
+    }
+    .variant-pill.is-disabled {
+      opacity: 0.48;
+      cursor: not-allowed;
+    }
+    .detail-selected-variant {
+      margin: 0 0 10px;
+      color: #a7f3d0;
+      font-size: 0.76rem;
+      font-weight: 800;
+    }
+    .cart-item-variant {
+      display: inline-flex;
+      align-items: center;
+      width: fit-content;
+      max-width: 100%;
+      padding: 3px 8px;
+      border-radius: 999px;
+      background: rgba(141,124,255,0.12);
+      border: 1px solid rgba(141,124,255,0.18);
+      color: #d7ccff;
+      font-size: 0.68rem;
+      font-weight: 800;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
     .detail-info-card,
     .checkout-meta-card,
     .checkout-provider,
@@ -3943,6 +4117,9 @@
     .floating-cart {
       background: rgba(5, 6, 10, 0.9);
       border-top-color: rgba(255,255,255,0.1);
+    }
+    .floating-cart.is-empty {
+      display: none;
     }
     .floating-cart-btn {
       border-radius: 999px;
@@ -4059,6 +4236,12 @@
       .product-price {
         width: 100%;
       }
+      .product-price-stack {
+        width: 100%;
+      }
+      .product-visual-fallback.card {
+        width: min(66%, 260px);
+      }
       .product-card-actions {
         justify-content: stretch;
         width: 100%;
@@ -4069,6 +4252,17 @@
       .detail-gallery .gallery-thumbs img {
         width: 74px;
         height: 74px;
+      }
+      .detail-variant-pills {
+        gap: 7px;
+      }
+      .variant-pill {
+        min-height: 54px;
+        padding: 10px 11px;
+      }
+      .variant-pill-main strong,
+      .variant-pill-meta b {
+        font-size: 0.82rem;
       }
     }
     @media (max-width: 480px) {
@@ -4085,9 +4279,28 @@
       .product-image {
         height: 330px;
       }
+      .product-visual-fallback.card {
+        width: min(72%, 230px);
+        border-radius: 24px;
+      }
+      .product-visual-ring {
+        width: 72px;
+        height: 72px;
+        border-radius: 22px;
+      }
+      .product-visual-icon {
+        font-size: 2.25rem;
+      }
       .product-card-actions .btn,
       .product-card-actions .btn-details {
         font-size: 0.76rem;
+      }
+      .variant-pill {
+        align-items: flex-start;
+        gap: 10px;
+      }
+      .variant-pill-meta b {
+        white-space: nowrap;
       }
     }
   </style>
@@ -4160,7 +4373,7 @@
   </div>
 
   <!-- Floating Cart Bar (mobile) -->
-  <div class="floating-cart" id="floatingCart">
+  <div class="floating-cart is-empty" id="floatingCart">
     <div class="floating-cart-left" onclick="openCart()">
       <div class="floating-cart-icon">
         🛒
@@ -4189,13 +4402,12 @@
               🇨🇴 Repuestos en Colombia
             </div>
             <h1>
-              Encuentra el repuesto correcto<br/>
-              <span class="gradient-text">para tu dispositivo</span>
+              Tú puedes repararlo.<br/>
+              <span class="gradient-text">Aquí está el repuesto.</span>
             </h1>
             <p>
-              Busca por modelo, pieza o síntoma. Pantallas, baterías, cámaras,
-              flex, puertos y herramientas con compatibilidad clara, calidad visible
-              y datos técnicos antes de comprar.
+              Busca tu modelo, elige la pieza compatible y compra con confianza.
+              Te mostramos calidad, stock, garantía y detalles claros antes de empezar.
             </p>
             <div class="hero-actions">
               <a href="#productos" class="btn btn-primary">
@@ -4209,20 +4421,20 @@
             <div class="hero-trust-strip" aria-label="Indicadores de confianza">
               <span>Compatibilidad clara</span>
               <span>Calidad identificada</span>
-              <span>Soporte para reparación</span>
+              <span>Soporte para hacerlo tú mismo</span>
             </div>
           </div>
 
         </div>
 
-        <div class="hero-finder reveal visible reveal-delay-1" aria-label="Buscador técnico de repuestos">
+        <div class="hero-finder reveal visible reveal-delay-1" aria-label="Buscador de repuestos por modelo">
           <div class="finder-header">
-            <span class="finder-eyebrow">Finder técnico</span>
-            <strong>Busca como reparador</strong>
+            <span class="finder-eyebrow">Encuentra tu pieza</span>
+            <strong>Busca por modelo o repuesto</strong>
           </div>
           <button class="finder-search" type="button" onclick="toggleSearch()">
             <span>🔍</span>
-            <span>iPhone 11 pantalla GX, puerto de carga A52...</span>
+            <span>iPhone 11 pantalla, batería XR, puerto de carga A52...</span>
           </button>
           <!-- Hero carousel: populated by JS from heroFeatured products -->
           <div class="hero-carousel" id="heroCarousel">
@@ -4273,44 +4485,44 @@
   <section class="categories" id="categorias">
     <div class="container">
       <div class="section-header reveal">
-        <h2 class="section-title">Repuestos por sistema</h2>
-        <p class="section-subtitle">Entra por la parte que vas a reparar: pantalla, energía, carga, cámara, audio, sensores o herramientas.</p>
+        <h2 class="section-title">¿Qué quieres reparar?</h2>
+        <p class="section-subtitle">Elige la parte de tu celular que quieres cambiar y encuentra repuestos compatibles para hacerlo con más seguridad.</p>
       </div>
       <div class="categories-grid">
         <div class="category-card reveal reveal-delay-1" data-category="pantallas">
           <div class="category-icon" style="background:rgba(99,102,241,0.12);color:#818cf8;">🖥️</div>
           <h3>Pantallas</h3>
-          <p>Módulos AMOLED, OLED, LCD y touch para cambios rápidos y limpios.</p>
+          <p>Pantallas completas para recuperar imagen, touch y brillo sin cambiar de celular.</p>
           <span class="category-count">24 repuestos</span>
         </div>
         <div class="category-card reveal reveal-delay-2" data-category="baterias">
           <div class="category-icon" style="background:rgba(236,72,153,0.12);color:#f472b6;">🔋</div>
           <h3>Baterías</h3>
-          <p>Reemplazos de alta capacidad y opciones OEM para más modelos.</p>
+          <p>Opciones para cuando la batería dura poco, se infla o el equipo se apaga solo.</p>
           <span class="category-count">18 repuestos</span>
         </div>
         <div class="category-card reveal reveal-delay-3" data-category="flex-y-conectores">
           <div class="category-icon" style="background:rgba(34,197,94,0.12);color:#4ade80;">🔌</div>
           <h3>Flex</h3>
-          <p>Flex de carga, encendido, volumen, audio y sensores para reparación fina.</p>
+          <p>Flex de carga, encendido, volumen, audio y sensores para resolver fallas puntuales.</p>
           <span class="category-count">22 repuestos</span>
         </div>
         <div class="category-card reveal reveal-delay-1" data-category="camaras-y-modulos">
           <div class="category-icon" style="background:rgba(251,191,36,0.12);color:#fbbf24;">📷</div>
           <h3>Cámaras y módulos</h3>
-          <p>Cámaras frontal y trasera, parlantes, vibradores y piezas internas clave.</p>
+          <p>Cámaras, parlantes, vibradores y módulos internos para devolver funciones clave.</p>
           <span class="category-count">15 repuestos</span>
         </div>
         <div class="category-card reveal reveal-delay-2" data-category="tapas-y-carcasa">
           <div class="category-icon" style="background:rgba(168,85,247,0.12);color:#c084fc;">📦</div>
           <h3>Tapas y carcasa</h3>
-          <p>Tapas traseras, marcos y piezas externas para dejar el equipo presentable.</p>
+          <p>Tapas, marcos y piezas externas para que tu celular vuelva a verse bien.</p>
           <span class="category-count">12 repuestos</span>
         </div>
         <div class="category-card reveal reveal-delay-3" data-category="accesorios">
           <div class="category-icon" style="background:rgba(14,165,233,0.12);color:#38bdf8;">🎧</div>
           <h3>Accesorios</h3>
-          <p>Cargadores, cables, protectores y complementos para venta rápida.</p>
+          <p>Cargadores, cables, protectores y complementos para cuidar mejor tu equipo.</p>
           <span class="category-count">Nuevos productos</span>
         </div>
         <div class="category-card reveal reveal-delay-1" data-category="back-glass">
@@ -4322,14 +4534,14 @@
         <div class="category-card reveal reveal-delay-2" data-category="face-id">
           <div class="category-icon" style="background:rgba(59,130,246,0.12);color:#93c5fd;">◇</div>
           <h3>Face ID</h3>
-          <p>Sensores, flex y módulos delicados para diagnóstico avanzado.</p>
-          <span class="category-count">Técnico</span>
+          <p>Sensores, flex y módulos delicados cuando necesitas recuperar desbloqueo o funciones.</p>
+          <span class="category-count">Por modelo</span>
         </div>
         <div class="category-card reveal reveal-delay-3" data-category="charging-ports">
           <div class="category-icon" style="background:rgba(45,212,191,0.12);color:#5eead4;">⌁</div>
           <h3>Charging Ports</h3>
-          <p>Puertos de carga, micrófono, conectores y placas auxiliares.</p>
-          <span class="category-count">Alta rotación</span>
+          <p>Puertos de carga, micrófono y conectores si tu celular no carga bien.</p>
+          <span class="category-count">Carga y datos</span>
         </div>
         <div class="category-card reveal reveal-delay-1" data-category="speakers">
           <div class="category-icon" style="background:rgba(250,204,21,0.12);color:#fde047;">▰</div>
@@ -4340,13 +4552,13 @@
         <div class="category-card reveal reveal-delay-2" data-category="adhesivos">
           <div class="category-icon" style="background:rgba(248,113,113,0.12);color:#fca5a5;">⬚</div>
           <h3>Adhesivos</h3>
-          <p>Sellos, pegantes, pre-cuts y consumibles para cierre limpio.</p>
+          <p>Sellos, pegantes y pre-cuts para cerrar el equipo con mejor acabado.</p>
           <span class="category-count">Consumibles</span>
         </div>
         <div class="category-card reveal reveal-delay-1" data-category="herramientas-diy">
           <div class="category-icon" style="background:rgba(6,182,212,0.12);color:#22d3ee;">🛠️</div>
           <h3>Herramientas DIY</h3>
-          <p>Kits de apertura, pinzas, adhesivos y consumibles para trabajar con confianza.</p>
+          <p>Kits de apertura, pinzas y consumibles para hacer la reparación en casa.</p>
           <span class="category-count">9 kits</span>
         </div>
       </div>
@@ -4359,8 +4571,8 @@
   <section class="products" id="productos">
     <div class="container">
       <div class="section-header reveal">
-        <h2 class="section-title">Catálogo técnico</h2>
-        <p class="section-subtitle">Piezas con compatibilidad, calidad, disponibilidad y datos de instalación para comprar con confianza.</p>
+        <h2 class="section-title">Encuentra tu repuesto</h2>
+        <p class="section-subtitle">Revisa compatibilidad, calidad, disponibilidad y garantía antes de comprar la pieza que necesitas.</p>
       </div>
       <div class="products-filter-bar">
         <div class="products-filter-info" id="productsFilterInfo">Mostrando todo el catálogo disponible.</div>
@@ -4379,40 +4591,40 @@
   <section class="testimonials" id="testimonios">
     <div class="container">
       <div class="section-header reveal">
-        <h2 class="section-title">Lo Que Dicen</h2>
-        <p class="section-subtitle">Técnicos, talleres pequeños y usuarios que prefieren reparar en vez de reemplazar.</p>
+        <h2 class="section-title">Personas que ya repararon</h2>
+        <p class="section-subtitle">Historias de usuarios que encontraron el repuesto correcto y decidieron darle otra vida a su celular.</p>
       </div>
       <div class="testimonials-grid">
         <div class="testimonial-card reveal reveal-delay-1">
           <div class="testimonial-stars">★★★★★</div>
-          <blockquote>"Compré una pantalla para un iPhone 13 y llegó en 24 horas. La calidad es idéntica a la original. Ya pedí 5 más."</blockquote>
+          <blockquote>"Compré una pantalla para mi iPhone 13 y llegó en 24 horas. Revisé la compatibilidad, la instalé con cuidado y el celular volvió a funcionar."</blockquote>
           <div class="testimonial-author">
             <div class="testimonial-avatar">CA</div>
             <div>
               <h4>Carlos A.</h4>
-              <p>Técnico independiente</p>
+              <p>Reparó su pantalla</p>
             </div>
           </div>
         </div>
         <div class="testimonial-card reveal reveal-delay-2">
           <div class="testimonial-stars">★★★★★</div>
-          <blockquote>"Reparé mi primer celular con piezas de NexCore. El flex de carga quedó perfecto y el teléfono volvió a la vida. ¡Increíble!"</blockquote>
+          <blockquote>"Era mi primera reparación. Pedí el flex de carga correcto, seguí las recomendaciones y el teléfono volvió a cargar."</blockquote>
           <div class="testimonial-author">
             <div class="testimonial-avatar">SG</div>
             <div>
               <h4>Sofía G.</h4>
-              <p>Técnico</p>
+              <p>Primera reparación</p>
             </div>
           </div>
         </div>
         <div class="testimonial-card reveal reveal-delay-3">
           <div class="testimonial-stars">★★★★★</div>
-          <blockquote>"Compro todos los repuestos para mi taller con NexCore. Precios al por mayor, entrega rápida y siempre tienen stock. Mi taller no para."</blockquote>
+          <blockquote>"No quería cambiar de celular por una batería agotada. Encontré el repuesto, lo pedí y ahora el equipo dura todo el día otra vez."</blockquote>
           <div class="testimonial-author">
             <div class="testimonial-avatar">MR</div>
             <div>
               <h4>Miguel R.</h4>
-              <p>Dueño de Taller</p>
+              <p>Cambió su batería</p>
             </div>
           </div>
         </div>
@@ -4426,19 +4638,19 @@
   <section class="pricing" id="precios">
     <div class="container">
       <div class="section-header reveal">
-        <h2 class="section-title">Kits para Reparar</h2>
-        <p class="section-subtitle">Arma tu mesa de trabajo o abastece tu taller con paquetes listos para intervenir equipos de forma práctica.</p>
+        <h2 class="section-title">Kits para empezar</h2>
+        <p class="section-subtitle">Todo lo básico para abrir, cambiar y volver a cerrar tu celular con más confianza.</p>
       </div>
       <div class="pricing-grid">
         <div class="pricing-card reveal reveal-delay-1">
           <h3>Kit Primer Cambio</h3>
-          <p>Ideal para empezar en reparación DIY con piezas y herramientas esenciales.</p>
+          <p>Ideal para tu primera reparación: herramientas básicas, adhesivos y piezas frecuentes.</p>
           <div class="pricing-amount">$120,000 <span>COP</span></div>
           <div class="pricing-period">kit de inicio</div>
           <ul class="pricing-features">
-            <li>3 pantallas de alta rotación</li>
+            <li>Pantallas compatibles para modelos comunes</li>
             <li>3 baterías compatibles</li>
-            <li>6 flex de carga multi-modelo</li>
+            <li>Flex de carga para fallas frecuentes</li>
             <li>Kit básico de apertura</li>
             <li>Adhesivo y consumibles de montaje</li>
             <li>Garantía de 3 meses</li>
@@ -4448,36 +4660,36 @@
 
         <div class="pricing-card featured reveal reveal-delay-2">
           <span class="pricing-popular">Más vendido</span>
-          <h3>Kit Mesa Técnica</h3>
-          <p>Para técnicos que reparan seguido y quieren stock mínimo de trabajo.</p>
+          <h3>Kit Reparación Completa</h3>
+          <p>Para hacer varias reparaciones en casa o tener repuestos listos para tus equipos.</p>
           <div class="pricing-amount">$450,000 <span>COP</span></div>
           <div class="pricing-period">kit completo</div>
           <ul class="pricing-features">
-            <li>12 pantallas alta calidad</li>
-            <li>8 baterías OEM</li>
-            <li>15 flex y conectores frecuentes</li>
+            <li>Pantallas de alta calidad</li>
+            <li>Baterías OEM compatibles</li>
+            <li>Flex y conectores frecuentes</li>
             <li>Set de destornilladores y pinzas</li>
             <li>Herramientas de apertura y adhesivos</li>
-            <li>Módulos complementarios de alta rotación</li>
-            <li>Checklist de instalación segura</li>
+            <li>Módulos complementarios útiles</li>
+            <li>Checklist para reparar con calma</li>
             <li>Garantía de 6 meses</li>
           </ul>
           <a href="#contacto" class="btn btn-gradient" style="width:100%;justify-content:center;">Cotizar kit</a>
         </div>
 
         <div class="pricing-card reveal reveal-delay-3">
-          <h3>Kit Taller Activo</h3>
-          <p>Abastecimiento pensado para talleres que no quieren detener reparaciones.</p>
+          <h3>Kit Familia</h3>
+          <p>Para tener repuestos y herramientas listos si reparas varios celulares en casa.</p>
           <div class="pricing-amount">$890,000 <span>COP</span></div>
-          <div class="pricing-period">abastecimiento completo</div>
+          <div class="pricing-period">kit completo</div>
           <ul class="pricing-features">
-            <li>25 pantallas de modelos de alta salida</li>
+            <li>Pantallas para modelos de alta salida</li>
             <li>15 baterías premium</li>
-            <li>25 flex y módulos frecuentes</li>
-            <li>Herramienta técnica para trabajo continuo</li>
+            <li>Flex y módulos frecuentes</li>
+            <li>Herramientas para trabajar con precisión</li>
             <li>Consumibles para limpieza y montaje</li>
-            <li>Piezas de respaldo para servicios urgentes</li>
-            <li>Soporte para reposición recurrente</li>
+            <li>Piezas de respaldo para reparaciones futuras</li>
+            <li>Soporte para elegir compatibilidad</li>
             <li>Garantía de 12 meses</li>
           </ul>
           <a href="#contacto" class="btn btn-secondary" style="width:100%;justify-content:center;">Cotizar</a>
@@ -4493,11 +4705,11 @@
     <div class="cta-glow"></div>
     <div class="container">
       <div class="reveal">
-        <h2>¿Listo para tu próxima reparación?</h2>
-        <p>Cuéntanos qué modelo estás trabajando, qué repuesto buscas o si necesitas armar un kit. Te respondemos con una recomendación útil y una cotización aterrizada.</p>
+        <h2>¿Listo para reparar tu celular?</h2>
+        <p>Cuéntanos el modelo, qué pieza necesitas o qué síntoma tiene el equipo. Te ayudamos a elegir el repuesto correcto antes de comprar.</p>
         <form class="cta-form" id="contactForm">
           <input type="email" id="emailInput" placeholder="tu@correo.com" required />
-          <textarea id="messageInput" placeholder="Ejemplo: necesito pantalla y batería para iPhone 11, o un kit para empezar a reparar Samsung gama media." style="min-height:120px;resize:vertical;padding:16px 20px;border-radius:20px;border:1px solid rgba(255,255,255,0.08);background:rgba(255,255,255,0.04);color:#f5f5f7;font-family:inherit;font-size:0.9375rem;line-height:1.5;"></textarea>
+          <textarea id="messageInput" placeholder="Ejemplo: mi iPhone 11 necesita pantalla, o mi Samsung A52 no carga bien." style="min-height:120px;resize:vertical;padding:16px 20px;border-radius:20px;border:1px solid rgba(255,255,255,0.08);background:rgba(255,255,255,0.04);color:#f5f5f7;font-family:inherit;font-size:0.9375rem;line-height:1.5;"></textarea>
           <button type="submit" class="btn btn-gradient">Cotizar ahora</button>
         </form>
         <p id="formFeedback" style="margin-top:16px;font-size:0.875rem;color:#22c55e;display:none;">✅ Recibimos tu solicitud. Te escribimos pronto.</p>
@@ -4568,7 +4780,7 @@
         <div class="footer-col">
           <h4>Empresa</h4>
           <a href="#">Sobre NexCore</a>
-          <a href="#">Compra para taller</a>
+          <a href="#">Guía para reparar</a>
           <a href="#">Reposición por volumen</a>
           <a href="#">Atención técnica</a>
         </div>
@@ -4588,7 +4800,7 @@
       </div>
       <div class="footer-bottom">
         <span>© 2026 NexCore. Todos los derechos reservados.</span>
-        <span>Hecho con 📱 para técnicos en Colombia</span>
+        <span>Hecho para quienes prefieren reparar en Colombia</span>
       </div>
     </div>
   </footer>
@@ -4709,7 +4921,7 @@
               </div>
               <div class="checkout-field checkout-field-wide">
                 <label class="checkout-label" for="checkoutNotes">Notas del pedido</label>
-                <textarea class="checkout-textarea" id="checkoutNotes" placeholder="Ejemplo: necesito entrega en Medellín y factura a nombre del taller."></textarea>
+                <textarea class="checkout-textarea" id="checkoutNotes" placeholder="Ejemplo: necesito entrega en Medellín y confirmar compatibilidad antes del envío."></textarea>
               </div>
             </div>
 
@@ -4840,6 +5052,10 @@
       const floatingBadge = document.getElementById('floatingCartBadge');
       const floatingTotal = document.getElementById('floatingCartTotal');
       const floatingSub = document.getElementById('floatingCartSub');
+      const floatingCart = document.getElementById('floatingCart');
+      if (floatingCart) {
+        floatingCart.classList.toggle('is-empty', count === 0);
+      }
       if (floatingBadge && floatingTotal && floatingSub) {
         floatingBadge.textContent = count;
         floatingBadge.style.display = count > 0 ? 'flex' : 'none';
@@ -4880,7 +5096,7 @@
           ${thumbHtml}
           <div class="cart-item-info">
             <div class="cart-item-name">${htmlSafe(c.name)}</div>
-            ${c.variantLabel ? `<div class="cart-item-variant">${htmlSafe(c.variantLabel)}</div>` : ''}
+            ${c.variantLabel ? `<div class="cart-item-variant">${htmlSafe(c.variantLabel)}${c.variantQuality ? ` · ${htmlSafe(c.variantQuality)}` : ''}</div>` : ''}
             <div class="cart-item-price">$${Number(c.price).toLocaleString('es-CO', {minimumFractionDigits:0})} COP c/u</div>
           </div>
           <div class="cart-item-right">
@@ -4907,7 +5123,9 @@
     
     function showCartToast(msg) {
       const t = document.createElement('div');
-      t.style.cssText = 'position:fixed;bottom:20px;right:20px;background:rgba(34,197,94,0.12);color:#22c55e;padding:12px 20px;border-radius:12px;border:1px solid rgba(34,197,94,0.2);font-size:0.875rem;z-index:9999;animation:fadeIn 0.3s;';
+      const hasItems = cart.reduce((sum, item) => sum + item.quantity, 0) > 0;
+      const bottom = hasItems && window.matchMedia('(max-width: 768px)').matches ? '92px' : '20px';
+      t.style.cssText = `position:fixed;bottom:${bottom};right:20px;max-width:min(340px,calc(100vw - 40px));background:rgba(34,197,94,0.12);color:#86efac;padding:12px 16px;border-radius:14px;border:1px solid rgba(34,197,94,0.22);font-size:0.875rem;font-weight:750;z-index:9999;animation:fadeIn 0.22s cubic-bezier(0.23,1,0.32,1);backdrop-filter:blur(14px);box-shadow:0 18px 45px rgba(0,0,0,0.24);`;
       t.textContent = '✅ ' + msg;
       document.body.appendChild(t);
       setTimeout(() => { t.style.opacity = '0'; t.style.transition = 'opacity 0.3s'; }, 2500);
@@ -5582,7 +5800,7 @@
         {
           productId: 'preview-screen-iphone-11',
           name: 'Pantalla iPhone 11',
-          description: 'Módulo completo con touch probado, brillo estable y marco listo para instalación.',
+          description: 'Pantalla completa para recuperar imagen y touch. Probada antes de enviarla.',
           price: 120000,
           category: 'pantallas',
           quality: 'GX',
@@ -5599,7 +5817,7 @@
         {
           productId: 'preview-battery-iphone-xr',
           name: 'Batería iPhone XR',
-          description: 'Batería de reemplazo para servicios de alta rotación en taller.',
+          description: 'Batería para cuando tu iPhone dura poco, se apaga rápido o ya no retiene carga.',
           price: 78000,
           category: 'baterias',
           quality: 'OEM',
@@ -5616,7 +5834,7 @@
         {
           productId: 'preview-flex-samsung',
           name: 'Flex de carga Samsung A52',
-          description: 'Puerto de carga y micrófono para reparación de falla de conexión.',
+          description: 'Puerto de carga y micrófono para cuando tu Samsung no carga bien o falla al conectar.',
           price: 42000,
           category: 'flex-y-conectores',
           quality: 'AAA',
@@ -5633,7 +5851,7 @@
         {
           productId: 'preview-camera',
           name: 'Cámara trasera iPhone 12',
-          description: 'Módulo de cámara probado antes de despacho para instalación segura.',
+          description: 'Módulo de cámara probado antes del envío para recuperar fotos y video.',
           price: 165000,
           category: 'camaras-y-modulos',
           quality: 'Original',
@@ -5936,6 +6154,52 @@
       return [family, model].filter(Boolean).join(' ');
     }
 
+    function formatCOPNumber(value) {
+      return '$' + Number(value || 0).toLocaleString('es-CO', { minimumFractionDigits: 0 });
+    }
+
+    function variantStockText(variant) {
+      const stock = Number(variant?.stock);
+      if (!Number.isFinite(stock) || stock <= 0) return 'Agotado';
+      if (stock < 5) return `Últimas ${stock}`;
+      return `${stock} disp.`;
+    }
+
+    function categoryVisualMeta(category) {
+      const key = category || 'general';
+      const map = {
+        pantallas: { icon: '▯', title: 'Display', label: 'Módulo probado' },
+        baterias: { icon: '▮', title: 'Batería', label: 'Celda verificada' },
+        'flex-y-conectores': { icon: '⌁', title: 'Flex', label: 'Conector compatible' },
+        'camaras-y-modulos': { icon: '◉', title: 'Cámara', label: 'Módulo óptico' },
+        'tapas-y-carcasa': { icon: '◇', title: 'Carcasa', label: 'Acabado limpio' },
+        accesorios: { icon: '◌', title: 'Accesorio', label: 'Originalidad visible' },
+        'herramientas-diy': { icon: '⌘', title: 'Herramienta', label: 'Trabajo preciso' },
+        'back-glass': { icon: '⬚', title: 'Back glass', label: 'Cierre premium' },
+        'face-id': { icon: '◇', title: 'Face ID', label: 'Sensor delicado' },
+        'charging-ports': { icon: '⌁', title: 'Puerto', label: 'Alta rotación' },
+        speakers: { icon: '◍', title: 'Audio', label: 'Módulo sonoro' },
+        adhesivos: { icon: '⬒', title: 'Adhesivo', label: 'Sellado limpio' },
+      };
+      return map[key] || { icon: '▣', title: 'Repuesto', label: 'Pieza técnica' };
+    }
+
+    function categoryVisualHtml(product, context = 'card') {
+      const meta = categoryVisualMeta(product?.category);
+      const quality = product?.quality || getCategoryLabel(product?.category);
+      return `
+        <div class="product-visual-fallback ${context}" aria-hidden="true">
+          <div class="product-visual-ring">
+            <span class="product-visual-icon">${htmlSafe(meta.icon)}</span>
+          </div>
+          <div class="product-visual-copy">
+            <strong>${htmlSafe(meta.title)}</strong>
+            <span>${htmlSafe(quality || meta.label)}</span>
+          </div>
+        </div>
+      `;
+    }
+
     function effectiveProductStock(product) {
       const variants = Array.isArray(product?.variants) ? product.variants : [];
       if (variants.length > 0) {
@@ -5972,7 +6236,7 @@
       if (product.category) chips.push(`<span class="product-meta-chip category">${htmlSafe(getCategoryLabel(product.category))}</span>`);
       // 3. Variants count OR quality — pick whichever is more informative, max 1 more chip
       if (Array.isArray(product.variants) && product.variants.length > 0) {
-        chips.push(`<span class="product-meta-chip">${product.variants.length} modelos</span>`);
+        chips.push(`<span class="product-meta-chip variants">${product.variants.length} modelos disp.</span>`);
       } else if (product.quality) {
         chips.push(`<span class="product-meta-chip quality">${htmlSafe(product.quality)}</span>`);
       }
@@ -6047,6 +6311,10 @@
         const price = selectedVariant?.price != null ? selectedVariant.price : detailCurrentProduct.price;
         priceEl.textContent = '$' + Number(price).toLocaleString('es-CO', {minimumFractionDigits: 0}) + ' COP';
       }
+      const selectedNote = document.getElementById('detailSelectedVariantNote');
+      if (selectedNote) {
+        selectedNote.textContent = selectedVariant ? `${variantDisplayLabel(selectedVariant)} · ${variantStockText(selectedVariant)}` : '';
+      }
       // Update pill active state
       document.querySelectorAll('.variant-pill').forEach(pill => {
         pill.classList.toggle('active', pill.dataset.variantId === variantId);
@@ -6096,17 +6364,10 @@
       if (galleryEl) {
         const imgCount = images.length;
         if (!hasRealImages) {
-          const catEmoji = {'pantallas':'🖥️','baterias':'🔋','flex-y-conectores':'🔌','camaras':'📷','camaras-y-modulos':'📷','tapas':'🛡️','tapas-y-carcasa':'🛡️','accesorios':'🎧','herramientas':'🔧','herramientas-diy':'🔧','back-glass':'🪟','face-id':'🔬','charging-ports':'⚡','speakers':'🔊','adhesivos':'🧴'}[product.category] || '📱';
           galleryEl.innerHTML = `
             <button class="product-detail-close-btn" onclick="closeProductDetail()">✕</button>
             <div class="gallery-main">
-              <div class="gallery-placeholder">
-                <div>
-                  <div class="gallery-placeholder-icon">${catEmoji}</div>
-                  <strong>${htmlSafe(categoryLabel)}</strong>
-                  <span>Foto del producto próximamente</span>
-                </div>
-              </div>
+              <div class="gallery-placeholder">${categoryVisualHtml(product, 'detail')}</div>
             </div>
             <div class="gallery-thumbs"></div>
           `;
@@ -6155,7 +6416,20 @@
               <div class="detail-variant-pills">
                 ${variants.map(v => {
                   const label = htmlSafe(variantDisplayLabel(v));
-                  return `<button type="button" class="variant-pill" data-variant-id="${htmlSafe(v.variantId)}" onclick="selectDetailVariant('${htmlSafe(v.variantId)}')">${label}</button>`;
+                  const stock = Number(v.stock);
+                  const disabled = Number.isFinite(stock) && stock <= 0;
+                  return `
+                    <button type="button" class="variant-pill${disabled ? ' is-disabled' : ''}" data-variant-id="${htmlSafe(v.variantId)}" onclick="selectDetailVariant('${htmlSafe(v.variantId)}')" ${disabled ? 'disabled' : ''}>
+                      <span class="variant-pill-main">
+                        <strong>${label}</strong>
+                        ${v.quality ? `<em>${htmlSafe(v.quality)}</em>` : ''}
+                      </span>
+                      <span class="variant-pill-meta">
+                        <b>${formatCOPNumber(v.price)}</b>
+                        <small>${htmlSafe(variantStockText(v))}</small>
+                      </span>
+                    </button>
+                  `;
                 }).join('')}
               </div>
             </div>`
@@ -6171,11 +6445,13 @@
           <div class="detail-desc">${htmlSafe(description)}</div>
           ${renderProductInfo(product)}
           <div class="detail-actions">
-            <button class="btn btn-gradient" onclick='(function(){const v=selectedVariant;const vImg=v&&v.images&&v.images[0]?(v.images[0].sm||v.images[0].md||""):"";addToCart({productId:"${product.productId}",name:${JSON.stringify(product.name)},price:v!=null&&v.price!=null?v.price:${product.price},image:vImg||${JSON.stringify(images[0]?.sm||images[0]?.md||"")},variantId:v?v.variantId:null,variantLabel:v?variantDisplayLabel(v):null});closeProductDetail();})()'>🛒 Agregar al carrito</button>
+            ${variants.length > 0 ? `<div class="detail-selected-variant" id="detailSelectedVariantNote"></div>` : ''}
+            <button class="btn btn-gradient" onclick='(function(){const v=selectedVariant;const vImg=v&&v.images&&v.images[0]?(v.images[0].sm||v.images[0].md||""):"";addToCart({productId:"${product.productId}",name:${JSON.stringify(product.name)},price:v!=null&&v.price!=null?v.price:${product.price},image:vImg||${JSON.stringify(images[0]?.sm||images[0]?.md||"")},variantId:v?v.variantId:null,variantLabel:v?variantDisplayLabel(v):null,variantQuality:v?v.quality:null});closeProductDetail();})()'>🛒 Agregar al carrito</button>
           </div>
         `;
         if (variants.length > 0) {
-          selectDetailVariant(variants[0].variantId);
+          const firstAvailable = variants.find((v) => Number(v.stock) > 0) || variants[0];
+          selectDetailVariant(firstAvailable.variantId);
         }
       }
 
@@ -6451,20 +6727,23 @@
       grid.innerHTML = pageProducts.map((p, i) => {
         const delay = (i % 4) + 1;
         const badge = badges[i % badges.length];
-        // Price: show range when variants have different prices
+        // Price: for variants, lead with "Desde" and keep the range as supporting metadata.
         let priceStr;
+        let priceSupport = '';
+        let hasVariantPriceRange = false;
         if (p.variants && p.variants.length > 0) {
           const vPrices = p.variants.map(v => Number(v.price)).filter(n => n > 0);
           if (vPrices.length > 0) {
             const minP = Math.min(...vPrices);
             const maxP = Math.max(...vPrices);
-            const fmt = n => '$' + n.toLocaleString('es-CO', {minimumFractionDigits: 0});
-            priceStr = minP === maxP ? fmt(minP) : `${fmt(minP)} – ${fmt(maxP)}`;
+            priceStr = `Desde ${formatCOPNumber(minP)}`;
+            hasVariantPriceRange = minP !== maxP;
+            priceSupport = hasVariantPriceRange ? `Hasta ${formatCOPNumber(maxP)} COP` : `${p.variants.length} modelos disponibles`;
           } else {
-            priceStr = '$' + Number(p.price).toLocaleString('es-CO', {minimumFractionDigits: 0});
+            priceStr = formatCOPNumber(p.price);
           }
         } else {
-          priceStr = '$' + Number(p.price).toLocaleString('es-CO', {minimumFractionDigits: 0});
+          priceStr = formatCOPNumber(p.price);
         }
         // Collect all images for this product (support both `images[]` and `imageUrl`)
         let allImages = [];
@@ -6481,8 +6760,8 @@
           }
         }
 
-        // If no real images, use emoji fallback
-        let imgHtml = ['📱','🔋','🔌','📷','🧩','🛠️','⚙️','📦'][i % 8];
+        // If no real images, use a polished technical fallback by category.
+        let imgHtml = categoryVisualHtml(p, 'card');
         let imgBg = 'linear-gradient(135deg,#1e1b4b,#312e81)';
         const escapedName = (p.name || '').replace(/'/g, "\\'");
 
@@ -6561,8 +6840,11 @@
               <h3>${htmlSafe(p.name)}</h3>
               <p>${htmlSafe((p.description && p.description.trim().toLowerCase() !== p.name.trim().toLowerCase() ? p.description : '') || getCategoryLabel(p.category) || '')}</p>
               ${cardMetaHtml}
-              <div class="product-footer${priceStr.includes('–') ? ' has-range' : ''}">
-                <span class="product-price${priceStr.includes('–') ? ' product-price-range' : ''}">${priceStr} <span>COP</span></span>
+              <div class="product-footer${hasVariantPriceRange ? ' has-range' : ''}">
+                <div class="product-price-stack">
+                  <span class="product-price${priceStr.startsWith('Desde') ? ' product-price-from' : ''}">${priceStr} <span>COP</span></span>
+                  ${priceSupport ? `<span class="product-price-note">${htmlSafe(priceSupport)}</span>` : ''}
+                </div>
                 <div class="product-card-actions">
                   <button class="btn-details btn-sm" onclick='openProductDetail(${productJsonForModal})' aria-label="Ver detalles de ${htmlSafe(p.name)}">Detalles</button>
                   ${p.variants && p.variants.length > 0
