@@ -6259,11 +6259,19 @@
       const raw = cleanHumanText(product?.description || '');
       const name = cleanHumanText(product?.name || '');
       const generic = getCategoryLabel(product?.category);
+      const fallbackByCategory = {
+        pantallas: 'Display compatible',
+        baterias: 'Batería compatible',
+        'flex-y-conectores': 'Flex o conector compatible',
+        'camaras-y-modulos': 'Módulo compatible',
+        accesorios: 'Accesorio compatible',
+      };
+      const fallback = fallbackByCategory[product?.category] || 'Repuesto compatible';
       if (!raw || raw.toLowerCase() === name.toLowerCase()) {
-        return `${generic || 'Repuesto'} compatible. Revisa el modelo antes de agregarlo al carrito.`;
+        return `${fallback}. Revisa el modelo antes de agregarlo al carrito.`;
       }
       if (/^pachas?\b/i.test(raw)) {
-        return `${generic || 'Repuesto'} compatible para ${name || 'tu equipo'}. Confirma el modelo y la calidad antes de comprar.`;
+        return `${fallback}${name ? ` para ${name}` : ''}. Confirma el modelo y la calidad antes de comprar.`;
       }
       return raw;
     }
