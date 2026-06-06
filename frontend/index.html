@@ -130,7 +130,7 @@
     .section-title {
       font-size: clamp(2rem, 5vw, 3.5rem);
       font-weight: 700;
-      letter-spacing: -0.03em;
+      letter-spacing: -0.012em;
       line-height: 1.1;
       margin-bottom: 16px;
     }
@@ -2747,14 +2747,48 @@
     .no-search-results {
       grid-column: 1 / -1;
       text-align: center;
-      padding: 48px 20px;
+      padding: 54px 20px;
       color: #86868b;
+      border: 1px solid rgba(255,255,255,0.07);
+      border-radius: 28px;
+      background:
+        radial-gradient(circle at 50% 0%, rgba(141,124,255,0.11), transparent 46%),
+        rgba(255,255,255,0.025);
     }
     .no-search-results strong {
       display: block;
-      font-size: 1.1rem;
+      font-size: 1.2rem;
       color: #d1d1d6;
       margin-bottom: 8px;
+    }
+    .no-search-results p {
+      max-width: 520px;
+      margin: 0 auto 18px;
+      color: #9aa1ae;
+      line-height: 1.6;
+    }
+    .no-search-actions {
+      display: flex;
+      justify-content: center;
+      flex-wrap: wrap;
+      gap: 8px;
+    }
+    .no-search-actions button {
+      border: 1px solid rgba(255,255,255,0.09);
+      background: rgba(255,255,255,0.04);
+      color: #d8dcef;
+      border-radius: 999px;
+      padding: 9px 12px;
+      font: inherit;
+      font-size: 0.8rem;
+      font-weight: 750;
+      cursor: pointer;
+      transition: transform 160ms var(--ease-out), border-color 160ms var(--ease-out), background 160ms var(--ease-out);
+    }
+    .no-search-actions button:hover {
+      transform: translateY(-1px);
+      border-color: rgba(141,124,255,0.35);
+      background: rgba(141,124,255,0.12);
     }
 
     /* ==============================
@@ -3774,6 +3808,21 @@
       border-color: rgba(61,220,151,0.24);
       box-shadow: none;
     }
+    .product-badge.warning {
+      color: #ffe5a3;
+      background: rgba(246,200,95,0.12);
+      border-color: rgba(246,200,95,0.26);
+    }
+    .product-badge.danger {
+      color: #fecdd3;
+      background: rgba(251,113,133,0.12);
+      border-color: rgba(251,113,133,0.24);
+    }
+    .product-badge.info {
+      color: #d8f3ff;
+      background: rgba(77,195,255,0.1);
+      border-color: rgba(77,195,255,0.22);
+    }
     .product-body {
       display: flex;
       flex: 1;
@@ -4272,6 +4321,11 @@
       .hero h1 {
         letter-spacing: -0.065em;
       }
+      .section-title {
+        font-size: clamp(2.15rem, 10vw, 3.25rem);
+        letter-spacing: 0;
+        line-height: 1.04;
+      }
       .hero-trust-strip span {
         flex: 1 1 auto;
         justify-content: center;
@@ -4406,8 +4460,8 @@
               <span class="gradient-text">Aquí está el repuesto.</span>
             </h1>
             <p>
-              Busca tu modelo, elige la pieza compatible y compra con confianza.
-              Te mostramos calidad, stock, garantía y detalles claros antes de empezar.
+              Busca por modelo, confirma compatibilidad y compra la pieza correcta
+              para cambiar pantalla, batería, flex o módulo sin adivinar.
             </p>
             <div class="hero-actions">
               <a href="#productos" class="btn btn-primary">
@@ -4419,9 +4473,9 @@
               </a>
             </div>
             <div class="hero-trust-strip" aria-label="Indicadores de confianza">
-              <span>Compatibilidad clara</span>
-              <span>Calidad identificada</span>
-              <span>Soporte para hacerlo tú mismo</span>
+              <span>Compatibilidad por modelo</span>
+              <span>Stock y calidad visibles</span>
+              <span>Soporte para instalar mejor</span>
             </div>
           </div>
 
@@ -4429,12 +4483,12 @@
 
         <div class="hero-finder reveal visible reveal-delay-1" aria-label="Buscador de repuestos por modelo">
           <div class="finder-header">
-            <span class="finder-eyebrow">Encuentra tu pieza</span>
-            <strong>Busca por modelo o repuesto</strong>
+            <span class="finder-eyebrow">Catálogo técnico</span>
+            <strong>Encuentra la parte correcta</strong>
           </div>
           <button class="finder-search" type="button" onclick="toggleSearch()">
             <span>🔍</span>
-            <span>iPhone 11 pantalla, batería XR, puerto de carga A52...</span>
+            <span>iPhone 11 display, batería XR, puerto de carga A52...</span>
           </button>
           <!-- Hero carousel: populated by JS from heroFeatured products -->
           <div class="hero-carousel" id="heroCarousel">
@@ -4572,7 +4626,7 @@
     <div class="container">
       <div class="section-header reveal">
         <h2 class="section-title">Encuentra tu repuesto</h2>
-        <p class="section-subtitle">Revisa compatibilidad, calidad, disponibilidad y garantía antes de comprar la pieza que necesitas.</p>
+        <p class="section-subtitle">Busca la pieza por modelo y revisa compatibilidad, calidad, disponibilidad y garantía antes de comprar.</p>
       </div>
       <div class="products-filter-bar">
         <div class="products-filter-info" id="productsFilterInfo">Mostrando todo el catálogo disponible.</div>
@@ -5154,21 +5208,27 @@
       currentPage = 1;
       renderStorefrontProducts();
     }
+    function wireSearchPickButtons(root) {
+      var scope = root || document;
+      var input = document.getElementById('searchInput');
+      scope.querySelectorAll('[data-search-pick]').forEach(function(btn) {
+        if (btn.dataset.searchWired === '1') return;
+        btn.dataset.searchWired = '1';
+        btn.addEventListener('click', function() {
+          var value = this.getAttribute('data-search-pick') || '';
+          if (input) input.value = value;
+          filterProducts(value);
+          document.getElementById('productos')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        });
+      });
+    }
     // Wire search input
     document.addEventListener('DOMContentLoaded', function() {
       var input = document.getElementById('searchInput');
       if (input) {
         input.addEventListener('input', function() { filterProducts(this.value); });
       }
-      document.querySelectorAll('[data-search-pick]').forEach(function(btn) {
-        btn.addEventListener('click', function() {
-          var value = this.getAttribute('data-search-pick') || '';
-          if (!input) return;
-          input.value = value;
-          filterProducts(value);
-          document.getElementById('productos')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
-        });
-      });
+      wireSearchPickButtons(document);
     });
 
     // Mobile nav slide-in panel
@@ -5882,11 +5942,37 @@
     }
 
     const SEARCH_STOPWORDS = new Set(['de', 'del', 'la', 'el', 'los', 'las', 'para', 'por', 'con', 'sin', 'no', 'un', 'una', 'y', 'o']);
+    const SEARCH_SYNONYMS = {
+      bateria: ['battery', 'baterias', 'pila'],
+      baterias: ['battery', 'bateria', 'pila'],
+      pantalla: ['display', 'lcd', 'touch', 'screen', 'modulo'],
+      pantallas: ['display', 'lcd', 'touch', 'screen', 'modulo'],
+      display: ['pantalla', 'lcd', 'touch', 'screen', 'modulo'],
+      flex: ['conector', 'cable', 'charging', 'puerto'],
+      carga: ['charging', 'puerto', 'conector', 'flex'],
+      camara: ['camera', 'modulo', 'lente'],
+      camaras: ['camera', 'modulo', 'lente'],
+      tapa: ['carcasa', 'back', 'glass', 'vidrio'],
+      adhesivo: ['sello', 'pegante', 'precorte', 'precuts'],
+      herramienta: ['kit', 'destornillador', 'spudger', 'pentalobe'],
+      herramientas: ['kit', 'destornillador', 'spudger', 'pentalobe'],
+      auricular: ['speaker', 'parlante', 'audio'],
+      parlante: ['speaker', 'auricular', 'audio'],
+    };
 
     function searchTokens(value) {
       return normalizeSearchValue(value)
         .split(/\s+/)
         .filter((token) => token && !SEARCH_STOPWORDS.has(token) && (/^\d+$/.test(token) || token.length >= 3));
+    }
+
+    function expandedSearchTokens(value) {
+      const tokens = searchTokens(value);
+      const expanded = new Set(tokens);
+      tokens.forEach((token) => {
+        (SEARCH_SYNONYMS[token] || []).forEach((alias) => expanded.add(normalizeSearchValue(alias)));
+      });
+      return [...expanded].filter(Boolean);
     }
 
     function productSearchText(product) {
@@ -5915,6 +6001,7 @@
         ...(Array.isArray(product.deviceFamilies) ? product.deviceFamilies : []),
         ...variantTerms,
         ...(Array.isArray(product.related) ? product.related : []),
+        ...expandedSearchTokens(getCategoryLabel(product.category)),
       ].filter(Boolean).join(' '));
     }
 
@@ -5926,7 +6013,7 @@
       const name = normalizeSearchValue(product.name);
       const category = normalizeSearchValue(getCategoryLabel(product.category));
       const compatibility = normalizeSearchValue((Array.isArray(product.compatibility) ? product.compatibility : []).join(' '));
-      const tokens = searchTokens(normalizedQuery);
+      const tokens = expandedSearchTokens(normalizedQuery);
       const alphaTokens = tokens.filter((token) => !/^\d+$/.test(token));
       const numericTokens = tokens.filter((token) => /^\d+$/.test(token));
       const textTokenSet = new Set(searchTokens(text));
@@ -6146,10 +6233,48 @@
       })[char]);
     }
 
+    function cleanHumanText(value) {
+      return String(value || '').replace(/\s+/g, ' ').trim();
+    }
+
+    function normalizeShippingText(value) {
+      const text = cleanHumanText(value);
+      if (!text) return '';
+      if (/^\d+$/.test(text)) return `${text} días hábiles`;
+      if (/^\d+\s*-\s*\d+$/.test(text)) return `${text} días hábiles`;
+      return text;
+    }
+
+    function normalizeWarrantyText(value) {
+      const text = cleanHumanText(value);
+      if (!text) return { warranty: '', note: '' };
+      if (/sello|sellos|instal|adhesivo|pegante|flex/i.test(text) && !/garant/i.test(text)) {
+        return { warranty: '', note: text };
+      }
+      if (/^\d+$/.test(text)) return { warranty: `${text} días`, note: '' };
+      return { warranty: text, note: '' };
+    }
+
+    function productDescriptionText(product) {
+      const raw = cleanHumanText(product?.description || '');
+      const name = cleanHumanText(product?.name || '');
+      const generic = getCategoryLabel(product?.category);
+      if (!raw || raw.toLowerCase() === name.toLowerCase()) {
+        return `${generic || 'Repuesto'} compatible. Revisa el modelo antes de agregarlo al carrito.`;
+      }
+      if (/^pachas?\b/i.test(raw)) {
+        return `${generic || 'Repuesto'} compatible para ${name || 'tu equipo'}. Confirma el modelo y la calidad antes de comprar.`;
+      }
+      return raw;
+    }
+
     function variantDisplayLabel(variant) {
       if (!variant) return '';
       const family = String(variant.deviceFamily || '').trim();
       const model = String(variant.model || '').trim();
+      if (/^\d+(\.\d+)?$/.test(model) && /iphone|galaxy|samsung|motorola|xiaomi|huawei/i.test(family)) {
+        return family;
+      }
       if (family && model && family.toLowerCase().endsWith(model.toLowerCase())) return family;
       return [family, model].filter(Boolean).join(' ');
     }
@@ -6232,9 +6357,13 @@
       // 1. Stock
       const stock = shortStockMeta(effectiveProductStock(product));
       if (stock) chips.push(`<span class="product-meta-chip ${stock.tone}">${htmlSafe(stock.text)}</span>`);
-      // 2. Category
-      if (product.category) chips.push(`<span class="product-meta-chip category">${htmlSafe(getCategoryLabel(product.category))}</span>`);
-      // 3. Variants count OR quality — pick whichever is more informative, max 1 more chip
+      if (Array.isArray(product.compatibility) && product.compatibility.length > 0) {
+        const firstModels = product.compatibility.slice(0, 2).join(', ');
+        const more = product.compatibility.length > 2 ? ` +${product.compatibility.length - 2}` : '';
+        chips.push(`<span class="product-meta-chip variants">${htmlSafe(firstModels + more)}</span>`);
+      } else if (product.category) {
+        chips.push(`<span class="product-meta-chip category">${htmlSafe(getCategoryLabel(product.category))}</span>`);
+      }
       if (Array.isArray(product.variants) && product.variants.length > 0) {
         chips.push(`<span class="product-meta-chip variants">${product.variants.length} modelos disp.</span>`);
       } else if (product.quality) {
@@ -6242,6 +6371,37 @@
       }
       if (chips.length === 0) return '';
       return `<div class="product-card-meta">${chips.join('')}</div>`;
+    }
+
+    function productBadgeMeta(product) {
+      const stock = effectiveProductStock(product);
+      if (stock <= 0) return { text: 'Agotado', tone: 'danger' };
+      if (stock < 5) return { text: `Últimas ${stock}`, tone: 'warning' };
+      if (Array.isArray(product.variants) && product.variants.length > 1) {
+        return { text: `${product.variants.length} modelos`, tone: 'info' };
+      }
+      if (product.quality) return { text: product.quality, tone: 'info' };
+      return { text: 'En stock', tone: 'success' };
+    }
+
+    function renderEmptyProductState(query) {
+      const safeQuery = htmlSafe(query || '');
+      const title = query ? `No encontramos "${safeQuery}"` : 'No hay productos cargados todavía';
+      const copy = query
+        ? 'Intenta con el modelo, la parte que quieres cambiar o una categoría cercana. Si buscas una pieza específica, también puedes revisar estas rutas rápidas.'
+        : 'Cuando agregues productos desde el backoffice aparecerán aquí con stock, compatibilidad y calidad.';
+      return `
+        <div class="no-search-results">
+          <strong>${title}</strong>
+          <p>${copy}</p>
+          <div class="no-search-actions">
+            <button type="button" data-search-pick="pantalla iphone">Pantalla iPhone</button>
+            <button type="button" data-search-pick="bateria">Batería</button>
+            <button type="button" data-search-pick="puerto de carga">Puerto de carga</button>
+            <button type="button" data-search-pick="airpods">AirPods</button>
+          </div>
+        </div>
+      `;
     }
 
     function renderProductSkeletons() {
@@ -6270,6 +6430,8 @@
     function renderProductInfo(product) {
       const stock = getStockMeta(effectiveProductStock(product));
       const stats = [];
+      const shippingText = normalizeShippingText(product.shippingTime);
+      const warrantyMeta = normalizeWarrantyText(product.warranty);
 
       // Stock — always shown
       stats.push({ label: 'Disponibilidad', value: stock.text, tone: stock.tone });
@@ -6281,8 +6443,9 @@
       }
 
       // Shipping + Warranty side by side
-      if (product.shippingTime) stats.push({ label: 'Envío estimado', value: product.shippingTime });
-      if (product.warranty)     stats.push({ label: 'Garantía',       value: product.warranty });
+      if (shippingText) stats.push({ label: 'Envío estimado', value: shippingText });
+      if (warrantyMeta.warranty) stats.push({ label: 'Garantía', value: warrantyMeta.warranty });
+      if (warrantyMeta.note) stats.push({ label: 'Nota de instalación', value: warrantyMeta.note });
       if (product.productCondition) stats.push({ label: 'Estado', value: product.productCondition });
 
       // If odd count, last one is wide
@@ -6355,7 +6518,7 @@
 
       const priceStr = '$' + Number(product.price).toLocaleString('es-CO', {minimumFractionDigits: 0});
       const escapedName = (product.name || '').replace(/'/g, "\\'");
-      const description = product.description || 'Sin descripción disponible.';
+      const description = productDescriptionText(product);
       const categoryLabel = getCategoryLabel(product.category);
       const hasRealImages = images.some((img) => img.lg || img.md || img.sm);
 
@@ -6709,7 +6872,8 @@
       renderProductFilters(storefrontProducts);
 
       if (visibleProducts.length === 0) {
-        grid.innerHTML = '<p style="grid-column:1/-1;text-align:center;color:#86868b;">No hay productos cargados para esta categoría todavía.</p>';
+        grid.innerHTML = renderEmptyProductState(activeSearchQuery);
+        wireSearchPickButtons(grid);
         renderPagination(0, 1);
         return;
       }
@@ -6722,11 +6886,9 @@
 
       renderPagination(visibleProducts.length, totalPages);
 
-      const badges = ['🔥 Más vendido','Nuevo','⭐ Destacado','💥 Oferta','🔥 Popular','Nuevo','💎 Premium','⚡','🔥 Más vendido','Nuevo','⭐ Destacado','💥 Oferta'];
-
       grid.innerHTML = pageProducts.map((p, i) => {
         const delay = (i % 4) + 1;
-        const badge = badges[i % badges.length];
+        const badge = productBadgeMeta(p);
         // Price: for variants, lead with "Desde" and keep the range as supporting metadata.
         let priceStr;
         let priceSupport = '';
@@ -6830,15 +6992,15 @@
 
         return `
           <div class="product-card reveal reveal-delay-${delay}" data-card-id="${cardId}" data-search="${htmlSafe(searchTerms)}"
-               onmouseenter="startCardRotation('${cardId}')"
+              onmouseenter="startCardRotation('${cardId}')"
                onmouseleave="stopCardRotation('${cardId}')">
             <div class="product-image" style="background:${imgBg};">
-              <span class="product-badge">${badge}</span>
+              <span class="product-badge ${htmlSafe(badge.tone)}">${htmlSafe(badge.text)}</span>
               ${imgHtml}
             </div>
             <div class="product-body">
               <h3>${htmlSafe(p.name)}</h3>
-              <p>${htmlSafe((p.description && p.description.trim().toLowerCase() !== p.name.trim().toLowerCase() ? p.description : '') || getCategoryLabel(p.category) || '')}</p>
+              <p>${htmlSafe(productDescriptionText(p))}</p>
               ${cardMetaHtml}
               <div class="product-footer${hasVariantPriceRange ? ' has-range' : ''}">
                 <div class="product-price-stack">
@@ -6846,9 +7008,9 @@
                   ${priceSupport ? `<span class="product-price-note">${htmlSafe(priceSupport)}</span>` : ''}
                 </div>
                 <div class="product-card-actions">
-                  <button class="btn-details btn-sm" onclick='openProductDetail(${productJsonForModal})' aria-label="Ver detalles de ${htmlSafe(p.name)}">Detalles</button>
+                  <button class="btn-details btn-sm" onclick='openProductDetail(${productJsonForModal})' aria-label="Ver ficha técnica de ${htmlSafe(p.name)}">Ficha técnica</button>
                   ${p.variants && p.variants.length > 0
-                    ? `<button class="btn btn-gradient btn-sm" onclick='openProductDetail(${productJsonForModal})' aria-label="Seleccionar modelo de ${htmlSafe(p.name)}">Ver modelos</button>`
+                    ? `<button class="btn btn-gradient btn-sm" onclick='openProductDetail(${productJsonForModal})' aria-label="Elegir modelo de ${htmlSafe(p.name)}">Elegir modelo</button>`
                     : `<button class="btn btn-gradient btn-sm${outOfStock ? ' is-disabled' : ''}" ${outOfStock ? 'disabled' : ''} onclick='addToCart({productId:"${p.productId}",name:${JSON.stringify(p.name)},price:${p.price},image:${JSON.stringify(allImages[0]?.sm || allImages[0]?.md || '')}})' aria-label="Agregar ${htmlSafe(p.name)} al carrito">${outOfStock ? 'Agotado' : 'Agregar'}</button>`
                   }
                 </div>
