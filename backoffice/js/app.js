@@ -1250,6 +1250,119 @@ const App = (() => {
     });
   }
 
+  // ---- DESIGN SETTINGS ----
+  async function renderDesignSettings() {
+    showLoading();
+    try {
+      const data = await Api.get('/api/admin/site-settings');
+      renderDesignSettingsContent(data.settings || { visualTheme: 'dark' });
+    } catch (err) {
+      $main.innerHTML = `<div class="empty-state"><p>${err.message}</p></div>`;
+    }
+  }
+
+  function renderDesignSettingsContent(settings) {
+    const currentTheme = settings.visualTheme || 'dark';
+    $main.innerHTML = `
+      <div class="page-header">
+        <div>
+          <h1 class="page-title">Diseño del sitio</h1>
+          <p class="page-subtitle">Cambia la dirección visual del ecommerce sin tocar código.</p>
+        </div>
+        <a class="btn btn-secondary" href="/" target="_blank" rel="noopener">Abrir tienda</a>
+      </div>
+
+      <div class="settings-layout">
+        <section class="settings-panel">
+          <div class="form-section-heading">
+            <span class="form-section-icon">🎨</span>
+            <div>
+              <h3>Estilo visual público</h3>
+              <p>Escoge cómo se verá la tienda para los clientes.</p>
+            </div>
+          </div>
+
+          <form id="designSettingsForm">
+            <div class="theme-choice-grid">
+              <label class="theme-choice-card ${currentTheme === 'dark' ? 'active' : ''}">
+                <input type="radio" name="visualTheme" value="dark" ${currentTheme === 'dark' ? 'checked' : ''} />
+                <span class="theme-preview theme-preview-dark">
+                  <span></span><span></span><span></span>
+                </span>
+                <strong>Dark premium</strong>
+                <small>La versión actual: modo oscuro, glassmorphism suave y acento morado.</small>
+              </label>
+
+              <label class="theme-choice-card ${currentTheme === 'repair' ? 'active' : ''}">
+                <input type="radio" name="visualTheme" value="repair" ${currentTheme === 'repair' ? 'checked' : ''} />
+                <span class="theme-preview theme-preview-repair">
+                  <span></span><span></span><span></span>
+                </span>
+                <strong>Repair catalog</strong>
+                <small>Inspirado en tienda técnica tipo iFixit: más claro, directo y orientado a piezas.</small>
+              </label>
+            </div>
+
+            <div class="settings-note">
+              <strong>Recomendación:</strong> usa Repair catalog si quieres que el sitio se sienta menos IA/SaaS y más tienda especializada en repuestos.
+            </div>
+
+            <div class="modal-footer settings-footer">
+              <button type="submit" class="btn btn-gradient" id="saveDesignSettingsBtn">Guardar diseño</button>
+            </div>
+          </form>
+        </section>
+
+        <aside class="settings-preview-card">
+          <span class="settings-preview-kicker">Preview conceptual</span>
+          <h2 id="settingsPreviewTitle">${currentTheme === 'repair' ? 'Repair catalog' : 'Dark premium'}</h2>
+          <p id="settingsPreviewCopy">${currentTheme === 'repair'
+            ? 'Catálogo técnico, fondos claros, bordes limpios y señales de compatibilidad.'
+            : 'Experiencia oscura, premium, con tarjetas glass y acentos morados.'}</p>
+          <div class="settings-mini-card">
+            <span id="settingsPreviewBadge">${currentTheme === 'repair' ? 'Compatible' : 'GX'}</span>
+            <strong>Display iPhone 12</strong>
+            <small>Stock, calidad y modelo visibles antes de comprar.</small>
+          </div>
+        </aside>
+      </div>`;
+
+    const form = document.getElementById('designSettingsForm');
+    const cards = [...document.querySelectorAll('.theme-choice-card')];
+    const syncCards = () => {
+      const selected = form.querySelector('input[name="visualTheme"]:checked')?.value || 'dark';
+      cards.forEach((card) => {
+        card.classList.toggle('active', card.querySelector('input')?.value === selected);
+      });
+      document.getElementById('settingsPreviewTitle').textContent = selected === 'repair' ? 'Repair catalog' : 'Dark premium';
+      document.getElementById('settingsPreviewCopy').textContent = selected === 'repair'
+        ? 'Catálogo técnico, fondos claros, bordes limpios y señales de compatibilidad.'
+        : 'Experiencia oscura, premium, con tarjetas glass y acentos morados.';
+      document.getElementById('settingsPreviewBadge').textContent = selected === 'repair' ? 'Compatible' : 'GX';
+    };
+
+    form.querySelectorAll('input[name="visualTheme"]').forEach((input) => {
+      input.addEventListener('change', syncCards);
+    });
+
+    form.addEventListener('submit', async (event) => {
+      event.preventDefault();
+      const visualTheme = form.querySelector('input[name="visualTheme"]:checked')?.value || 'dark';
+      const button = document.getElementById('saveDesignSettingsBtn');
+      button.disabled = true;
+      button.textContent = 'Guardando…';
+      try {
+        await Api.put('/api/admin/site-settings', { visualTheme });
+        showToast('Diseño actualizado. La tienda tomará este estilo al cargar.');
+      } catch (err) {
+        showToast(err.message, 'error');
+      } finally {
+        button.disabled = false;
+        button.textContent = 'Guardar diseño';
+      }
+    });
+  }
+
   // ---- LEADS ----
   async function renderLeads() {
     showLoading();
@@ -1767,6 +1880,7 @@ const App = (() => {
     registerRoute('#/leads', renderLeads);
     registerRoute('#/quotes', renderQuotes);
     registerRoute('#/orders', renderOrders);
+    registerRoute('#/design', renderDesignSettings);
 
     // Router listening
     window.addEventListener('hashchange', () => {

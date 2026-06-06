@@ -53,6 +53,11 @@ PRODUCT_CATEGORIES = {
     "herramientas-diy",
 }
 
+SITE_SETTINGS_ID = "__site_settings__"
+DEFAULT_SITE_SETTINGS = {
+    "visualTheme": "dark",
+}
+
 
 class DecimalEncoder(json.JSONEncoder):
     def default(self, obj):
@@ -94,6 +99,20 @@ def slugify(value):
 def normalize_category(value):
     category = slugify(value or "")
     return category if category in PRODUCT_CATEGORIES else "herramientas-diy"
+
+
+def is_site_settings_item(item):
+    return item.get("productId") == SITE_SETTINGS_ID or item.get("itemType") == "site_settings"
+
+
+def normalize_site_settings(body):
+    body = body if isinstance(body, dict) else {}
+    theme = (body.get("visualTheme") or DEFAULT_SITE_SETTINGS["visualTheme"]).strip()
+    if theme not in ("dark", "repair"):
+        theme = DEFAULT_SITE_SETTINGS["visualTheme"]
+    return {
+        "visualTheme": theme,
+    }
 
 
 def cents_to_cop_units(amount_in_cents):
@@ -656,8 +675,28 @@ def require_api_key(event):
 
 def list_products():
     items = products_table.scan().get("Items", [])
+    items = [item for item in items if not is_site_settings_item(item)]
     items.sort(key=lambda x: x.get("createdAt", ""), reverse=True)
     return response(200, {"ok": True, "products": items})
+
+
+def get_site_settings():
+    existing = products_table.get_item(Key={"productId": SITE_SETTINGS_ID}).get("Item") or {}
+    settings = DEFAULT_SITE_SETTINGS.copy()
+    settings.update(normalize_site_settings(existing.get("settings") or existing))
+    return response(200, {"ok": True, "settings": settings})
+
+
+def update_site_settings(body):
+    settings = normalize_site_settings(body)
+    item = {
+        "productId": SITE_SETTINGS_ID,
+        "itemType": "site_settings",
+        "settings": settings,
+        "updatedAt": now_iso(),
+    }
+    products_table.put_item(Item=item)
+    return response(200, {"ok": True, "settings": settings})
 
 
 
@@ -764,7 +803,7 @@ def _parse_price(value):
 
 def list_public_products():
     items = products_table.scan().get("Items", [])
-    active = [p for p in items if p.get("status", "active") != "deleted"]
+    active = [p for p in items if not is_site_settings_item(p) and p.get("status", "active") != "deleted"]
     active.sort(key=lambda x: x.get("createdAt", ""), reverse=True)
     safe = []
     for p in active:
@@ -989,6 +1028,7 @@ def update_quote(quote_id, body):
 
 def handle_dashboard():
     products = products_table.scan().get("Items", [])
+    products = [product for product in products if not is_site_settings_item(product)]
     leads = leads_table.scan().get("Items", [])
     quotes = quotes_table.scan().get("Items", [])
     orders = orders_table.scan().get("Items", [])
@@ -2168,6 +2208,9 @@ def handler(event, context):
     if method == "GET" and path == "/api/products":
         return list_public_products()
 
+    if method == "GET" and path == "/api/site-settings":
+        return get_site_settings()
+
     # --- API Key protected POST endpoints (frontend sends x-api-key) ---
     if method == "POST" and path in ("/api/leads", "/api/checkout/session"):
         if not require_api_key(event):
@@ -2228,6 +2271,11 @@ def handler(event, context):
         if method == "POST":
             return create_product(get_json_body(event))
 
+    if path == "/api/admin/site-settings":
+        if method == "GET":
+            return get_site_settings()
+        if method == "PUT":
+            return update_site_settings(get_json_body(event))
 
     if path.startswith("/api/admin/products/"):
         product_id = path.replace("/api/admin/products/", "").split("/")[0]

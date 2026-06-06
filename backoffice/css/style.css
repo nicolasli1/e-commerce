@@ -556,6 +556,174 @@ tbody tr.deleted {
 }
 
 /* ===========================================================
+   SITE DESIGN SETTINGS
+   =========================================================== */
+.settings-layout {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(280px, 360px);
+  gap: 20px;
+  align-items: start;
+}
+
+.settings-panel,
+.settings-preview-card {
+  background: var(--bg-card);
+  border: 1px solid var(--border-glass);
+  border-radius: var(--radius-lg);
+  padding: 24px;
+  box-shadow: 0 24px 70px rgba(0,0,0,0.18);
+}
+
+.theme-choice-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 14px;
+  margin-top: 18px;
+}
+
+.theme-choice-card {
+  position: relative;
+  display: grid;
+  gap: 12px;
+  padding: 16px;
+  border-radius: 18px;
+  border: 1px solid var(--border-glass);
+  background: rgba(255,255,255,0.035);
+  cursor: pointer;
+  transition: transform 180ms var(--ease-out), border-color 180ms var(--ease-out), background 180ms var(--ease-out), box-shadow 180ms var(--ease-out);
+}
+
+.theme-choice-card input {
+  position: absolute;
+  opacity: 0;
+  pointer-events: none;
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .theme-choice-card:hover {
+    transform: translateY(-2px);
+    border-color: rgba(99,102,241,0.34);
+    background: rgba(255,255,255,0.055);
+  }
+}
+
+.theme-choice-card.active {
+  border-color: rgba(99,102,241,0.58);
+  box-shadow: 0 20px 54px rgba(99,102,241,0.14);
+}
+
+.theme-choice-card strong {
+  color: var(--text-primary);
+  font-size: 1rem;
+}
+
+.theme-choice-card small {
+  color: var(--text-secondary);
+  font-size: 0.82rem;
+  line-height: 1.55;
+}
+
+.theme-preview {
+  height: 120px;
+  border-radius: 14px;
+  border: 1px solid rgba(255,255,255,0.08);
+  padding: 14px;
+  display: grid;
+  gap: 8px;
+  align-content: end;
+  overflow: hidden;
+}
+
+.theme-preview span {
+  display: block;
+  border-radius: 999px;
+}
+
+.theme-preview span:first-child { width: 58%; height: 12px; }
+.theme-preview span:nth-child(2) { width: 82%; height: 8px; }
+.theme-preview span:nth-child(3) { width: 42%; height: 22px; }
+
+.theme-preview-dark {
+  background:
+    radial-gradient(circle at 72% 12%, rgba(168,85,247,0.28), transparent 42%),
+    linear-gradient(180deg, #111322, #06070d);
+}
+.theme-preview-dark span { background: rgba(255,255,255,0.78); }
+.theme-preview-dark span:nth-child(3) { background: linear-gradient(135deg, #6366f1, #a855f7); }
+
+.theme-preview-repair {
+  background:
+    linear-gradient(rgba(15,23,42,0.05) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(15,23,42,0.05) 1px, transparent 1px),
+    #f7f4ec;
+  background-size: 18px 18px;
+}
+.theme-preview-repair span { background: #1f2937; }
+.theme-preview-repair span:nth-child(3) { background: #0f766e; }
+
+.settings-note {
+  margin-top: 16px;
+  padding: 14px;
+  border-radius: 14px;
+  color: #d8dcef;
+  background: rgba(59,130,246,0.08);
+  border: 1px solid rgba(59,130,246,0.18);
+  font-size: 0.86rem;
+  line-height: 1.55;
+}
+
+.settings-footer {
+  margin-top: 20px;
+  padding-top: 18px;
+}
+
+.settings-preview-kicker {
+  color: var(--text-muted);
+  font-size: 0.72rem;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.settings-preview-card h2 {
+  margin-top: 10px;
+  font-size: 1.55rem;
+  letter-spacing: -0.04em;
+}
+
+.settings-preview-card p {
+  margin-top: 8px;
+  color: var(--text-secondary);
+  font-size: 0.9rem;
+  line-height: 1.6;
+}
+
+.settings-mini-card {
+  margin-top: 20px;
+  padding: 16px;
+  border-radius: 16px;
+  border: 1px solid rgba(255,255,255,0.08);
+  background: rgba(255,255,255,0.045);
+  display: grid;
+  gap: 8px;
+}
+
+.settings-mini-card span {
+  width: max-content;
+  padding: 5px 8px;
+  border-radius: 999px;
+  color: #a7f3d0;
+  background: rgba(16,185,129,0.12);
+  border: 1px solid rgba(16,185,129,0.24);
+  font-size: 0.72rem;
+  font-weight: 800;
+}
+
+.settings-mini-card small {
+  color: var(--text-secondary);
+}
+
+/* ===========================================================
    MODAL
    =========================================================== */
 .modal-overlay {
@@ -2088,6 +2256,14 @@ tbody tr.deleted {
   }
   .form-row {
     grid-template-columns: 1fr;
+  }
+  .settings-layout,
+  .theme-choice-grid {
+    grid-template-columns: 1fr;
+  }
+  .settings-panel,
+  .settings-preview-card {
+    padding: 18px;
   }
   .modal {
     width: 100%;

@@ -4357,9 +4357,240 @@
         white-space: nowrap;
       }
     }
+
+    /* ==============================
+       REPAIR CATALOG THEME
+       iFixit-inspired technical storefront
+    ============================== */
+    body[data-site-theme="repair"] {
+      --bg: #f6f3ea;
+      --bg-soft: #ede7dc;
+      --surface: rgba(255, 255, 255, 0.82);
+      --surface-strong: rgba(255, 255, 255, 0.96);
+      --surface-muted: rgba(15, 23, 42, 0.04);
+      --border: rgba(15, 23, 42, 0.12);
+      --border-strong: rgba(15, 23, 42, 0.2);
+      --text: #17202a;
+      --muted: #56616f;
+      --muted-2: #7a8490;
+      --violet: #0f766e;
+      --violet-2: #2563eb;
+      --blue: #2563eb;
+      --green: #0f9f6e;
+      --shadow-soft: 0 18px 50px rgba(45, 38, 25, 0.12);
+      --shadow-card: 0 18px 42px rgba(45, 38, 25, 0.14);
+      background:
+        linear-gradient(rgba(15,23,42,0.035) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(15,23,42,0.035) 1px, transparent 1px),
+        #f6f3ea;
+      background-size: 32px 32px;
+      color: #17202a;
+    }
+
+    body[data-site-theme="repair"]::before {
+      background:
+        radial-gradient(circle at 16% 18%, rgba(15,118,110,0.09), transparent 28%),
+        radial-gradient(circle at 84% 16%, rgba(37,99,235,0.08), transparent 24%);
+      background-size: auto;
+      opacity: 1;
+    }
+
+    body[data-site-theme="repair"] .navbar {
+      background: rgba(246, 243, 234, 0.82);
+      border-bottom: 1px solid rgba(15, 23, 42, 0.08);
+    }
+    body[data-site-theme="repair"] .navbar.scrolled {
+      background: rgba(246, 243, 234, 0.92);
+      box-shadow: 0 16px 40px rgba(45, 38, 25, 0.09);
+    }
+    body[data-site-theme="repair"] .logo,
+    body[data-site-theme="repair"] .nav-links a,
+    body[data-site-theme="repair"] .hero h1,
+    body[data-site-theme="repair"] .section-title,
+    body[data-site-theme="repair"] .category-card h3,
+    body[data-site-theme="repair"] .product-body h3,
+    body[data-site-theme="repair"] .detail-info h2 {
+      color: #17202a;
+    }
+    body[data-site-theme="repair"] .logo-icon {
+      background: linear-gradient(145deg, #0f766e, #2563eb);
+      box-shadow: 0 12px 28px rgba(15, 118, 110, 0.18);
+    }
+    body[data-site-theme="repair"] .nav-links,
+    body[data-site-theme="repair"] .search-toggle,
+    body[data-site-theme="repair"] .cart-trigger,
+    body[data-site-theme="repair"] .btn-secondary {
+      background: rgba(255,255,255,0.72);
+      border-color: rgba(15,23,42,0.12);
+      color: #17202a;
+    }
+    body[data-site-theme="repair"] .btn-primary {
+      background: #17202a;
+      color: #fff;
+    }
+    body[data-site-theme="repair"] .btn-gradient {
+      background: linear-gradient(135deg, #0f766e, #2563eb);
+      box-shadow: 0 14px 34px rgba(15, 118, 110, 0.2);
+    }
+    body[data-site-theme="repair"] .hero {
+      padding-top: clamp(92px, 11vw, 128px);
+    }
+    body[data-site-theme="repair"] .hero-glow,
+    body[data-site-theme="repair"] .hero-glow-2 {
+      display: none;
+    }
+    body[data-site-theme="repair"] .hero-badge {
+      color: #0f513f;
+      background: rgba(15, 118, 110, 0.08);
+      border-color: rgba(15, 118, 110, 0.18);
+      box-shadow: none;
+    }
+    body[data-site-theme="repair"] .hero h1 {
+      letter-spacing: -0.045em;
+    }
+    body[data-site-theme="repair"] .hero h1 .gradient-text {
+      background: linear-gradient(115deg, #0f766e, #2563eb);
+      -webkit-background-clip: text;
+      background-clip: text;
+    }
+    body[data-site-theme="repair"] .hero p,
+    body[data-site-theme="repair"] .section-subtitle,
+    body[data-site-theme="repair"] .products-filter-info,
+    body[data-site-theme="repair"] .category-card p,
+    body[data-site-theme="repair"] .product-body p {
+      color: #56616f;
+    }
+    body[data-site-theme="repair"] .hero-trust-strip span,
+    body[data-site-theme="repair"] .finder-parts span,
+    body[data-site-theme="repair"] .filter-chip,
+    body[data-site-theme="repair"] .product-meta-chip,
+    body[data-site-theme="repair"] .compat-chip {
+      background: rgba(255,255,255,0.78);
+      border-color: rgba(15,23,42,0.1);
+      color: #334155;
+    }
+    body[data-site-theme="repair"] .hero-finder,
+    body[data-site-theme="repair"] .category-card,
+    body[data-site-theme="repair"] .product-card,
+    body[data-site-theme="repair"] .detail-panel,
+    body[data-site-theme="repair"] .detail-info,
+    body[data-site-theme="repair"] .checkout-panel,
+    body[data-site-theme="repair"] .no-search-results {
+      background: rgba(255,255,255,0.86);
+      border-color: rgba(15,23,42,0.12);
+      box-shadow: var(--shadow-soft);
+    }
+    body[data-site-theme="repair"] .hero-finder::before {
+      background-image:
+        linear-gradient(rgba(15,23,42,0.04) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(15,23,42,0.04) 1px, transparent 1px);
+      opacity: 1;
+    }
+    body[data-site-theme="repair"] .finder-eyebrow,
+    body[data-site-theme="repair"] .hero-carousel-price,
+    body[data-site-theme="repair"] .category-count,
+    body[data-site-theme="repair"] .quality-pill,
+    body[data-site-theme="repair"] .gallery-zoom-reset {
+      color: #0f766e;
+    }
+    body[data-site-theme="repair"] .finder-header strong,
+    body[data-site-theme="repair"] .hero-carousel-name,
+    body[data-site-theme="repair"] .product-price,
+    body[data-site-theme="repair"] .detail-price {
+      color: #17202a;
+      background: none;
+      -webkit-text-fill-color: currentColor;
+    }
+    body[data-site-theme="repair"] .finder-search,
+    body[data-site-theme="repair"] .hero-carousel,
+    body[data-site-theme="repair"] .search-bar-inner {
+      background: rgba(255,255,255,0.92);
+      border-color: rgba(15,23,42,0.12);
+      color: #475569;
+    }
+    body[data-site-theme="repair"] .categories,
+    body[data-site-theme="repair"] .products,
+    body[data-site-theme="repair"] .testimonials,
+    body[data-site-theme="repair"] .pricing {
+      background: transparent;
+      border-block-color: rgba(15,23,42,0.08);
+    }
+    body[data-site-theme="repair"] .category-icon {
+      background: rgba(15,118,110,0.08) !important;
+      color: #0f766e !important;
+    }
+    body[data-site-theme="repair"] .product-card {
+      border-radius: 18px;
+      min-height: 500px;
+    }
+    body[data-site-theme="repair"] .product-image,
+    body[data-site-theme="repair"] .detail-gallery {
+      background:
+        linear-gradient(rgba(15,23,42,0.045) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(15,23,42,0.045) 1px, transparent 1px),
+        #ede7dc !important;
+      background-size: 24px 24px !important;
+      border-bottom-color: rgba(15,23,42,0.1);
+    }
+    body[data-site-theme="repair"] .product-image::after {
+      background: linear-gradient(180deg, transparent 58%, rgba(246,243,234,0.72));
+    }
+    body[data-site-theme="repair"] .product-visual-fallback {
+      background: rgba(255,255,255,0.72);
+      border-color: rgba(15,23,42,0.12);
+    }
+    body[data-site-theme="repair"] .product-visual-ring {
+      background: rgba(15,118,110,0.09);
+      border-color: rgba(15,118,110,0.18);
+      box-shadow: none;
+    }
+    body[data-site-theme="repair"] .product-visual-icon,
+    body[data-site-theme="repair"] .product-visual-copy strong {
+      color: #17202a;
+      text-shadow: none;
+    }
+    body[data-site-theme="repair"] .product-badge {
+      background: rgba(15,118,110,0.1);
+      border-color: rgba(15,118,110,0.22);
+      color: #0f513f;
+    }
+    body[data-site-theme="repair"] .detail-stat,
+    body[data-site-theme="repair"] .variant-pill,
+    body[data-site-theme="repair"] .detail-tool-list span,
+    body[data-site-theme="repair"] .detail-related-list span,
+    body[data-site-theme="repair"] .checkout-result-card,
+    body[data-site-theme="repair"] .cart-item {
+      background: rgba(255,255,255,0.78);
+      border-color: rgba(15,23,42,0.1);
+      color: #17202a;
+    }
+    body[data-site-theme="repair"] .modal,
+    body[data-site-theme="repair"] .cart-modal,
+    body[data-site-theme="repair"] .mobile-nav-panel,
+    body[data-site-theme="repair"] .search-bar-wrap {
+      background: rgba(246,243,234,0.94);
+      color: #17202a;
+      border-color: rgba(15,23,42,0.12);
+    }
+    body[data-site-theme="repair"] .floating-cart {
+      background: rgba(255,255,255,0.92);
+      border-color: rgba(15,23,42,0.12);
+      color: #17202a;
+    }
+    body[data-site-theme="repair"] .search-bar-wrap input,
+    body[data-site-theme="repair"] .checkout-input,
+    body[data-site-theme="repair"] .checkout-select,
+    body[data-site-theme="repair"] .checkout-textarea,
+    body[data-site-theme="repair"] .tracking-form input,
+    body[data-site-theme="repair"] .cta-form input,
+    body[data-site-theme="repair"] .cta-form textarea {
+      background: rgba(255,255,255,0.92);
+      border-color: rgba(15,23,42,0.12);
+      color: #17202a;
+    }
   </style>
 </head>
-<body>
+<body data-site-theme="dark">
 
   <!-- ============================
        NAVBAR
@@ -7124,7 +7355,38 @@
       }
     }
 
-    loadProducts();
+    function applySiteTheme(theme) {
+      const nextTheme = theme === 'repair' ? 'repair' : 'dark';
+      document.body.dataset.siteTheme = nextTheme;
+      try {
+        localStorage.setItem('nexcore_site_theme', nextTheme);
+      } catch {}
+    }
+
+    async function loadSiteSettings() {
+      try {
+        const cachedTheme = localStorage.getItem('nexcore_site_theme');
+        if (cachedTheme) applySiteTheme(cachedTheme);
+      } catch {}
+
+      if (isLocalPreview()) return;
+
+      try {
+        const res = await fetch('/api/site-settings?_t=' + Date.now());
+        if (!res.ok) return;
+        const data = await res.json();
+        applySiteTheme(data?.settings?.visualTheme || 'dark');
+      } catch (err) {
+        console.log('No se pudo cargar configuración visual:', err);
+      }
+    }
+
+    async function initStorefront() {
+      await loadSiteSettings();
+      await loadProducts();
+    }
+
+    initStorefront();
 
     document.querySelectorAll('.category-card[data-category]').forEach((card) => {
       card.addEventListener('click', () => {
