@@ -4363,45 +4363,48 @@
        iFixit-inspired technical storefront
     ============================== */
     body[data-site-theme="repair"] {
-      --bg: #f6f3ea;
-      --bg-soft: #ede7dc;
-      --surface: rgba(255, 255, 255, 0.82);
-      --surface-strong: rgba(255, 255, 255, 0.96);
-      --surface-muted: rgba(15, 23, 42, 0.04);
+      --bg: #f5f7f8;
+      --bg-soft: #e9eef1;
+      --surface: #ffffff;
+      --surface-strong: #ffffff;
+      --surface-muted: #f3f6f7;
       --border: rgba(15, 23, 42, 0.12);
-      --border-strong: rgba(15, 23, 42, 0.2);
-      --text: #17202a;
-      --muted: #56616f;
-      --muted-2: #7a8490;
-      --violet: #0f766e;
-      --violet-2: #2563eb;
+      --border-strong: rgba(15, 23, 42, 0.22);
+      --text: #151c24;
+      --muted: #51606d;
+      --muted-2: #74808b;
+      --violet: #0e7c72;
+      --violet-2: #245fbd;
       --blue: #2563eb;
       --green: #0f9f6e;
-      --shadow-soft: 0 18px 50px rgba(45, 38, 25, 0.12);
-      --shadow-card: 0 18px 42px rgba(45, 38, 25, 0.14);
+      --repair-line: rgba(19, 36, 48, 0.055);
+      --repair-paper: #fbfcfb;
+      --shadow-soft: 0 18px 46px rgba(31, 45, 55, 0.12);
+      --shadow-card: 0 22px 52px rgba(31, 45, 55, 0.16);
       background:
-        linear-gradient(rgba(15,23,42,0.035) 1px, transparent 1px),
-        linear-gradient(90deg, rgba(15,23,42,0.035) 1px, transparent 1px),
-        #f6f3ea;
-      background-size: 32px 32px;
-      color: #17202a;
+        linear-gradient(180deg, #fbfcfb 0%, #f4f7f8 42%, #eef3f5 100%);
+      color: #151c24;
     }
 
     body[data-site-theme="repair"]::before {
       background:
-        radial-gradient(circle at 16% 18%, rgba(15,118,110,0.09), transparent 28%),
-        radial-gradient(circle at 84% 16%, rgba(37,99,235,0.08), transparent 24%);
-      background-size: auto;
+        radial-gradient(circle at 18% 12%, rgba(14,124,114,0.13), transparent 28%),
+        radial-gradient(circle at 82% 10%, rgba(36,95,189,0.11), transparent 25%),
+        linear-gradient(var(--repair-line) 1px, transparent 1px),
+        linear-gradient(90deg, var(--repair-line) 1px, transparent 1px);
+      background-size: auto, auto, 44px 44px, 44px 44px;
+      background-position: center, center, 0 0, 0 0;
       opacity: 1;
     }
 
     body[data-site-theme="repair"] .navbar {
-      background: rgba(246, 243, 234, 0.82);
-      border-bottom: 1px solid rgba(15, 23, 42, 0.08);
+      background: rgba(251, 252, 251, 0.9);
+      border-bottom: 1px solid rgba(15, 23, 42, 0.1);
+      box-shadow: 0 10px 34px rgba(31, 45, 55, 0.08);
     }
     body[data-site-theme="repair"] .navbar.scrolled {
-      background: rgba(246, 243, 234, 0.92);
-      box-shadow: 0 16px 40px rgba(45, 38, 25, 0.09);
+      background: rgba(251, 252, 251, 0.96);
+      box-shadow: 0 16px 44px rgba(31, 45, 55, 0.11);
     }
     body[data-site-theme="repair"] .logo,
     body[data-site-theme="repair"] .nav-links a,
@@ -4420,8 +4423,8 @@
     body[data-site-theme="repair"] .search-toggle,
     body[data-site-theme="repair"] .cart-trigger,
     body[data-site-theme="repair"] .btn-secondary {
-      background: rgba(255,255,255,0.72);
-      border-color: rgba(15,23,42,0.12);
+      background: rgba(255,255,255,0.9);
+      border-color: rgba(15,23,42,0.14);
       color: #17202a;
     }
     body[data-site-theme="repair"] .btn-primary {
@@ -4441,8 +4444,8 @@
     }
     body[data-site-theme="repair"] .hero-badge {
       color: #0f513f;
-      background: rgba(15, 118, 110, 0.08);
-      border-color: rgba(15, 118, 110, 0.18);
+      background: rgba(15, 118, 110, 0.1);
+      border-color: rgba(15, 118, 110, 0.22);
       box-shadow: none;
     }
     body[data-site-theme="repair"] .hero h1 {
@@ -4465,9 +4468,10 @@
     body[data-site-theme="repair"] .filter-chip,
     body[data-site-theme="repair"] .product-meta-chip,
     body[data-site-theme="repair"] .compat-chip {
-      background: rgba(255,255,255,0.78);
-      border-color: rgba(15,23,42,0.1);
+      background: rgba(255,255,255,0.96);
+      border-color: rgba(15,23,42,0.12);
       color: #334155;
+      box-shadow: 0 8px 18px rgba(31,45,55,0.05);
     }
     body[data-site-theme="repair"] .hero-finder,
     body[data-site-theme="repair"] .category-card,
@@ -4476,14 +4480,23 @@
     body[data-site-theme="repair"] .detail-info,
     body[data-site-theme="repair"] .checkout-panel,
     body[data-site-theme="repair"] .no-search-results {
-      background: rgba(255,255,255,0.86);
-      border-color: rgba(15,23,42,0.12);
+      background: #ffffff;
+      border-color: rgba(15,23,42,0.14);
       box-shadow: var(--shadow-soft);
+    }
+    body[data-site-theme="repair"] .hero-finder,
+    body[data-site-theme="repair"] .category-card,
+    body[data-site-theme="repair"] .product-card {
+      box-shadow:
+        0 1px 0 rgba(255,255,255,0.9) inset,
+        0 18px 44px rgba(31,45,55,0.12),
+        0 0 0 1px rgba(255,255,255,0.7);
     }
     body[data-site-theme="repair"] .hero-finder::before {
       background-image:
-        linear-gradient(rgba(15,23,42,0.04) 1px, transparent 1px),
-        linear-gradient(90deg, rgba(15,23,42,0.04) 1px, transparent 1px);
+        linear-gradient(rgba(15,23,42,0.026) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(15,23,42,0.026) 1px, transparent 1px);
+      background-size: 28px 28px;
       opacity: 1;
     }
     body[data-site-theme="repair"] .finder-eyebrow,
@@ -4504,43 +4517,67 @@
     body[data-site-theme="repair"] .finder-search,
     body[data-site-theme="repair"] .hero-carousel,
     body[data-site-theme="repair"] .search-bar-inner {
-      background: rgba(255,255,255,0.92);
-      border-color: rgba(15,23,42,0.12);
+      background: #ffffff;
+      border-color: rgba(15,23,42,0.14);
       color: #475569;
+      box-shadow: 0 12px 28px rgba(31,45,55,0.08);
     }
     body[data-site-theme="repair"] .categories,
     body[data-site-theme="repair"] .products,
     body[data-site-theme="repair"] .testimonials,
     body[data-site-theme="repair"] .pricing {
       background: transparent;
-      border-block-color: rgba(15,23,42,0.08);
+      border-block-color: rgba(15,23,42,0.1);
+    }
+    body[data-site-theme="repair"] .products,
+    body[data-site-theme="repair"] .pricing {
+      background:
+        linear-gradient(180deg, rgba(238, 243, 245, 0.84), rgba(248, 250, 250, 0.94));
+      border-block: 1px solid rgba(15,23,42,0.1);
     }
     body[data-site-theme="repair"] .category-icon {
-      background: rgba(15,118,110,0.08) !important;
+      background: #eef6f4 !important;
       color: #0f766e !important;
+      border: 1px solid rgba(15,118,110,0.14);
     }
     body[data-site-theme="repair"] .product-card {
       border-radius: 18px;
       min-height: 500px;
+      overflow: hidden;
+    }
+    @media (hover: hover) and (pointer: fine) {
+      body[data-site-theme="repair"] .category-card:hover,
+      body[data-site-theme="repair"] .product-card:hover {
+        border-color: rgba(14,124,114,0.28);
+        box-shadow:
+          0 1px 0 rgba(255,255,255,0.95) inset,
+          0 26px 60px rgba(31,45,55,0.18),
+          0 0 0 1px rgba(14,124,114,0.08);
+      }
     }
     body[data-site-theme="repair"] .product-image,
     body[data-site-theme="repair"] .detail-gallery {
       background:
-        linear-gradient(rgba(15,23,42,0.045) 1px, transparent 1px),
-        linear-gradient(90deg, rgba(15,23,42,0.045) 1px, transparent 1px),
-        #ede7dc !important;
-      background-size: 24px 24px !important;
-      border-bottom-color: rgba(15,23,42,0.1);
+        radial-gradient(circle at 50% 38%, rgba(255,255,255,0.95), transparent 38%),
+        linear-gradient(rgba(15,23,42,0.035) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(15,23,42,0.035) 1px, transparent 1px),
+        linear-gradient(180deg, #f3f6f7, #e7edf0) !important;
+      background-size: auto, 28px 28px, 28px 28px, auto !important;
+      border-bottom-color: rgba(15,23,42,0.12);
     }
     body[data-site-theme="repair"] .product-image::after {
-      background: linear-gradient(180deg, transparent 58%, rgba(246,243,234,0.72));
+      background: linear-gradient(180deg, transparent 56%, rgba(255,255,255,0.9));
+    }
+    body[data-site-theme="repair"] .product-body {
+      background: #ffffff;
     }
     body[data-site-theme="repair"] .product-visual-fallback {
-      background: rgba(255,255,255,0.72);
-      border-color: rgba(15,23,42,0.12);
+      background: #ffffff;
+      border-color: rgba(15,23,42,0.14);
+      box-shadow: 0 18px 34px rgba(31,45,55,0.1);
     }
     body[data-site-theme="repair"] .product-visual-ring {
-      background: rgba(15,118,110,0.09);
+      background: rgba(15,118,110,0.08);
       border-color: rgba(15,118,110,0.18);
       box-shadow: none;
     }
@@ -4550,9 +4587,10 @@
       text-shadow: none;
     }
     body[data-site-theme="repair"] .product-badge {
-      background: rgba(15,118,110,0.1);
-      border-color: rgba(15,118,110,0.22);
+      background: rgba(235, 248, 244, 0.96);
+      border-color: rgba(15,118,110,0.24);
       color: #0f513f;
+      box-shadow: 0 10px 20px rgba(31,45,55,0.08);
     }
     body[data-site-theme="repair"] .detail-stat,
     body[data-site-theme="repair"] .variant-pill,
@@ -4560,22 +4598,23 @@
     body[data-site-theme="repair"] .detail-related-list span,
     body[data-site-theme="repair"] .checkout-result-card,
     body[data-site-theme="repair"] .cart-item {
-      background: rgba(255,255,255,0.78);
-      border-color: rgba(15,23,42,0.1);
+      background: #ffffff;
+      border-color: rgba(15,23,42,0.12);
       color: #17202a;
     }
     body[data-site-theme="repair"] .modal,
     body[data-site-theme="repair"] .cart-modal,
     body[data-site-theme="repair"] .mobile-nav-panel,
     body[data-site-theme="repair"] .search-bar-wrap {
-      background: rgba(246,243,234,0.94);
+      background: rgba(248,250,250,0.96);
       color: #17202a;
       border-color: rgba(15,23,42,0.12);
     }
     body[data-site-theme="repair"] .floating-cart {
-      background: rgba(255,255,255,0.92);
+      background: #ffffff;
       border-color: rgba(15,23,42,0.12);
       color: #17202a;
+      box-shadow: 0 -14px 34px rgba(31,45,55,0.13);
     }
     body[data-site-theme="repair"] .search-bar-wrap input,
     body[data-site-theme="repair"] .checkout-input,
@@ -4584,7 +4623,7 @@
     body[data-site-theme="repair"] .tracking-form input,
     body[data-site-theme="repair"] .cta-form input,
     body[data-site-theme="repair"] .cta-form textarea {
-      background: rgba(255,255,255,0.92);
+      background: #ffffff;
       border-color: rgba(15,23,42,0.12);
       color: #17202a;
     }
