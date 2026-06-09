@@ -9,11 +9,10 @@ const App = (() => {
   'use strict';
 
   const PRODUCT_CATEGORY_OPTIONS = [
+    { value: '', label: '— Sin categoría —' },
     { value: 'pantallas', label: 'Pantallas' },
     { value: 'baterias', label: 'Baterías' },
     { value: 'flex-y-conectores', label: 'Flex y conectores' },
-    { value: 'camaras-y-modulos', label: 'Cámaras y módulos' },
-    { value: 'tapas-y-carcasa', label: 'Tapas y carcasa' },
     { value: 'accesorios', label: 'Accesorios' },
     { value: 'herramientas-diy', label: 'Herramientas DIY' },
   ];
@@ -1069,7 +1068,7 @@ const App = (() => {
       pDesc.value = product ? (product.description || '') : '';
       pPrice.value = product ? product.price : '';
       pStock.value = product ? product.stock : '';
-      pCategory.value = product ? (product.category || 'pantallas') : 'pantallas';
+      pCategory.value = product ? (product.category || '') : '';
       pQuality.value = product ? (product.quality || '') : '';
       pShippingTime.value = product ? (product.shippingTime || '') : '';
       pWarranty.value = product ? (product.warranty || '') : '';
