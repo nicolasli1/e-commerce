@@ -2131,7 +2131,7 @@
       align-items: baseline;
       margin-bottom: 16px;
     }
-    .cart-total-label { font-size: 0.8rem; color: #86868b; }
+    .cart-total-label { font-size: 0.8rem; color: #a1a1aa; }
     .cart-total-amount {
       font-size: 1.5rem;
       font-weight: 800;
@@ -4942,6 +4942,23 @@
       background: #ffffff;
       border-color: rgba(15,23,42,0.12);
       color: #17202a;
+    }
+    /* ── Repair theme: fix low-contrast secondary text ── */
+    body[data-site-theme="repair"] .cart-item-price,
+    body[data-site-theme="repair"] .cart-total-label,
+    body[data-site-theme="repair"] .cart-secure-note {
+      color: #6b7280;
+    }
+    body[data-site-theme="repair"] .checkout-lead,
+    body[data-site-theme="repair"] .checkout-meta-card span,
+    body[data-site-theme="repair"] .checkout-summary-meta,
+    body[data-site-theme="repair"] .checkout-inline-note {
+      color: #4b5563;
+    }
+    body[data-site-theme="repair"] .checkout-label,
+    body[data-site-theme="repair"] .checkout-checkbox,
+    body[data-site-theme="repair"] .checkout-summary-note {
+      color: #374151;
     }
   </style>
 </head>
