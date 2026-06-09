@@ -181,6 +181,8 @@ jobs:
           cdk deploy ${{ env.PROJECT_NAME }}-${{ env.ENVIRONMENT }}-frontend \
             --context environment=${{ env.ENVIRONMENT }} \
             --context price_class=PriceClass_100 \
+            --context certificate_arn=arn:aws:acm:us-east-1:203918882873:certificate/71688eb6-7880-45fd-a18c-8eef64fd01f6 \
+            --context domain_names=repuestoscel.com,www.repuestoscel.com \
             --require-approval never
 
       # --- Obtener outputs ---

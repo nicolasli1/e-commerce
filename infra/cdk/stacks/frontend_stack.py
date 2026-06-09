@@ -34,6 +34,8 @@ class FrontendStack(Stack):
         api_endpoint: Optional[str] = None,
         images_bucket_domain: Optional[str] = None,
         images_bucket_name: Optional[str] = None,
+        certificate_arn: Optional[str] = None,
+        domain_names: Optional[list] = None,
         **kwargs,
     ) -> None:
         super().__init__(scope, id, **kwargs)
@@ -440,8 +442,17 @@ class FrontendStack(Stack):
                         response_page_path="/index.html",
                     ),
                 ],
-                viewer_certificate=cloudfront.CfnDistribution.ViewerCertificateProperty(
-                    cloud_front_default_certificate=True,
+                aliases=domain_names if domain_names else None,
+                viewer_certificate=(
+                    cloudfront.CfnDistribution.ViewerCertificateProperty(
+                        acm_certificate_arn=certificate_arn,
+                        ssl_support_method="sni-only",
+                        minimum_protocol_version="TLSv1.2_2021",
+                    )
+                    if certificate_arn
+                    else cloudfront.CfnDistribution.ViewerCertificateProperty(
+                        cloud_front_default_certificate=True,
+                    )
                 ),
                 # web_acl_id=waf_acl.attr_arn,
             ),

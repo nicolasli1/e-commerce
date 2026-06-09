@@ -33,6 +33,9 @@ project_name = app.node.try_get_context("project_name") or "sales-website"
 environment = app.node.try_get_context("environment") or "dev"
 enable_backend = app.node.try_get_context("enable_backend") or "true"
 price_class = app.node.try_get_context("price_class") or "PriceClass_100"
+certificate_arn = app.node.try_get_context("certificate_arn") or None
+raw_domains = app.node.try_get_context("domain_names") or None
+domain_names = raw_domains.split(",") if raw_domains else None
 
 enable_backend_bool = enable_backend.lower() in ("true", "1", "yes")
 
@@ -70,6 +73,8 @@ frontend = FrontendStack(
     api_endpoint=api_endpoint,
     images_bucket_domain=images_bucket_domain,
     images_bucket_name=images_bucket_name,
+    certificate_arn=certificate_arn,
+    domain_names=domain_names,
     cross_region_references=True,
     description=f"Sales website frontend – {project_name} {environment}",
     env=cdk.Environment(
