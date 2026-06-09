@@ -534,7 +534,99 @@
       justify-content: center;
       gap: 16px;
       flex-wrap: wrap;
-      margin-top: 36px;
+      margin-top: 22px;
+    }
+    .hero-search-shell {
+      width: min(100%, 740px);
+      margin: 30px auto 0;
+      padding: 8px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      border-radius: 999px;
+      border: 1px solid rgba(255,255,255,0.12);
+      background:
+        linear-gradient(180deg, rgba(255,255,255,0.1), rgba(255,255,255,0.045));
+      box-shadow:
+        0 24px 70px rgba(0,0,0,0.22),
+        inset 0 1px 0 rgba(255,255,255,0.06);
+      backdrop-filter: blur(18px);
+      -webkit-backdrop-filter: blur(18px);
+    }
+    .hero-search-icon {
+      width: 44px;
+      min-width: 44px;
+      height: 44px;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      border-radius: 999px;
+      background: rgba(255,255,255,0.08);
+      color: #f5f5f7;
+      font-size: 1.05rem;
+    }
+    .hero-search-shell input {
+      min-width: 0;
+      flex: 1;
+      border: 0;
+      outline: 0;
+      background: transparent;
+      color: #f5f5f7;
+      font: inherit;
+      font-size: clamp(1rem, 2vw, 1.08rem);
+      font-weight: 650;
+      padding: 0 4px;
+    }
+    .hero-search-shell input::placeholder {
+      color: #7f8796;
+    }
+    .hero-search-shell button {
+      min-height: 44px;
+      padding: 0 18px;
+      border: 0;
+      border-radius: 999px;
+      background: #f5f5f7;
+      color: #10131a;
+      font: inherit;
+      font-weight: 800;
+      cursor: pointer;
+      transition: transform 160ms var(--ease-out), box-shadow 160ms var(--ease-out);
+      box-shadow: 0 10px 28px rgba(255,255,255,0.08);
+    }
+    .hero-search-shell button:active {
+      transform: scale(0.98);
+    }
+    .hero-search-picks {
+      width: min(100%, 720px);
+      margin: 12px auto 0;
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: center;
+      gap: 8px;
+    }
+    .hero-search-picks button {
+      border: 1px solid rgba(255,255,255,0.09);
+      background: rgba(255,255,255,0.04);
+      color: #aeb6c6;
+      border-radius: 999px;
+      padding: 8px 12px;
+      font: inherit;
+      font-size: 0.8rem;
+      font-weight: 750;
+      cursor: pointer;
+      transition: transform 160ms var(--ease-out), border-color 160ms var(--ease-out), color 160ms var(--ease-out), background 160ms var(--ease-out);
+    }
+    @media (hover: hover) and (pointer: fine) {
+      .hero-search-shell button:hover {
+        transform: translateY(-1px);
+        box-shadow: 0 16px 36px rgba(255,255,255,0.1);
+      }
+      .hero-search-picks button:hover {
+        transform: translateY(-1px);
+        color: #f5f5f7;
+        border-color: rgba(141,124,255,0.26);
+        background: rgba(141,124,255,0.12);
+      }
     }
     .hero-stats {
       display: flex;
@@ -2801,6 +2893,18 @@
       color: #9aa1ae;
       line-height: 1.6;
     }
+    .no-search-hint {
+      width: fit-content;
+      max-width: 100%;
+      margin: 0 auto 18px;
+      padding: 8px 12px;
+      border-radius: 999px;
+      border: 1px solid rgba(141,124,255,0.18);
+      background: rgba(141,124,255,0.08);
+      color: #cfc8ff;
+      font-size: 0.8rem;
+      font-weight: 750;
+    }
     .no-search-actions {
       display: flex;
       justify-content: center;
@@ -4283,6 +4387,19 @@
       .hero-actions .btn {
         justify-content: center;
       }
+      .hero-search-shell {
+        border-radius: 24px;
+        display: grid;
+        grid-template-columns: 44px 1fr;
+        padding: 10px;
+      }
+      .hero-search-shell button {
+        grid-column: 1 / -1;
+        width: 100%;
+      }
+      .hero-search-picks {
+        justify-content: flex-start;
+      }
       .hero-stats {
         display: grid;
         grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -4570,12 +4687,51 @@
       -webkit-text-fill-color: currentColor;
     }
     body[data-site-theme="repair"] .finder-search,
+    body[data-site-theme="repair"] .hero-search-shell,
     body[data-site-theme="repair"] .hero-carousel,
     body[data-site-theme="repair"] .search-bar-inner {
       background: #ffffff;
       border-color: rgba(15,23,42,0.14);
       color: #475569;
       box-shadow: 0 12px 28px rgba(31,45,55,0.08);
+    }
+    body[data-site-theme="repair"] .hero-search-icon {
+      background: #eef2ff;
+      color: #0f172a;
+    }
+    body[data-site-theme="repair"] .hero-search-shell input {
+      color: #17202a;
+    }
+    body[data-site-theme="repair"] .hero-search-shell input::placeholder {
+      color: #697586;
+    }
+    body[data-site-theme="repair"] .hero-search-shell button {
+      background: linear-gradient(135deg, #0f766e, #2563eb);
+      color: #ffffff;
+      box-shadow: 0 16px 32px rgba(37,99,235,0.16);
+    }
+    body[data-site-theme="repair"] .hero-search-picks button {
+      background: rgba(255,255,255,0.94);
+      border-color: rgba(15,23,42,0.12);
+      color: #334155;
+      box-shadow: 0 8px 18px rgba(31,45,55,0.05);
+    }
+    body[data-site-theme="repair"] .no-search-actions button {
+      background: #ffffff;
+      border-color: rgba(15,23,42,0.14);
+      color: #334155;
+      box-shadow: 0 8px 18px rgba(31,45,55,0.05);
+    }
+    body[data-site-theme="repair"] .no-search-results strong {
+      color: #17202a;
+    }
+    body[data-site-theme="repair"] .no-search-results p {
+      color: #64748b;
+    }
+    body[data-site-theme="repair"] .no-search-hint {
+      color: #0f766e;
+      background: rgba(15,118,110,0.08);
+      border-color: rgba(15,118,110,0.16);
     }
     body[data-site-theme="repair"] .categories,
     body[data-site-theme="repair"] .products,
@@ -4844,7 +5000,7 @@
       <button class="btn btn-secondary btn-sm" onclick="toggleSearch()" style="flex-shrink:0;">Cerrar</button>
     </div>
     <div class="search-quick-picks" aria-label="Búsquedas rápidas">
-      <button type="button" data-search-pick="iPhone 11 pantalla">iPhone 11 pantalla</button>
+      <button type="button" data-search-pick="Pantalla iPhone">Pantalla iPhone</button>
       <button type="button" data-search-pick="batería OEM">Batería OEM</button>
       <button type="button" data-search-pick="puerto de carga">Puerto de carga</button>
       <button type="button" data-search-pick="adhesivo">Adhesivo</button>
@@ -4910,9 +5066,20 @@
               Busca por modelo, confirma compatibilidad y compra la pieza correcta
               para cambiar pantalla, batería, flex o módulo sin adivinar.
             </p>
+            <form class="hero-search-shell" id="heroSearchForm" role="search" aria-label="Buscar repuestos por modelo">
+              <span class="hero-search-icon" aria-hidden="true">🔎</span>
+              <input id="heroSearchInput" type="search" autocomplete="off" placeholder="Busca modelo o repuesto..." />
+              <button type="submit">Buscar</button>
+            </form>
+            <div class="hero-search-picks" aria-label="Búsquedas frecuentes">
+              <button type="button" data-search-pick="Pantalla iPhone">Pantalla iPhone</button>
+              <button type="button" data-search-pick="Batería Samsung Galaxy">Batería Samsung Galaxy</button>
+              <button type="button" data-search-pick="Cámara iPhone Pro">Cámara iPhone Pro</button>
+              <button type="button" data-search-pick="Puerto de carga Xiaomi Redmi">Puerto de carga Xiaomi Redmi</button>
+            </div>
             <div class="hero-actions">
               <a href="#productos" class="btn btn-primary">
-                Buscar repuesto
+                Ver catálogo
                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
               </a>
               <a href="#categorias" class="btn btn-secondary">
@@ -4935,7 +5102,7 @@
           </div>
           <button class="finder-search" type="button" onclick="toggleSearch()">
             <span>🔍</span>
-            <span>iPhone 11 display, batería XR, puerto de carga A52...</span>
+            <span>Display iPhone, batería Samsung, puerto de carga Xiaomi...</span>
           </button>
           <!-- Hero carousel: populated by JS from heroFeatured products -->
           <div class="hero-carousel" id="heroCarousel">
@@ -5098,7 +5265,7 @@
       <div class="testimonials-grid">
         <div class="testimonial-card reveal reveal-delay-1">
           <div class="testimonial-stars">★★★★★</div>
-          <blockquote>"Compré una pantalla para mi iPhone 13 y llegó en 24 horas. Revisé la compatibilidad, la instalé con cuidado y el celular volvió a funcionar."</blockquote>
+          <blockquote>"Compré una pantalla para mi iPhone y llegó en 24 horas. Revisé la compatibilidad, la instalé con cuidado y el celular volvió a funcionar."</blockquote>
           <div class="testimonial-author">
             <div class="testimonial-avatar">CA</div>
             <div>
@@ -5210,7 +5377,7 @@
         <p>Cuéntanos el modelo, qué pieza necesitas o qué síntoma tiene el equipo. Te ayudamos a elegir el repuesto correcto antes de comprar.</p>
         <form class="cta-form" id="contactForm">
           <input type="email" id="emailInput" placeholder="tu@correo.com" required />
-          <textarea id="messageInput" placeholder="Ejemplo: mi iPhone 11 necesita pantalla, o mi Samsung A52 no carga bien." style="min-height:120px;resize:vertical;"></textarea>
+          <textarea id="messageInput" placeholder="Ejemplo: mi iPhone necesita pantalla, o mi Samsung Galaxy no carga bien." style="min-height:120px;resize:vertical;"></textarea>
           <button type="submit" class="btn btn-gradient">Cotizar ahora</button>
         </form>
         <p id="formFeedback" style="margin-top:16px;font-size:0.875rem;color:#22c55e;display:none;">✅ Recibimos tu solicitud. Te escribimos pronto.</p>
@@ -5644,15 +5811,27 @@
       if (searchVisible && input) {
         input.focus(); input.select();
         document.getElementById('productos')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
-      } else if (input) { input.value = ''; filterProducts(''); }
+      } else if (input) { filterProducts(''); }
     }
     function clearSearch() {
+      filterProducts('');
       var input = document.getElementById('searchInput');
-      if (input) { input.value = ''; input.focus(); filterProducts(''); }
+      if (input) input.focus();
     }
-    function filterProducts(query) {
+    function syncSearchInputs(query) {
+      var value = String(query || '');
+      var input = document.getElementById('searchInput');
+      var heroInput = document.getElementById('heroSearchInput');
+      var clearBtn = document.getElementById('searchClear');
+      if (input && input.value !== value) input.value = value;
+      if (heroInput && heroInput.value !== value) heroInput.value = value;
+      if (clearBtn) clearBtn.classList.toggle('visible', value.trim().length > 0);
+    }
+    function filterProducts(query, options = {}) {
+      if (options.resetCategory) activeProductCategory = '';
       activeSearchQuery = String(query || '').trim();
       currentPage = 1;
+      syncSearchInputs(activeSearchQuery);
       renderStorefrontProducts();
     }
     function wireSearchPickButtons(root) {
@@ -5663,8 +5842,7 @@
         btn.dataset.searchWired = '1';
         btn.addEventListener('click', function() {
           var value = this.getAttribute('data-search-pick') || '';
-          if (input) input.value = value;
-          filterProducts(value);
+          filterProducts(value, { resetCategory: true });
           document.getElementById('productos')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
         });
       });
@@ -5673,7 +5851,19 @@
     document.addEventListener('DOMContentLoaded', function() {
       var input = document.getElementById('searchInput');
       if (input) {
-        input.addEventListener('input', function() { filterProducts(this.value); });
+        input.addEventListener('input', function() { filterProducts(this.value, { resetCategory: true }); });
+      }
+      var heroForm = document.getElementById('heroSearchForm');
+      var heroInput = document.getElementById('heroSearchInput');
+      if (heroInput) {
+        heroInput.addEventListener('input', function() { filterProducts(this.value, { resetCategory: true }); });
+      }
+      if (heroForm) {
+        heroForm.addEventListener('submit', function(event) {
+          event.preventDefault();
+          filterProducts(heroInput ? heroInput.value : '', { resetCategory: true });
+          document.getElementById('productos')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        });
       }
       wireSearchPickButtons(document);
     });
@@ -6305,71 +6495,71 @@
     function localPreviewProducts() {
       return [
         {
-          productId: 'preview-screen-iphone-11',
-          name: 'Pantalla iPhone 11',
+          productId: 'preview-screen-iphone-pro',
+          name: 'Pantalla iPhone Pro',
           description: 'Pantalla completa para recuperar imagen y touch. Probada antes de enviarla.',
           price: 120000,
           category: 'pantallas',
           quality: 'GX',
-          compatibility: ['iPhone 11', 'iPhone XR'],
+          compatibility: ['iPhone', 'iPhone Pro'],
           shippingTime: '24-48h',
           warranty: '30 días',
           repairDifficulty: 'Media',
           repairTime: '45-60 min',
           requiredTools: ['Pentalobe', 'Spudger', 'Adhesivo display'],
           productCondition: 'Nuevo probado',
-          related: ['Adhesivo iPhone 11', 'Kit apertura iPhone'],
+          related: ['Adhesivo iPhone', 'Kit apertura iPhone'],
           stock: 4
         },
         {
-          productId: 'preview-battery-iphone-xr',
-          name: 'Batería iPhone XR',
-          description: 'Batería para cuando tu iPhone dura poco, se apaga rápido o ya no retiene carga.',
+          productId: 'preview-battery-samsung-galaxy',
+          name: 'Batería Samsung Galaxy',
+          description: 'Batería para cuando tu Samsung dura poco, se apaga rápido o ya no retiene carga.',
           price: 78000,
           category: 'baterias',
           quality: 'OEM',
-          compatibility: ['iPhone XR'],
+          compatibility: ['Samsung Galaxy'],
           shippingTime: 'Entrega nacional',
           warranty: '90 días',
           repairDifficulty: 'Media',
           repairTime: '30-45 min',
           requiredTools: ['Pentalobe', 'Spudger', 'Adhesivo batería'],
           productCondition: 'Nuevo OEM',
-          related: ['Adhesivo batería XR', 'Kit destornilladores'],
+          related: ['Adhesivo batería Samsung', 'Kit destornilladores'],
           stock: 18
         },
         {
-          productId: 'preview-flex-samsung',
-          name: 'Flex de carga Samsung A52',
-          description: 'Puerto de carga y micrófono para cuando tu Samsung no carga bien o falla al conectar.',
+          productId: 'preview-flex-xiaomi-redmi',
+          name: 'Puerto de carga Xiaomi Redmi',
+          description: 'Puerto de carga y micrófono para cuando tu Xiaomi no carga bien o falla al conectar.',
           price: 42000,
           category: 'flex-y-conectores',
           quality: 'AAA',
-          compatibility: ['Samsung A52', 'Samsung A52s'],
+          compatibility: ['Xiaomi Redmi', 'Xiaomi'],
           shippingTime: '2-4 días',
           warranty: '30 días',
           repairDifficulty: 'Baja',
           repairTime: '20-30 min',
           requiredTools: ['Phillips', 'Pinza', 'Alcohol isopropílico'],
           productCondition: 'Nuevo',
-          related: ['Adhesivo tapa A52', 'Puerto SIM A52'],
+          related: ['Adhesivo tapa Xiaomi', 'Puerto SIM Redmi'],
           stock: 9
         },
         {
           productId: 'preview-camera',
-          name: 'Cámara trasera iPhone 12',
+          name: 'Cámara trasera iPhone Pro',
           description: 'Módulo de cámara probado antes del envío para recuperar fotos y video.',
           price: 165000,
           category: 'camaras-y-modulos',
           quality: 'Original',
-          compatibility: ['iPhone 12', 'iPhone 12 Mini'],
+          compatibility: ['iPhone', 'iPhone Pro'],
           shippingTime: '24-48h',
           warranty: '30 días',
           repairDifficulty: 'Alta',
           repairTime: '60-90 min',
           requiredTools: ['Pentalobe', 'Spudger', 'Pinza ESD'],
           productCondition: 'Original probado',
-          related: ['Flash iPhone 12', 'Flex cámara iPhone 12'],
+          related: ['Flash iPhone', 'Flex cámara iPhone'],
           stock: 0
         }
       ];
@@ -6406,6 +6596,32 @@
       auricular: ['speaker', 'parlante', 'audio'],
       parlante: ['speaker', 'auricular', 'audio'],
     };
+    const SEARCH_INTENT_RULES = [
+      { intent: 'pantallas', labels: ['Pantallas'], terms: ['pantalla', 'pantallas', 'display', 'lcd', 'touch', 'screen'] },
+      { intent: 'baterias', labels: ['Baterías'], terms: ['bateria', 'baterias', 'battery', 'pila'] },
+      { intent: 'camaras-y-modulos', labels: ['Cámaras y módulos'], terms: ['camara', 'camaras', 'camera', 'lente'] },
+      { intent: 'flex-y-conectores', labels: ['Flex y conectores', 'Charging Ports'], terms: ['flex', 'conector', 'puerto', 'carga', 'charging', 'pin'] },
+      { intent: 'tapas-y-carcasa', labels: ['Tapas y carcasa', 'Back Glass'], terms: ['tapa', 'carcasa', 'back', 'glass', 'vidrio'] },
+      { intent: 'herramientas-diy', labels: ['Herramientas DIY'], terms: ['herramienta', 'herramientas', 'kit', 'destornillador', 'spudger', 'pinza'] },
+      { intent: 'adhesivos', labels: ['Adhesivos'], terms: ['adhesivo', 'sello', 'pegante', 'precorte'] },
+    ];
+    const CATEGORY_EQUIVALENTS = {
+      pantallas: ['pantallas'],
+      baterias: ['baterias'],
+      'camaras-y-modulos': ['camaras-y-modulos', 'camaras'],
+      'flex-y-conectores': ['flex-y-conectores', 'flex', 'charging-ports'],
+      'tapas-y-carcasa': ['tapas-y-carcasa', 'tapas', 'back-glass'],
+      'herramientas-diy': ['herramientas-diy', 'herramientas'],
+      adhesivos: ['adhesivos'],
+    };
+    const SEARCH_BRAND_RULES = [
+      { brand: 'apple', terms: ['apple', 'iphone', 'ipad', 'airpods'] },
+      { brand: 'samsung', terms: ['samsung', 'galaxy'] },
+      { brand: 'xiaomi', terms: ['xiaomi', 'redmi', 'poco'] },
+      { brand: 'motorola', terms: ['motorola', 'moto'] },
+      { brand: 'huawei', terms: ['huawei', 'honor'] },
+      { brand: 'oppo', terms: ['oppo', 'realme', 'oneplus'] },
+    ];
 
     function searchTokens(value) {
       return normalizeSearchValue(value)
@@ -6420,6 +6636,62 @@
         (SEARCH_SYNONYMS[token] || []).forEach((alias) => expanded.add(normalizeSearchValue(alias)));
       });
       return [...expanded].filter(Boolean);
+    }
+
+    function searchIntentRules(value) {
+      const normalized = normalizeSearchValue(value);
+      if (!normalized) return [];
+      const rawTokens = new Set(searchTokens(normalized));
+      return SEARCH_INTENT_RULES.filter((rule) => {
+        return rule.terms.some((term) => {
+          const clean = normalizeSearchValue(term);
+          return rawTokens.has(clean) || normalized.includes(clean);
+        });
+      });
+    }
+
+    function searchBrandRules(value) {
+      const normalized = normalizeSearchValue(value);
+      if (!normalized) return [];
+      const rawTokens = new Set(searchTokens(normalized));
+      return SEARCH_BRAND_RULES.filter((rule) => {
+        return rule.terms.some((term) => {
+          const clean = normalizeSearchValue(term);
+          return rawTokens.has(clean) || normalized.includes(clean);
+        });
+      });
+    }
+
+    function productMatchesIntent(product, intentRules) {
+      if (!intentRules.length) return true;
+      const category = normalizeSearchValue(product?.category);
+      const variantTerms = Array.isArray(product?.variants)
+        ? product.variants.flatMap((variant) => [
+            variant.deviceBrand,
+            variant.deviceFamily,
+            variant.model,
+            variant.quality,
+          ])
+        : [];
+      const text = normalizeSearchValue([
+        product?.name,
+        getCategoryLabel(product?.category),
+        product?.category,
+        product?.quality,
+        ...(Array.isArray(product?.deviceFamilies) ? product.deviceFamilies : []),
+        ...variantTerms,
+      ].filter(Boolean).join(' '));
+      return intentRules.some((rule) => {
+        const categories = CATEGORY_EQUIVALENTS[rule.intent] || [rule.intent];
+        if (categories.map(normalizeSearchValue).includes(category)) return true;
+        return rule.terms.some((term) => text.includes(normalizeSearchValue(term)));
+      });
+    }
+
+    function productMatchesBrand(product, brandRules) {
+      if (!brandRules.length) return true;
+      const text = productSearchText(product);
+      return brandRules.some((rule) => rule.terms.some((term) => text.includes(normalizeSearchValue(term))));
     }
 
     function productSearchText(product) {
@@ -6520,18 +6792,37 @@
     function rankedProductsForSearch(products, query) {
       const normalizedQuery = normalizeSearchValue(query);
       if (!normalizedQuery) {
-        return { products: products.slice(), exactCount: 0, relatedCount: 0 };
+        return { products: products.slice(), exactCount: 0, relatedCount: 0, intentLabels: [] };
       }
+      const intentRules = searchIntentRules(normalizedQuery);
+      const brandRules = searchBrandRules(normalizedQuery);
 
       const ranked = products
-        .map((product, index) => ({ product, index, ...scoreProductSearch(product, normalizedQuery) }))
+        .map((product, index) => {
+          const intentMatch = productMatchesIntent(product, intentRules);
+          const brandMatch = productMatchesBrand(product, brandRules);
+          const scored = scoreProductSearch(product, normalizedQuery);
+          return {
+            product,
+            index,
+            intentMatch,
+            brandMatch,
+            ...scored,
+            score: (intentMatch ? scored.score : Math.floor(scored.score * 0.34)) * (brandMatch ? 1 : 0.12),
+          };
+        })
         .filter((item) => item.score > 0)
         .sort((a, b) => b.score - a.score || a.index - b.index);
+      const brandMatched = brandRules.length ? ranked.filter((item) => item.brandMatch) : ranked;
+      const brandScoped = brandRules.length ? brandMatched : ranked;
+      const intentMatched = brandScoped.filter((item) => item.intentMatch);
+      const finalRanked = intentRules.length ? intentMatched : brandScoped;
 
       return {
-        products: ranked.map((item) => item.product),
-        exactCount: ranked.filter((item) => item.exact).length,
-        relatedCount: ranked.filter((item) => !item.exact && item.related).length,
+        products: finalRanked.map((item) => item.product),
+        exactCount: finalRanked.filter((item) => item.exact).length,
+        relatedCount: finalRanked.filter((item) => !item.exact && item.related).length,
+        intentLabels: intentRules.flatMap((rule) => rule.labels),
       };
     }
 
@@ -6812,17 +7103,23 @@
       // 1. Stock
       const stock = shortStockMeta(effectiveProductStock(product));
       if (stock) chips.push(`<span class="product-meta-chip ${stock.tone}">${htmlSafe(stock.text)}</span>`);
+      if (product.category) {
+        chips.push(`<span class="product-meta-chip category">${htmlSafe(getCategoryLabel(product.category))}</span>`);
+      }
+      const variantQualities = Array.isArray(product.variants)
+        ? [...new Set(product.variants.map((variant) => variant.quality).filter(Boolean))]
+        : [];
+      const qualityLabel = product.quality || variantQualities.slice(0, 2).join(' / ');
+      if (qualityLabel) {
+        chips.push(`<span class="product-meta-chip quality">${htmlSafe(qualityLabel)}</span>`);
+      }
       if (Array.isArray(product.compatibility) && product.compatibility.length > 0) {
         const firstModels = product.compatibility.slice(0, 2).join(', ');
         const more = product.compatibility.length > 2 ? ` +${product.compatibility.length - 2}` : '';
         chips.push(`<span class="product-meta-chip variants">${htmlSafe(firstModels + more)}</span>`);
-      } else if (product.category) {
-        chips.push(`<span class="product-meta-chip category">${htmlSafe(getCategoryLabel(product.category))}</span>`);
       }
       if (Array.isArray(product.variants) && product.variants.length > 0) {
         chips.push(`<span class="product-meta-chip variants">${product.variants.length} modelos disp.</span>`);
-      } else if (product.quality) {
-        chips.push(`<span class="product-meta-chip quality">${htmlSafe(product.quality)}</span>`);
       }
       if (chips.length === 0) return '';
       return `<div class="product-card-meta">${chips.join('')}</div>`;
@@ -6842,18 +7139,28 @@
     function renderEmptyProductState(query) {
       const safeQuery = htmlSafe(query || '');
       const title = query ? `No encontramos "${safeQuery}"` : 'No hay productos cargados todavía';
+      const intentRules = searchIntentRules(query || '');
+      const intentLabels = intentRules.flatMap((rule) => rule.labels);
+      const starterPicks = [
+        ...(intentRules.some((rule) => rule.intent === 'pantallas') ? ['Pantalla iPhone', 'Display Samsung', 'Pantalla Xiaomi'] : []),
+        ...(intentRules.some((rule) => rule.intent === 'baterias') ? ['Batería iPhone', 'Batería Samsung', 'Batería Xiaomi'] : []),
+        ...(intentRules.some((rule) => rule.intent === 'camaras-y-modulos') ? ['Cámara iPhone', 'Cámara Samsung', 'Módulo cámara'] : []),
+        ...(intentRules.some((rule) => rule.intent === 'flex-y-conectores') ? ['Puerto de carga', 'Flex de carga', 'Conector iPhone'] : []),
+        'Pantalla iPhone',
+        'Batería',
+        'Puerto de carga',
+      ];
+      const uniquePicks = [...new Set(starterPicks)].slice(0, 6);
       const copy = query
-        ? 'Intenta con el modelo, la parte que quieres cambiar o una categoría cercana. Si buscas una pieza específica, también puedes revisar estas rutas rápidas.'
+        ? 'No hay una coincidencia directa en el catálogo actual. Prueba una búsqueda más amplia por pieza, marca o familia de dispositivo.'
         : 'Cuando agregues productos desde el backoffice aparecerán aquí con stock, compatibilidad y calidad.';
       return `
         <div class="no-search-results">
           <strong>${title}</strong>
           <p>${copy}</p>
+          ${intentLabels.length ? `<div class="no-search-hint">Categorías relacionadas: ${intentLabels.map(htmlSafe).join(' · ')}</div>` : ''}
           <div class="no-search-actions">
-            <button type="button" data-search-pick="pantalla iphone">Pantalla iPhone</button>
-            <button type="button" data-search-pick="bateria">Batería</button>
-            <button type="button" data-search-pick="puerto de carga">Puerto de carga</button>
-            <button type="button" data-search-pick="airpods">AirPods</button>
+            ${uniquePicks.map((pick) => `<button type="button" data-search-pick="${htmlSafe(pick)}">${htmlSafe(pick)}</button>`).join('')}
           </div>
         </div>
       `;
@@ -7241,13 +7548,19 @@
       const actions = document.getElementById('productsFilterActions');
       if (!actions) return;
       const categories = [...new Set(products.map((product) => product.category).filter(Boolean))];
+      const counts = products.reduce((acc, product) => {
+        const category = product.category;
+        if (!category) return acc;
+        acc[category] = (acc[category] || 0) + 1;
+        return acc;
+      }, {});
       actions.innerHTML = '';
       if (categories.length === 0) return;
 
       const allChip = document.createElement('button');
       allChip.className = `filter-chip ${activeProductCategory ? '' : 'active'}`;
       allChip.type = 'button';
-      allChip.textContent = 'Todo';
+      allChip.textContent = `Todo (${products.length})`;
       allChip.addEventListener('click', () => {
         activeProductCategory = '';
         currentPage = 1;
@@ -7259,7 +7572,7 @@
         const chip = document.createElement('button');
         chip.className = `filter-chip ${activeProductCategory === category ? 'active' : ''}`;
         chip.type = 'button';
-        chip.textContent = getCategoryLabel(category);
+        chip.textContent = `${getCategoryLabel(category)} (${counts[category] || 0})`;
         chip.addEventListener('click', () => {
           activeProductCategory = category;
           currentPage = 1;
@@ -7305,7 +7618,7 @@
       const products = activeProductCategory
         ? storefrontProducts.filter((product) => product.category === activeProductCategory)
         : storefrontProducts.slice();
-      const searchBase = activeSearchQuery ? storefrontProducts.slice() : products;
+      const searchBase = activeSearchQuery ? products.slice() : products;
       const rankedSearch = rankedProductsForSearch(searchBase, activeSearchQuery);
       const visibleProducts = activeSearchQuery ? rankedSearch.products : products;
 
@@ -7313,7 +7626,8 @@
         if (activeSearchQuery) {
           if (visibleProducts.length > 0) {
             const mode = rankedSearch.exactCount > 0 ? 'coincidencias relevantes' : 'productos relacionados';
-            info.textContent = `${visibleProducts.length} ${mode} para "${activeSearchQuery}".`;
+            const scope = activeProductCategory ? ` en ${getCategoryLabel(activeProductCategory).toLowerCase()}` : '';
+            info.textContent = `${visibleProducts.length} ${mode}${scope} para "${activeSearchQuery}".`;
           } else {
             info.textContent = `No encontramos "${activeSearchQuery}". Prueba por modelo, categoría o tipo de repuesto.`;
           }
@@ -7657,6 +7971,7 @@
     document.querySelectorAll('.category-card[data-category]').forEach((card) => {
       card.addEventListener('click', () => {
         activeProductCategory = card.dataset.category || '';
+        currentPage = 1;
         renderStorefrontProducts();
         document.getElementById('productos')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
       });
