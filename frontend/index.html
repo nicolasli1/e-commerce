@@ -422,6 +422,37 @@
         border-color: rgba(245, 245, 247, 0.25);
       }
     }
+    .theme-toggle {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 7px;
+      min-width: 42px;
+      height: 42px;
+      padding: 0 13px;
+      border-radius: 9999px;
+      background: rgba(245, 245, 247, 0.08);
+      color: #f5f5f7;
+      border: 1px solid rgba(245, 245, 247, 0.12);
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+      cursor: pointer;
+      font: inherit;
+      font-size: 0.8rem;
+      font-weight: 750;
+      transition: transform 160ms var(--ease-out), background 160ms var(--ease-out), border-color 160ms var(--ease-out), color 160ms var(--ease-out);
+    }
+    .theme-toggle:active { transform: scale(0.97); }
+    .theme-toggle-icon {
+      font-size: 1rem;
+      line-height: 1;
+    }
+    @media (hover: hover) and (pointer: fine) {
+      .theme-toggle:hover {
+        background: rgba(245, 245, 247, 0.15);
+        border-color: rgba(245, 245, 247, 0.25);
+      }
+    }
     .hamburger {
       display: none;
       background: none;
@@ -3141,6 +3172,11 @@
       .floating-cart { display: flex; }
       .nav-links, .nav-cta { display: none; }
       .nav-actions { gap: 10px; }
+      .theme-toggle {
+        width: 42px;
+        padding: 0;
+      }
+      .theme-toggle-text { display: none; }
       .hamburger { display: block; }
       .nav-links.open {
         display: flex;
@@ -4435,9 +4471,14 @@
     body[data-site-theme="repair"] .nav-links,
     body[data-site-theme="repair"] .search-toggle,
     body[data-site-theme="repair"] .cart-trigger,
+    body[data-site-theme="repair"] .theme-toggle,
     body[data-site-theme="repair"] .btn-secondary {
       background: rgba(255,255,255,0.9);
       border-color: rgba(15,23,42,0.14);
+      color: #17202a;
+    }
+    body[data-site-theme="repair"] .hamburger,
+    body[data-site-theme="repair"] .search-toggle {
       color: #17202a;
     }
     body[data-site-theme="repair"] .btn-primary {
@@ -4493,6 +4534,8 @@
     body[data-site-theme="repair"] .detail-info,
     body[data-site-theme="repair"] .checkout-panel,
     body[data-site-theme="repair"] .pricing-card,
+    body[data-site-theme="repair"] .testimonial-card,
+    body[data-site-theme="repair"] .tracking-shell,
     body[data-site-theme="repair"] .no-search-results {
       background: #ffffff;
       border-color: rgba(15,23,42,0.14);
@@ -4602,6 +4645,58 @@
     body[data-site-theme="repair"] .pricing-card .btn {
       margin-top: auto;
     }
+    body[data-site-theme="repair"] .testimonial-card {
+      color: #151c24;
+      box-shadow:
+        0 1px 0 rgba(255,255,255,0.95) inset,
+        0 20px 46px rgba(31,45,55,0.12),
+        0 0 0 1px rgba(255,255,255,0.78);
+    }
+    body[data-site-theme="repair"] .testimonial-stars {
+      color: #0e7c72;
+      letter-spacing: 1.5px;
+    }
+    body[data-site-theme="repair"] .testimonial-card blockquote {
+      color: #2f3b46;
+      font-weight: 520;
+    }
+    body[data-site-theme="repair"] .testimonial-author h4,
+    body[data-site-theme="repair"] .cta h2,
+    body[data-site-theme="repair"] .tracking-shell .section-title,
+    body[data-site-theme="repair"] .tracking-result-title {
+      color: #111827;
+    }
+    body[data-site-theme="repair"] .testimonial-author p,
+    body[data-site-theme="repair"] .cta p,
+    body[data-site-theme="repair"] .tracking-empty,
+    body[data-site-theme="repair"] .tracking-shell .section-subtitle,
+    body[data-site-theme="repair"] .tracking-result-copy {
+      color: #51606d;
+    }
+    body[data-site-theme="repair"] .testimonial-avatar {
+      background: linear-gradient(135deg, #0e7c72, #245fbd);
+      color: #ffffff;
+    }
+    body[data-site-theme="repair"] .cta-form input::placeholder,
+    body[data-site-theme="repair"] .cta-form textarea::placeholder,
+    body[data-site-theme="repair"] .tracking-form input::placeholder {
+      color: #7b8792;
+    }
+    body[data-site-theme="repair"] .mobile-nav-links a,
+    body[data-site-theme="repair"] .mobile-nav-user a {
+      color: #17202a !important;
+      background: #ffffff !important;
+      border-color: rgba(15,23,42,0.12) !important;
+    }
+    body[data-site-theme="repair"] .tracking-result,
+    body[data-site-theme="repair"] .tracking-box {
+      background: #f7fafb;
+      border-color: rgba(15,23,42,0.12);
+      color: #151c24;
+    }
+    body[data-site-theme="repair"] .tracking-box strong {
+      color: #0e7c72;
+    }
     body[data-site-theme="repair"] .category-icon {
       background: #eef6f4 !important;
       color: #0f766e !important;
@@ -4697,6 +4792,19 @@
   </style>
 </head>
 <body data-site-theme="dark">
+  <script>
+    (function() {
+      try {
+        var mode = localStorage.getItem('nexcore_theme_mode') || 'system';
+        if (!/^(system|repair|dark)$/.test(mode)) mode = 'system';
+        var isDark = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
+        document.body.dataset.themeMode = mode;
+        document.body.dataset.siteTheme = mode === 'system' ? (isDark ? 'dark' : 'repair') : mode;
+      } catch (_) {
+        document.body.dataset.themeMode = 'system';
+      }
+    })();
+  </script>
 
   <!-- ============================
        NAVBAR
@@ -4716,6 +4824,10 @@
         <a href="#contacto">Contacto</a>
       </div>
       <div class="nav-actions">
+        <button class="theme-toggle" id="themeToggle" onclick="cycleThemeMode()" title="Tema: sistema" aria-label="Tema: sistema">
+          <span class="theme-toggle-icon" id="themeToggleIcon">◐</span>
+          <span class="theme-toggle-text" id="themeToggleText">Sistema</span>
+        </button>
         <button class="search-toggle" id="searchToggle" onclick="toggleSearch()" title="Buscar" aria-label="Buscar productos">🔍</button>
         <a href="#carrito" id="cartNavBtn" class="cart-trigger" title="Carrito" aria-label="Abrir carrito">🛒<span id="cartCount" style="position:absolute;top:-8px;right:-6px;background:#ef4444;color:#fff;font-size:0.625rem;width:18px;height:18px;border-radius:50%;display:none;align-items:center;justify-content:center;font-weight:700;">0</span></a>
         <div class="nav-cta">
@@ -5100,7 +5212,7 @@
         <p>Cuéntanos el modelo, qué pieza necesitas o qué síntoma tiene el equipo. Te ayudamos a elegir el repuesto correcto antes de comprar.</p>
         <form class="cta-form" id="contactForm">
           <input type="email" id="emailInput" placeholder="tu@correo.com" required />
-          <textarea id="messageInput" placeholder="Ejemplo: mi iPhone 11 necesita pantalla, o mi Samsung A52 no carga bien." style="min-height:120px;resize:vertical;padding:16px 20px;border-radius:20px;border:1px solid rgba(255,255,255,0.08);background:rgba(255,255,255,0.04);color:#f5f5f7;font-family:inherit;font-size:0.9375rem;line-height:1.5;"></textarea>
+          <textarea id="messageInput" placeholder="Ejemplo: mi iPhone 11 necesita pantalla, o mi Samsung A52 no carga bien." style="min-height:120px;resize:vertical;"></textarea>
           <button type="submit" class="btn btn-gradient">Cotizar ahora</button>
         </form>
         <p id="formFeedback" style="margin-top:16px;font-size:0.875rem;color:#22c55e;display:none;">✅ Recibimos tu solicitud. Te escribimos pronto.</p>
@@ -7461,34 +7573,81 @@
       }
     }
 
-    function applySiteTheme(theme) {
-      const nextTheme = theme === 'repair' ? 'repair' : 'dark';
-      document.body.dataset.siteTheme = nextTheme;
-      try {
-        localStorage.setItem('nexcore_site_theme', nextTheme);
-      } catch {}
+    const THEME_MODE_KEY = 'nexcore_theme_mode';
+    const LEGACY_THEME_KEY = 'nexcore_site_theme';
+    const THEME_MODES = ['system', 'repair', 'dark'];
+    const THEME_MODE_META = {
+      system: { icon: '◐', label: 'Sistema', title: 'Tema: sistema' },
+      repair: { icon: '☀', label: 'Día', title: 'Tema: día' },
+      dark: { icon: '☾', label: 'Noche', title: 'Tema: noche' }
+    };
+    const systemThemeQuery = window.matchMedia ? window.matchMedia('(prefers-color-scheme: dark)') : null;
+    let currentThemeMode = 'system';
+
+    function normalizeThemeMode(mode) {
+      return THEME_MODES.includes(mode) ? mode : 'system';
     }
 
-    async function loadSiteSettings() {
+    function resolveThemeMode(mode) {
+      const normalized = normalizeThemeMode(mode);
+      if (normalized === 'system') {
+        return systemThemeQuery && systemThemeQuery.matches ? 'dark' : 'repair';
+      }
+      return normalized;
+    }
+
+    function updateThemeToggle(mode) {
+      const meta = THEME_MODE_META[normalizeThemeMode(mode)];
+      const toggle = document.getElementById('themeToggle');
+      const icon = document.getElementById('themeToggleIcon');
+      const text = document.getElementById('themeToggleText');
+      if (icon) icon.textContent = meta.icon;
+      if (text) text.textContent = meta.label;
+      if (toggle) {
+        toggle.title = meta.title;
+        toggle.setAttribute('aria-label', meta.title);
+      }
+    }
+
+    function applyThemeMode(mode, options = {}) {
+      currentThemeMode = normalizeThemeMode(mode);
+      document.body.dataset.themeMode = currentThemeMode;
+      document.body.dataset.siteTheme = resolveThemeMode(currentThemeMode);
+      updateThemeToggle(currentThemeMode);
+      if (options.persist) {
+        try {
+          localStorage.setItem(THEME_MODE_KEY, currentThemeMode);
+          localStorage.removeItem(LEGACY_THEME_KEY);
+        } catch {}
+      }
+    }
+
+    function cycleThemeMode() {
+      const nextMode = currentThemeMode === 'system' ? 'repair' : currentThemeMode === 'repair' ? 'dark' : 'system';
+      applyThemeMode(nextMode, { persist: true });
+    }
+
+    function initThemePreference() {
+      let storedMode = 'system';
       try {
-        const cachedTheme = localStorage.getItem('nexcore_site_theme');
-        if (cachedTheme) applySiteTheme(cachedTheme);
+        storedMode = normalizeThemeMode(localStorage.getItem(THEME_MODE_KEY) || 'system');
+        localStorage.removeItem(LEGACY_THEME_KEY);
       } catch {}
-
-      if (isLocalPreview()) return;
-
-      try {
-        const res = await fetch('/api/site-settings?_t=' + Date.now());
-        if (!res.ok) return;
-        const data = await res.json();
-        applySiteTheme(data?.settings?.visualTheme || 'dark');
-      } catch (err) {
-        console.log('No se pudo cargar configuración visual:', err);
+      applyThemeMode(storedMode);
+      if (systemThemeQuery) {
+        const handleSystemThemeChange = () => {
+          if (currentThemeMode === 'system') applyThemeMode('system');
+        };
+        if (typeof systemThemeQuery.addEventListener === 'function') {
+          systemThemeQuery.addEventListener('change', handleSystemThemeChange);
+        } else if (typeof systemThemeQuery.addListener === 'function') {
+          systemThemeQuery.addListener(handleSystemThemeChange);
+        }
       }
     }
 
     async function initStorefront() {
-      await loadSiteSettings();
+      initThemePreference();
       await loadProducts();
     }
 
