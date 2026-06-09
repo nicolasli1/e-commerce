@@ -47,6 +47,7 @@ class BackendStack(Stack):
         project_name: str = "sales-website",
         environment: str = "dev",
         enable_backend: bool = True,
+        allowed_origins: Optional[list] = None,
         **kwargs,
     ) -> None:
         super().__init__(scope, id, **kwargs)
@@ -257,7 +258,7 @@ class BackendStack(Stack):
             "HttpApi",
             api_name=f"{project_name}-{environment}-http-api",
             cors_preflight=apigwv2.CorsPreflightOptions(
-                allow_origins=["*"],
+                allow_origins=allowed_origins or ["https://repuestoscel.com", "https://www.repuestoscel.com"],
                 allow_methods=[
                     apigwv2.CorsHttpMethod.GET,
                     apigwv2.CorsHttpMethod.POST,

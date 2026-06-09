@@ -173,6 +173,7 @@ jobs:
           cdk deploy ${{ env.PROJECT_NAME }}-${{ env.ENVIRONMENT }}-backend \
             --context environment=${{ env.ENVIRONMENT }} \
             --context enable_backend=true \
+            --context allowed_origins=https://repuestoscel.com,https://www.repuestoscel.com,https://d1ag0uf6e1dp20.cloudfront.net \
             --require-approval never
 
       - name: Deploy Frontend Stack
