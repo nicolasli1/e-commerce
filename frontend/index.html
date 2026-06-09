@@ -5912,7 +5912,7 @@
       if (heroInput) {
         heroInput.addEventListener('input', function() { filterProducts(this.value, { resetCategory: true }); });
         heroInput.addEventListener('focus', function() {
-          document.getElementById('productos')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+          if (!searchVisible) toggleSearch();
         });
       }
       if (heroForm) {
