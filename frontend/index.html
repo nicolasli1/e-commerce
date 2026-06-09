@@ -4944,11 +4944,13 @@
       color: #17202a;
     }
     /* ── Repair theme: fix low-contrast secondary text ── */
+    /* Cart */
     body[data-site-theme="repair"] .cart-item-price,
     body[data-site-theme="repair"] .cart-total-label,
     body[data-site-theme="repair"] .cart-secure-note {
       color: #6b7280;
     }
+    /* Checkout */
     body[data-site-theme="repair"] .checkout-lead,
     body[data-site-theme="repair"] .checkout-meta-card span,
     body[data-site-theme="repair"] .checkout-summary-meta,
@@ -4959,6 +4961,45 @@
     body[data-site-theme="repair"] .checkout-checkbox,
     body[data-site-theme="repair"] .checkout-summary-note {
       color: #374151;
+    }
+    /* Product detail — variant pills */
+    body[data-site-theme="repair"] .detail-variant-label {
+      color: #6b7280;
+    }
+    body[data-site-theme="repair"] .variant-pill {
+      color: #374151;
+      background: rgba(15,23,42,0.04);
+      border-color: rgba(15,23,42,0.14);
+    }
+    body[data-site-theme="repair"] .variant-pill:hover {
+      color: #111827;
+      background: rgba(15,23,42,0.08);
+      border-color: rgba(15,23,42,0.25);
+    }
+    body[data-site-theme="repair"] .variant-pill-main strong {
+      color: #111827;
+    }
+    body[data-site-theme="repair"] .variant-pill-main em,
+    body[data-site-theme="repair"] .variant-pill-meta small {
+      color: #6b7280;
+    }
+    body[data-site-theme="repair"] .variant-pill-meta b {
+      color: #4f46e5;
+    }
+    /* Product detail — stat cards */
+    body[data-site-theme="repair"] .detail-stat {
+      background: rgba(15,23,42,0.03);
+      border-color: rgba(15,23,42,0.10);
+    }
+    body[data-site-theme="repair"] .detail-stat-label {
+      color: #6b7280;
+    }
+    body[data-site-theme="repair"] .detail-stat-value {
+      color: #111827;
+    }
+    /* Product description */
+    body[data-site-theme="repair"] .detail-info .detail-desc {
+      color: #4b5563;
     }
   </style>
 </head>
