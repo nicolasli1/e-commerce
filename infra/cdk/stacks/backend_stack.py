@@ -416,6 +416,11 @@ class BackendStack(Stack):
             integration=lambda_integration,
         )
         http_api.add_routes(
+            path="/api/admin/campaigns/send",
+            methods=[apigwv2.HttpMethod.POST],
+            integration=lambda_integration,
+        )
+        http_api.add_routes(
             path="/api/admin/leads",
             methods=[apigwv2.HttpMethod.GET],
             integration=lambda_integration,
