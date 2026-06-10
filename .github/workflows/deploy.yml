@@ -186,6 +186,23 @@ jobs:
           cdk bootstrap aws://${{ secrets.AWS_ACCOUNT_ID }}/${{ env.AWS_REGION }}
           cdk bootstrap aws://${{ secrets.AWS_ACCOUNT_ID }}/${{ env.BACKEND_REGION }}
 
+      # --- Diagnostic: confirm SES identity is in the synthesized template ---
+      - name: Verify SES identity in synth
+        working-directory: ${{ env.CDK_DIR }}
+        run: |
+          echo "aws-cdk-lib version:"; pip show aws-cdk-lib | grep -i version
+          cdk synth ${{ env.PROJECT_NAME }}-${{ env.ENVIRONMENT }}-backend \
+            --context environment=${{ env.ENVIRONMENT }} \
+            --context enable_backend=true \
+            --context allowed_origins=https://repuestoscel.com \
+            --context ses_domain=repuestoscel.com > /tmp/backend_synth.yaml
+          COUNT=$(grep -c "AWS::SES::EmailIdentity" /tmp/backend_synth.yaml || echo 0)
+          echo "AWS::SES::EmailIdentity count in synth: $COUNT"
+          if [ "$COUNT" -lt 1 ]; then
+            echo "::error::SES EmailIdentity missing from synthesized template"
+            exit 1
+          fi
+
       # --- Deploy stacks ---
       - name: Deploy Backend Stack
         working-directory: ${{ env.CDK_DIR }}
