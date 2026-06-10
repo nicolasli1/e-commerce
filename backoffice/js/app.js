@@ -1,5 +1,5 @@
 /**
- * NexCore Backoffice — SPA Router & Page Controllers
+ * RepuestosCel Backoffice — SPA Router & Page Controllers
  *
  * Hash-based router (#/ruta). Page modules render into #main-content.
  * Protected routes redirect to #/login when no session token exists.
@@ -110,8 +110,8 @@ const App = (() => {
         <div class="login-glow-2"></div>
         <div class="login-card">
           <div class="login-logo">
-            <div class="login-logo-icon">N</div>
-            <h1>NexCore Admin</h1>
+            <div class="login-logo-icon"><img src="favicon.svg" alt="" aria-hidden="true" /></div>
+            <h1>RepuestosCel Admin</h1>
             <p>Panel de administración</p>
           </div>
           <div class="login-error" id="loginError"></div>
@@ -1362,6 +1362,181 @@ const App = (() => {
     });
   }
 
+  // ---- CAMPAIGNS / PUBLICATIONS ----
+  function renderCampaigns() {
+    $main.innerHTML = `
+      <div class="page-header">
+        <div>
+          <h1 class="page-title">Correos</h1>
+          <p class="page-subtitle">Envía publicaciones y pruebas desde soporte@repuestoscel.com</p>
+        </div>
+      </div>
+
+      <div class="campaign-layout">
+        <form id="campaignForm" class="campaign-composer">
+          <div class="campaign-shell">
+            <div class="campaign-section-label">Audiencia</div>
+            <div class="form-row">
+              <div class="form-group">
+                <label class="form-label">Destino</label>
+                <select class="form-select" id="campaignAudience">
+                  <option value="test">Prueba interna</option>
+                  <option value="leads">Leads</option>
+                  <option value="customers">Clientes con pedidos</option>
+                  <option value="all">Leads + clientes</option>
+                </select>
+              </div>
+              <div class="form-group" id="campaignTestEmailGroup">
+                <label class="form-label">Correo de prueba</label>
+                <input class="form-input" id="campaignTestEmail" value="soporte@repuestoscel.com" placeholder="soporte@repuestoscel.com" />
+              </div>
+            </div>
+          </div>
+
+          <div class="campaign-shell">
+            <div class="campaign-section-label">Mensaje</div>
+            <div class="form-group">
+              <label class="form-label">Asunto</label>
+              <input class="form-input" id="campaignSubject" maxlength="90" value="Nuevos repuestos disponibles en RepuestosCel" />
+            </div>
+            <div class="form-group">
+              <label class="form-label">Preheader</label>
+              <input class="form-input" id="campaignPreheader" maxlength="120" value="Encuentra piezas compatibles y listas para reparar en casa." />
+            </div>
+            <div class="form-group">
+              <label class="form-label">Título del correo</label>
+              <input class="form-input" id="campaignTitle" maxlength="80" value="Repuestos listos para tu próxima reparación" />
+            </div>
+            <div class="form-group">
+              <label class="form-label">Contenido</label>
+              <textarea class="form-textarea" id="campaignMessage" rows="8">Tenemos nuevas pantallas, baterías y herramientas para que puedas hacer la reparación con calma y con la pieza correcta.
+
+Si tienes dudas de compatibilidad, responde este correo y te ayudamos a elegir el repuesto adecuado.</textarea>
+            </div>
+            <div class="form-row">
+              <div class="form-group">
+                <label class="form-label">Texto del botón</label>
+                <input class="form-input" id="campaignCtaText" value="Ver catálogo" />
+              </div>
+              <div class="form-group">
+                <label class="form-label">URL del botón</label>
+                <input class="form-input" id="campaignCtaUrl" value="https://repuestoscel.com/#productos" />
+              </div>
+            </div>
+          </div>
+
+          <div class="campaign-actions">
+            <button type="button" class="btn btn-secondary" id="campaignDryRunBtn">Calcular audiencia</button>
+            <button type="submit" class="btn btn-gradient" id="campaignSendBtn">Enviar correo</button>
+          </div>
+          <div class="campaign-result" id="campaignResult"></div>
+        </form>
+
+        <aside class="campaign-preview">
+          <div class="campaign-preview-header">
+            <div>
+              <div class="campaign-section-label">Preview</div>
+              <h2 id="campaignPreviewTitle">Repuestos listos para tu próxima reparación</h2>
+            </div>
+            <span>RepuestosCel</span>
+          </div>
+          <p id="campaignPreviewPreheader">Encuentra piezas compatibles y listas para reparar en casa.</p>
+          <div id="campaignPreviewMessage" class="campaign-preview-copy"></div>
+          <button class="campaign-preview-cta" id="campaignPreviewCta" type="button">Ver catálogo</button>
+          <div class="campaign-preview-footer">Incluye aviso de baja por respuesta al correo.</div>
+        </aside>
+      </div>
+    `;
+
+    const form = document.getElementById('campaignForm');
+    const audience = document.getElementById('campaignAudience');
+    const testEmailGroup = document.getElementById('campaignTestEmailGroup');
+    const result = document.getElementById('campaignResult');
+    const sendBtn = document.getElementById('campaignSendBtn');
+    const dryRunBtn = document.getElementById('campaignDryRunBtn');
+
+    function getCampaignPayload(options = {}) {
+      return {
+        audience: audience.value,
+        testEmail: document.getElementById('campaignTestEmail').value.trim(),
+        subject: document.getElementById('campaignSubject').value.trim(),
+        preheader: document.getElementById('campaignPreheader').value.trim(),
+        title: document.getElementById('campaignTitle').value.trim(),
+        message: document.getElementById('campaignMessage').value.trim(),
+        ctaText: document.getElementById('campaignCtaText').value.trim(),
+        ctaUrl: document.getElementById('campaignCtaUrl').value.trim(),
+        dryRun: !!options.dryRun,
+      };
+    }
+
+    function renderPreview() {
+      const payload = getCampaignPayload();
+      document.getElementById('campaignPreviewTitle').textContent = payload.title || 'Título del correo';
+      document.getElementById('campaignPreviewPreheader').textContent = payload.preheader || 'Preheader del correo';
+      document.getElementById('campaignPreviewMessage').innerHTML = esc(payload.message || 'Contenido del mensaje')
+        .split('\n')
+        .filter(Boolean)
+        .map((line) => `<p>${line}</p>`)
+        .join('');
+      const cta = document.getElementById('campaignPreviewCta');
+      cta.textContent = payload.ctaText || 'Ver catálogo';
+      cta.style.display = payload.ctaText && payload.ctaUrl ? '' : 'none';
+    }
+
+    function syncAudience() {
+      testEmailGroup.style.display = audience.value === 'test' ? '' : 'none';
+      sendBtn.textContent = audience.value === 'test' ? 'Enviar prueba' : 'Enviar publicación';
+    }
+
+    function setResult(message, type = 'info') {
+      result.className = `campaign-result ${type}`;
+      result.textContent = message;
+    }
+
+    audience.addEventListener('change', () => {
+      syncAudience();
+      renderPreview();
+    });
+    form.querySelectorAll('input, textarea, select').forEach((field) => {
+      field.addEventListener('input', renderPreview);
+    });
+
+    dryRunBtn.addEventListener('click', async () => {
+      dryRunBtn.disabled = true;
+      setResult('Calculando audiencia...');
+      try {
+        const data = await Api.post('/api/admin/campaigns/send', getCampaignPayload({ dryRun: true }));
+        setResult(`Audiencia estimada: ${data.recipients || 0} destinatarios.`, 'success');
+      } catch (err) {
+        setResult(err.message, 'error');
+      } finally {
+        dryRunBtn.disabled = false;
+      }
+    });
+
+    form.addEventListener('submit', async (event) => {
+      event.preventDefault();
+      const payload = getCampaignPayload();
+      const confirmCopy = payload.audience === 'test'
+        ? `Enviar prueba a ${payload.testEmail}?`
+        : `Enviar publicación a la audiencia "${payload.audience}"?`;
+      if (!window.confirm(confirmCopy)) return;
+      sendBtn.disabled = true;
+      setResult('Enviando correo...');
+      try {
+        const data = await Api.post('/api/admin/campaigns/send', payload);
+        setResult(`Envío terminado: ${data.sent || 0} enviados, ${data.failed || 0} fallidos.`, data.failed ? 'warning' : 'success');
+      } catch (err) {
+        setResult(err.message, 'error');
+      } finally {
+        sendBtn.disabled = false;
+      }
+    });
+
+    syncAudience();
+    renderPreview();
+  }
+
   // ---- LEADS ----
   async function renderLeads() {
     showLoading();
@@ -1879,6 +2054,7 @@ const App = (() => {
     registerRoute('#/leads', renderLeads);
     registerRoute('#/quotes', renderQuotes);
     registerRoute('#/orders', renderOrders);
+    registerRoute('#/campaigns', renderCampaigns);
     registerRoute('#/design', renderDesignSettings);
 
     // Router listening

@@ -1,5 +1,5 @@
 """
-Unit tests for NexCore CRUD operations.
+Unit tests for RepuestosCel CRUD operations.
 
 Tests the product/lead/quote logic that mirrors the inline Lambda code.
 Uses moto to mock DynamoDB.

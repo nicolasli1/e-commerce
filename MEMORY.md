@@ -1,8 +1,8 @@
-# MEMORY.md — NexCore Sales Website
+# MEMORY.md — RepuestosCel Sales Website
 
 ## Identity
 
-- **Brand**: NexCore — Repuestos para Celulares
+- **Brand**: RepuestosCel — Repuestos para Celulares
 - **Category**: E-commerce de repuestos y accesorios para celulares
 - **Stack**: AWS serverless (S3 + CloudFront + API Gateway HTTP + Lambda + DynamoDB)
 - **Infra**: CDK (Python) primary, CloudFormation fallback

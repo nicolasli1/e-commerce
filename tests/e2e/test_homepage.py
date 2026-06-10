@@ -15,7 +15,7 @@ class TestSiteAlive:
         page.on("pageerror", lambda err: errors.append(str(err)))
         page.goto(base_url, wait_until="networkidle")
         title = page.title()
-        assert "NexCore" in title or "Repuestos" in title, f"Title: {title}"
+        assert "RepuestosCel" in title or "Repuestos" in title, f"Title: {title}"
         assert len(errors) == 0, f"Errores JS: {errors}"
 
     def test_hero_section(self, page, base_url):

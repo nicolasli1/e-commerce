@@ -109,7 +109,7 @@ def test_checkout_button_opens_checkout_modal(
     context = playwright_browser.new_context(**options)
     context.add_init_script(
         """
-        localStorage.setItem('nexcore_cart', JSON.stringify([
+        localStorage.setItem('repuestoscel_cart', JSON.stringify([
           { productId: 'prod-1', name: 'Pantalla iPhone 13', price: 180000, quantity: 2 }
         ]));
         """

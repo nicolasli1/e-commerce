@@ -1,6 +1,6 @@
 #!/bin/bash
 # =============================================================================
-# CloudFormation Deploy Script — NexCore Sales Website
+# CloudFormation Deploy Script — RepuestosCel Sales Website
 # =============================================================================
 # Uso:
 #   ./scripts/deploy-cfn.sh create-stack [--env prod] [--project sales-website]

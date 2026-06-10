@@ -1,4 +1,4 @@
-# Plan Priorizado - Conversión y Búsqueda NexCore
+# Plan Priorizado - Conversión y Búsqueda RepuestosCel
 
 Fecha: 2026-06-08
 

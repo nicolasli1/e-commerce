@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # ──────────────────────────────────────────────────────────────
-# run-e2e.sh — Comandos para ejecutar tests E2E de NexCore
+# run-e2e.sh — Comandos para ejecutar tests E2E de RepuestosCel
 # ──────────────────────────────────────────────────────────────
 set -euo pipefail
 
@@ -17,7 +17,7 @@ BLUE='\033[0;34m'
 NC='\033[0m'
 
 echo -e "${BLUE}╔══════════════════════════════════════════╗${NC}"
-echo -e "${BLUE}║      NexCore E2E Test Runner             ║${NC}"
+echo -e "${BLUE}║      RepuestosCel E2E Test Runner             ║${NC}"
 echo -e "${BLUE}╚══════════════════════════════════════════╝${NC}"
 
 # ─── Funciones ──────────────────────────────────────────

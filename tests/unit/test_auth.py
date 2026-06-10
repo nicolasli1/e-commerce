@@ -1,5 +1,5 @@
 """
-Unit tests for NexCore authentication logic.
+Unit tests for RepuestosCel authentication logic.
 
 These tests replicate the inline Lambda functions from backend_stack.py
 to verify auth logic independently of AWS.

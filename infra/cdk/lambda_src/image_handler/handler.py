@@ -1,4 +1,4 @@
-"""Image processing Lambda for NexCore product images.
+"""Image processing Lambda for RepuestosCel product images.
 
 Pipeline:
   1. Validate file type (JPEG/PNG/WebP) and size (max 5MB)
@@ -134,7 +134,7 @@ def remove_background_with_removebg(image_data: bytes) -> bytes | None:
     if not api_key:
         return None
 
-    boundary = "----NexCoreRemoveBgBoundary"
+    boundary = "----RepuestosCelRemoveBgBoundary"
     fields = [
         (
             "size",
@@ -440,7 +440,7 @@ def transparent_product_canvas(img: Image.Image, target_size: tuple) -> Image.Im
 # ──────────────────────────────────────────────
 
 def add_watermark(img: Image.Image) -> Image.Image:
-    """Add semi-transparent 'NexCore' watermark to bottom-right corner.
+    """Add semi-transparent 'RepuestosCel' watermark to bottom-right corner.
     
     Only applied to sizes >= md (skipped for sm thumbnails).
     """
@@ -463,7 +463,7 @@ def add_watermark(img: Image.Image) -> Image.Image:
         # Fall back to default PIL font
         font = ImageFont.load_default()
 
-    text = "NexCore"
+    text = "RepuestosCel"
 
     # Measure text
     try:

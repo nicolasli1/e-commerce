@@ -1,9 +1,9 @@
 AWSTemplateFormatVersion: '2010-09-09'
 Description: >
-  NexCore Sales Website — AWS serverless stack.
+  RepuestosCel Sales Website — AWS serverless stack.
   S3 + CloudFront + WAF + API Gateway + Lambda + DynamoDB.
   Secrets stored in SSM Parameter Store (SecureString).
-  Primary IaC for the NexCore sales website — CloudFormation.
+  Primary IaC for the RepuestosCel sales website — CloudFormation.
 
 Parameters:
   ProjectName:

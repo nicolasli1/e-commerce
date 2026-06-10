@@ -5,7 +5,7 @@ ROOT_DIR="$(cd "$(dirname "$0")/.." && pwd)"
 
 echo ""
 echo "╔══════════════════════════════════════════════════╗"
-echo "║        NexCore — Test Suite                     ║"
+echo "║        RepuestosCel — Test Suite                     ║"
 echo "╚══════════════════════════════════════════════════╝"
 echo ""
 
@@ -27,7 +27,7 @@ if [ "${RUN_E2E:-}" = "true" ]; then
     echo "═══════════════════════════════════════════════"
     echo "  🌐 E2E TESTS (live site)"
     echo "═══════════════════════════════════════════════"
-    echo "  URL: ${NEXCORE_BASE_URL:-https://d1ag0uf6e1dp20.cloudfront.net}"
+    echo "  URL: ${REPUESTOSCEL_BASE_URL:-https://d1ag0uf6e1dp20.cloudfront.net}"
     echo ""
     cd "$ROOT_DIR" && python -m pytest tests/e2e/ -v --tb=long "$@"
     E2E_EXIT=$?

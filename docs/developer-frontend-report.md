@@ -2,7 +2,7 @@
 
 ## Resumen
 
-Se creó el frontend SPA del backoffice de NexCore en la carpeta `backoffice/`. Es una aplicación de una sola página (SPA) construida con HTML, CSS y JavaScript vanilla — sin frameworks ni librerías externas.
+Se creó el frontend SPA del backoffice de RepuestosCel en la carpeta `backoffice/`. Es una aplicación de una sola página (SPA) construida con HTML, CSS y JavaScript vanilla — sin frameworks ni librerías externas.
 
 ## Archivos creados
 

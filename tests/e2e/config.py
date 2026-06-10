@@ -59,8 +59,8 @@ class E2EConfig:
     ])
 
     # Test user credentials (crear en setup si no existen)
-    test_user_email: str = os.getenv("E2E_TEST_USER_EMAIL", "e2e-test@nexcore-test.co")
-    test_user_pass: str = os.getenv("E2E_TEST_USER_PASS", "TestNexCore2026!")
+    test_user_email: str = os.getenv("E2E_TEST_USER_EMAIL", "e2e-test@repuestoscel-test.co")
+    test_user_pass: str = os.getenv("E2E_TEST_USER_PASS", "TestRepuestosCel2026!")
     test_user_name: str = "Test E2E User"
 
     # API endpoints

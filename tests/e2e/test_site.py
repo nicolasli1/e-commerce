@@ -1,5 +1,5 @@
 """
-E2E tests for NexCore sales website.
+E2E tests for RepuestosCel sales website.
 
 Tests against the LIVE deployed site.
 Requires: BASE_URL environment variable or defaults to CloudFront URL.
@@ -11,11 +11,11 @@ import os
 import requests
 
 BASE_URL = os.environ.get(
-    "NEXCORE_BASE_URL", "https://d1ag0uf6e1dp20.cloudfront.net"
+    "REPUESTOSCEL_BASE_URL", "https://d1ag0uf6e1dp20.cloudfront.net"
 )
-API_KEY = os.environ.get("NEXCORE_API_KEY", "nexcor…2026")
-ADMIN_USER = os.environ.get("NEXCORE_ADMIN_USER", "admin")
-ADMIN_PASS = os.environ.get("NEXCORE_ADMIN_PASS", "admin123")
+API_KEY = os.environ.get("REPUESTOSCEL_API_KEY", "repuestoscel…2026")
+ADMIN_USER = os.environ.get("REPUESTOSCEL_ADMIN_USER", "admin")
+ADMIN_PASS = os.environ.get("REPUESTOSCEL_ADMIN_PASS", "admin123")
 
 
 class TestLandingPage:
@@ -27,7 +27,7 @@ class TestLandingPage:
 
     def test_landing_page_has_correct_title(self):
         res = requests.get(f"{BASE_URL}/", timeout=15)
-        assert "NexCore" in res.text
+        assert "RepuestosCel" in res.text
         assert "Componentes Tecnológicos" in res.text
 
     def test_landing_page_has_hero_section(self):
@@ -48,7 +48,7 @@ class TestBackofficeFrontend:
 
     def test_admin_login_page_is_backoffice(self):
         res = requests.get(f"{BASE_URL}/admin/login", timeout=15)
-        assert "Backoffice" in res.text or "NexCore Admin" in res.text
+        assert "Backoffice" in res.text or "RepuestosCel Admin" in res.text
 
     def test_admin_dashboard_page_returns_200(self):
         res = requests.get(f"{BASE_URL}/admin/", timeout=15)
@@ -61,12 +61,12 @@ class TestBackofficeFrontend:
     def test_admin_css_loads(self):
         res = requests.get(f"{BASE_URL}/admin/css/style.css", timeout=15)
         assert res.status_code == 200
-        assert "NexCore" in res.text or "backoffice" in res.text.lower()
+        assert "RepuestosCel" in res.text or "backoffice" in res.text.lower()
 
     def test_admin_js_app_loads(self):
         res = requests.get(f"{BASE_URL}/admin/js/app.js", timeout=15)
         assert res.status_code == 200
-        assert "NexCore" in res.text or "App" in res.text
+        assert "RepuestosCel" in res.text or "App" in res.text
 
     def test_admin_js_api_loads(self):
         res = requests.get(f"{BASE_URL}/admin/js/api.js", timeout=15)

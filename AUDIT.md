@@ -1,11 +1,11 @@
-# Auditoría UX/UI y Conversión - NexCore Ecommerce
+# Auditoría UX/UI y Conversión - RepuestosCel Ecommerce
 
 Fecha: 2026-06-08
 Sitio auditado: https://d1ag0uf6e1dp20.cloudfront.net/
 
 ## Resumen Ejecutivo
 
-NexCore ya tiene una base visual premium y un catálogo funcional, pero la conversión depende de que el comprador encuentre rápido la pieza correcta. El principal riesgo detectado era que la búsqueda no ocupaba el lugar central de la experiencia y que, ante búsquedas sin match exacto, la página podía sentirse vacía o poco orientadora.
+RepuestosCel ya tiene una base visual premium y un catálogo funcional, pero la conversión depende de que el comprador encuentre rápido la pieza correcta. El principal riesgo detectado era que la búsqueda no ocupaba el lugar central de la experiencia y que, ante búsquedas sin match exacto, la página podía sentirse vacía o poco orientadora.
 
 La mejora crítica es tratar la home como una experiencia de descubrimiento tipo marketplace especializado: buscar por modelo, pieza, calidad y compatibilidad debe ser el primer flujo, no una acción secundaria del header.
 

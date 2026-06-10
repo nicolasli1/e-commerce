@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # =============================================================================
-# Rotate SSM Secrets for NexCore Sales Website
+# Rotate SSM Secrets for RepuestosCel Sales Website
 # =============================================================================
 # Creates or rotates the admin SSM Parameter Store secrets.
 #

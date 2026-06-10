@@ -1,4 +1,4 @@
-# 🧪 NexCore E2E Testing — Plan Maestro
+# 🧪 RepuestosCel E2E Testing — Plan Maestro
 
 ---
 

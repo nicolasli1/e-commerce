@@ -10,7 +10,7 @@ Usage:
   python3 scripts/mp_local_checkout_test.py
 
 Optional env vars:
-  MERCADOPAGO_TEST_TITLE='NexCore local test'
+  MERCADOPAGO_TEST_TITLE='RepuestosCel local test'
   MERCADOPAGO_TEST_PRICE='49900'
   MERCADOPAGO_TEST_EMAIL='test@testuser.com'
   MERCADOPAGO_TEST_PORT='8787'
@@ -70,7 +70,7 @@ def start_callback_server(port: int) -> HTTPServer:
 
 
 def build_preference(base_url: str) -> dict:
-    title = env("MERCADOPAGO_TEST_TITLE", "NexCore local test")
+    title = env("MERCADOPAGO_TEST_TITLE", "RepuestosCel local test")
     email = env("MERCADOPAGO_TEST_EMAIL", "test@testuser.com")
     price = int(float(env("MERCADOPAGO_TEST_PRICE", "49900")))
     preference = {
@@ -85,7 +85,7 @@ def build_preference(base_url: str) -> dict:
         "payer": {
             "email": email,
         },
-        "external_reference": "nexcore-local-checkout-test",
+        "external_reference": "repuestoscel-local-checkout-test",
     }
     if base_url.startswith("https://"):
         preference["back_urls"] = {

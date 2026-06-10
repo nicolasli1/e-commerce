@@ -1,11 +1,11 @@
-# DevOps Report — Infraestructura Backoffice NexCore
+# DevOps Report — Infraestructura Backoffice RepuestosCel
 
 **Fecha:** 2026-05-03
 **Autor:** DevOps (subagent)
 
 ## Resumen de Cambios
 
-Se preparó la infraestructura completa de CloudFormation + CDK para el backoffice de NexCore, siguiendo el plan definido en `docs/backoffice-plan.md`.
+Se preparó la infraestructura completa de CloudFormation + CDK para el backoffice de RepuestosCel, siguiendo el plan definido en `docs/backoffice-plan.md`.
 
 ---
 

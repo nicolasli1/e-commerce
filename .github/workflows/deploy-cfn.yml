@@ -171,7 +171,7 @@ jobs:
 
           echo ""
           echo "========================================"
-          echo "  ✅ NexCore Deploy Complete (CFn)"
+          echo "  ✅ RepuestosCel Deploy Complete (CFn)"
           echo "  🌐 Website: $URL"
           echo "  🔌 API:     $API_URL"
           echo "  📦 Template: ${{ env.CFN_TEMPLATE }}"

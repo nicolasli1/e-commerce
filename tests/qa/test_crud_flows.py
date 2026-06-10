@@ -1,5 +1,5 @@
 """
-QA Tests — Pruebas de flujos CRUD del backoffice NexCore
+QA Tests — Pruebas de flujos CRUD del backoffice RepuestosCel
 
 Ejecutar: python -m pytest tests/qa/ -v --tb=short
 Requiere: URL del sitio accesible
@@ -8,9 +8,9 @@ Requiere: URL del sitio accesible
 import os
 import requests
 
-BASE_URL = os.environ.get("NEXCORE_BASE_URL", "https://d1ag0uf6e1dp20.cloudfront.net")
-ADMIN_USER = os.environ.get("NEXCORE_ADMIN_USER", "admin")
-ADMIN_PASS = os.environ.get("NEXCORE_ADMIN_PASS", "admin123")
+BASE_URL = os.environ.get("REPUESTOSCEL_BASE_URL", "https://d1ag0uf6e1dp20.cloudfront.net")
+ADMIN_USER = os.environ.get("REPUESTOSCEL_ADMIN_USER", "admin")
+ADMIN_PASS = os.environ.get("REPUESTOSCEL_ADMIN_PASS", "admin123")
 
 
 def _login():
@@ -153,7 +153,7 @@ class TestLeadsQA:
     def test_01_crear_lead_publico(self):
         """Crear lead desde el formulario público."""
         r = requests.post(f"{BASE_URL}/api/leads",
-                          json={"name": "QA Test", "email": "qa@nexcore.test",
+                          json={"name": "QA Test", "email": "qa@repuestoscel.test",
                                 "message": "Prueba de lead desde QA"}, timeout=10)
         assert r.status_code == 201, f"❌ Crear lead falló: {r.status_code} {r.text}"
         assert r.json()["ok"] is True

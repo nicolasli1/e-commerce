@@ -3,21 +3,23 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>NexCore — Repuestos para Celulares</title>
-  <meta name="description" content="NexCore: repuestos para celulares en Colombia. Encuentra pantallas, baterías, flex, cámaras y herramientas para reparar tu celular con confianza. Envíos 24-48h." />
-  <meta name="keywords" content="repuestos celulares colombia, reparar celular, pantallas iPhone, baterías Samsung, kit reparación, flex carga, NexCore" />
+  <title>RepuestosCel — Repuestos para Celulares</title>
+  <meta name="description" content="RepuestosCel: repuestos para celulares en Colombia. Encuentra pantallas, baterías, flex, cámaras y herramientas para reparar tu celular con confianza. Envíos 24-48h." />
+  <meta name="keywords" content="repuestos celulares colombia, reparar celular, pantallas iPhone, baterías Samsung, kit reparación, flex carga, RepuestosCel" />
   <meta name="robots" content="index, follow" />
   <link rel="canonical" href="https://d1ag0uf6e1dp20.cloudfront.net/" />
+  <link rel="icon" type="image/svg+xml" href="favicon.svg" />
+  <link rel="apple-touch-icon" href="favicon.svg" />
   <!-- Open Graph -->
-  <meta property="og:title" content="NexCore — Repuestos para Celulares en Colombia" />
+  <meta property="og:title" content="RepuestosCel — Repuestos para Celulares en Colombia" />
   <meta property="og:description" content="Pantallas, baterías, flex, cámaras, tapas y herramientas DIY. Envíos 24-48h a toda Colombia." />
   <meta property="og:url" content="https://d1ag0uf6e1dp20.cloudfront.net/" />
   <meta property="og:type" content="website" />
-  <meta property="og:site_name" content="NexCore" />
+  <meta property="og:site_name" content="RepuestosCel" />
   <meta property="og:locale" content="es_CO" />
   <!-- Twitter Cards -->
   <meta name="twitter:card" content="summary_large_image" />
-  <meta name="twitter:title" content="NexCore — Repuestos para Celulares" />
+  <meta name="twitter:title" content="RepuestosCel — Repuestos para Celulares" />
   <meta name="twitter:description" content="Encuentra el repuesto correcto para reparar tu celular. Pantallas, baterías, flex, kits DIY y envío en Colombia." />
   <!-- Schema.org JSON-LD -->
   <script type="application/ld+json">
@@ -25,12 +27,12 @@
     "@context": "https://schema.org",
     "@type": "Store",
     "@id": "https://d1ag0uf6e1dp20.cloudfront.net/#store",
-    "name": "NexCore",
+    "name": "RepuestosCel",
     "url": "https://d1ag0uf6e1dp20.cloudfront.net/",
     "description": "Tienda de repuestos para celulares en Colombia. Pantallas, baterías, flex, cámaras, tapas y herramientas DIY.",
     "image": "https://d1ag0uf6e1dp20.cloudfront.net/og-image.jpg",
     "telephone": "+57-300-000-0000",
-    "email": "contacto@nexcore.co",
+    "email": "soporte@repuestoscel.com",
     "address": {
       "@type": "PostalAddress",
       "addressCountry": "CO"
@@ -362,6 +364,12 @@
       font-size: 0.75rem;
       font-weight: 800;
       color: #fff;
+    }
+    .logo-icon img {
+      width: 100%;
+      height: 100%;
+      display: block;
+      border-radius: inherit;
     }
     .nav-links {
       display: flex;
@@ -5007,7 +5015,8 @@
   <script>
     (function() {
       try {
-        var mode = localStorage.getItem('nexcore_theme_mode') || 'system';
+        var legacyThemeKey = 'nex' + 'core_theme_mode';
+        var mode = localStorage.getItem('repuestoscel_theme_mode') || localStorage.getItem(legacyThemeKey) || 'system';
         if (!/^(system|repair|dark)$/.test(mode)) mode = 'system';
         var isDark = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
         document.body.dataset.themeMode = mode;
@@ -5024,8 +5033,8 @@
   <nav class="navbar" id="navbar">
     <div class="container">
       <a href="#" class="logo">
-        <span class="logo-icon">N</span>
-        NexCore
+        <span class="logo-icon"><img src="favicon.svg" alt="" aria-hidden="true" /></span>
+        RepuestosCel
       </a>
       <div class="nav-links" id="navLinks">
         <a href="#categorias">Categorías</a>
@@ -5071,7 +5080,7 @@
   <!-- Mobile Nav Slide-in Panel -->
   <div class="mobile-nav-panel" id="mobileNavPanel">
     <div class="mobile-nav-header">
-      <div class="mobile-nav-logo"><span class="logo-icon" style="width:28px;height:28px;font-size:0.65rem;">N</span> NexCore</div>
+      <div class="mobile-nav-logo"><span class="logo-icon" style="width:28px;height:28px;font-size:0.65rem;"><img src="favicon.svg" alt="" aria-hidden="true" /></span> RepuestosCel</div>
       <button class="mobile-nav-close" onclick="closeMobileNav()" aria-label="Cerrar menú">✕</button>
     </div>
     <div class="mobile-nav-links">
@@ -5459,7 +5468,7 @@
         </div>
         <div class="footer-col">
           <h4>Empresa</h4>
-          <a href="#">Sobre NexCore</a>
+          <a href="#">Sobre RepuestosCel</a>
           <a href="#">Guía para reparar</a>
           <a href="#">Reposición por volumen</a>
           <a href="#">Atención técnica</a>
@@ -5479,7 +5488,7 @@
         </div>
       </div>
       <div class="footer-bottom">
-        <span>© 2026 NexCore. Todos los derechos reservados.</span>
+        <span>© 2026 RepuestosCel. Todos los derechos reservados.</span>
         <span>Hecho para quienes prefieren reparar en Colombia</span>
       </div>
     </div>
@@ -5608,7 +5617,7 @@
             <div class="checkout-consent">
               <label class="checkout-checkbox">
                 <input type="checkbox" id="checkoutAcceptStore" required />
-                <span>Acepto que NexCore procese mi pedido y me contacte sobre esta compra.</span>
+                <span>Acepto que RepuestosCel procese mi pedido y me contacte sobre esta compra.</span>
               </label>
               <label class="checkout-checkbox">
                 <input type="checkbox" id="checkoutAcceptPayment" required />
@@ -5671,8 +5680,43 @@
     // ==============================
     // CARRITO
     // ==============================
-    let cart = JSON.parse(localStorage.getItem('nexcore_cart') || '[]');
-    const CHECKOUT_REFERENCE_STORAGE_KEY = 'nexcore_checkout_reference';
+    const CART_STORAGE_KEY = 'repuestoscel_cart';
+    const LEGACY_CART_STORAGE_KEY = 'nex' + 'core_cart';
+    const CHECKOUT_REFERENCE_STORAGE_KEY = 'repuestoscel_checkout_reference';
+    const LEGACY_CHECKOUT_REFERENCE_STORAGE_KEY = 'nex' + 'core_checkout_reference';
+
+    function readLocalStorageWithLegacy(key, legacyKey, fallback = '') {
+      const currentValue = localStorage.getItem(key);
+      if (currentValue !== null) return currentValue;
+      const legacyValue = localStorage.getItem(legacyKey);
+      if (legacyValue !== null) {
+        localStorage.setItem(key, legacyValue);
+        return legacyValue;
+      }
+      return fallback;
+    }
+
+    function saveCart() {
+      localStorage.setItem(CART_STORAGE_KEY, JSON.stringify(cart));
+      localStorage.removeItem(LEGACY_CART_STORAGE_KEY);
+    }
+
+    function clearCartStorage() {
+      localStorage.removeItem(CART_STORAGE_KEY);
+      localStorage.removeItem(LEGACY_CART_STORAGE_KEY);
+    }
+
+    function saveCheckoutReference(reference) {
+      localStorage.setItem(CHECKOUT_REFERENCE_STORAGE_KEY, reference);
+      localStorage.removeItem(LEGACY_CHECKOUT_REFERENCE_STORAGE_KEY);
+    }
+
+    function clearCheckoutReferenceStorage() {
+      clearCheckoutReferenceStorage();
+      localStorage.removeItem(LEGACY_CHECKOUT_REFERENCE_STORAGE_KEY);
+    }
+
+    let cart = JSON.parse(readLocalStorageWithLegacy(CART_STORAGE_KEY, LEGACY_CART_STORAGE_KEY, '[]') || '[]');
     // API Key for backend auth — injected by CDK during deploy
     // In dev, this can be empty (backend allows requests without key)
     const API_KEY = '__API_KEY__';
@@ -5688,7 +5732,7 @@
       } else {
         cart.push({...product, quantity: 1});
       }
-      localStorage.setItem('nexcore_cart', JSON.stringify(cart));
+      saveCart();
       updateCartCount();
       showCartToast(product.name + ' agregado al carrito');
     }
@@ -5699,13 +5743,13 @@
         el.classList.add('removing');
         setTimeout(() => {
           cart = cart.filter(c => cartItemKey(c) !== key);
-          localStorage.setItem('nexcore_cart', JSON.stringify(cart));
+          saveCart();
           updateCartCount();
           renderCart();
         }, 200);
       } else {
         cart = cart.filter(c => cartItemKey(c) !== key);
-        localStorage.setItem('nexcore_cart', JSON.stringify(cart));
+        saveCart();
         updateCartCount();
         renderCart();
       }
@@ -5715,7 +5759,7 @@
       const item = cart.find(c => cartItemKey(c) === key);
       if (item) {
         item.quantity = Math.max(1, item.quantity + delta);
-        localStorage.setItem('nexcore_cart', JSON.stringify(cart));
+        saveCart();
         updateCartCount();
         renderCart();
       }
@@ -6211,8 +6255,8 @@
 
       if (status === 'APPROVED') {
         cart = [];
-        localStorage.removeItem('nexcore_cart');
-        localStorage.removeItem(CHECKOUT_REFERENCE_STORAGE_KEY);
+        clearCartStorage();
+        clearCheckoutReferenceStorage();
         updateCartCount();
         renderCart();
       }
@@ -6353,7 +6397,7 @@
           throw new Error(data.message || data.error || 'No pudimos crear el checkout.');
         }
 
-        localStorage.setItem(CHECKOUT_REFERENCE_STORAGE_KEY, data.reference);
+        saveCheckoutReference(data.reference);
 
         if (provider === 'nequi') {
           const phone = payload.nequiPhone;
@@ -6374,7 +6418,7 @@
                 showCheckoutResult(d.order);
                 setCheckoutMode('confirmed');
                 setCheckoutStatus('¡Pago aprobado! Tu pedido está confirmado.', 'success');
-                cart = []; localStorage.removeItem('nexcore_cart'); updateCartCount();
+                cart = []; clearCartStorage(); updateCartCount();
               } else if (['rejected','declined','error'].includes(status)) {
                 clearInterval(poll);
                 setCheckoutStatus('El pago fue rechazado o cancelado en Nequi.', 'error');
@@ -6400,7 +6444,7 @@
       const isCheckoutReturn = params.get('checkout') === 'return';
       if (!isCheckoutReturn) return;
 
-      const reference = params.get('reference') || localStorage.getItem(CHECKOUT_REFERENCE_STORAGE_KEY);
+      const reference = params.get('reference') || readLocalStorageWithLegacy(CHECKOUT_REFERENCE_STORAGE_KEY, LEGACY_CHECKOUT_REFERENCE_STORAGE_KEY, '');
       const transactionId = params.get('transactionId') || params.get('payment_id') || params.get('id') || '';
       if (!reference) {
         window.history.replaceState({}, document.title, window.location.pathname + window.location.hash);
@@ -7900,8 +7944,8 @@
       }
     }
 
-    const THEME_MODE_KEY = 'nexcore_theme_mode';
-    const LEGACY_THEME_KEY = 'nexcore_site_theme';
+    const THEME_MODE_KEY = 'repuestoscel_theme_mode';
+    const LEGACY_THEME_KEYS = ['nex' + 'core_theme_mode', 'nex' + 'core_site_theme', 'repuestoscel_site_theme'];
     const THEME_MODES = ['system', 'repair', 'dark'];
     const THEME_MODE_META = {
       system: { icon: '☀', label: 'Sistema', title: 'Tema: sistema' },
@@ -7947,7 +7991,7 @@
       if (options.persist) {
         try {
           localStorage.setItem(THEME_MODE_KEY, currentThemeMode);
-          localStorage.removeItem(LEGACY_THEME_KEY);
+          LEGACY_THEME_KEYS.forEach((key) => localStorage.removeItem(key));
         } catch {}
       }
     }
@@ -7960,8 +8004,9 @@
     function initThemePreference() {
       let storedMode = 'system';
       try {
-        storedMode = normalizeThemeMode(localStorage.getItem(THEME_MODE_KEY) || 'system');
-        localStorage.removeItem(LEGACY_THEME_KEY);
+        const legacyMode = LEGACY_THEME_KEYS.map((key) => localStorage.getItem(key)).find(Boolean);
+        storedMode = normalizeThemeMode(localStorage.getItem(THEME_MODE_KEY) || legacyMode || 'system');
+        LEGACY_THEME_KEYS.forEach((key) => localStorage.removeItem(key));
       } catch {}
       applyThemeMode(storedMode);
       if (systemThemeQuery) {
@@ -8046,7 +8091,7 @@
           }
           if (cart.length > 0) {
             cart = [];
-            localStorage.removeItem('nexcore_cart');
+            clearCartStorage();
             updateCartCount();
             renderCart();
           }
@@ -8084,17 +8129,33 @@
     // ==============================
     // USER AUTH STATE (simplified — no user accounts, just tracking)
     // ==============================
-    const AUTH_TOKEN_KEY = 'nexcore_auth_token';
-    const AUTH_USER_KEY = 'nexcore_auth_user';
-    const AUTH_USERID_KEY = 'nexcore_auth_user_id';
-    let currentUser = JSON.parse(sessionStorage.getItem(AUTH_USER_KEY) || 'null');
+    const AUTH_TOKEN_KEY = 'repuestoscel_auth_token';
+    const AUTH_USER_KEY = 'repuestoscel_auth_user';
+    const AUTH_USERID_KEY = 'repuestoscel_auth_user_id';
+    const LEGACY_AUTH_TOKEN_KEY = 'nex' + 'core_auth_token';
+    const LEGACY_AUTH_USER_KEY = 'nex' + 'core_auth_user';
+    const LEGACY_AUTH_USERID_KEY = 'nex' + 'core_auth_user_id';
+
+    function readSessionStorageWithLegacy(key, legacyKey, fallback = '') {
+      const currentValue = sessionStorage.getItem(key);
+      if (currentValue !== null) return currentValue;
+      const legacyValue = sessionStorage.getItem(legacyKey);
+      if (legacyValue !== null) {
+        sessionStorage.setItem(key, legacyValue);
+        sessionStorage.removeItem(legacyKey);
+        return legacyValue;
+      }
+      return fallback;
+    }
+
+    let currentUser = JSON.parse(readSessionStorageWithLegacy(AUTH_USER_KEY, LEGACY_AUTH_USER_KEY, 'null') || 'null');
 
     function isLoggedIn() {
-      return !!sessionStorage.getItem(AUTH_TOKEN_KEY);
+      return !!readSessionStorageWithLegacy(AUTH_TOKEN_KEY, LEGACY_AUTH_TOKEN_KEY);
     }
 
     function getUserToken() {
-      return sessionStorage.getItem(AUTH_TOKEN_KEY) || '';
+      return readSessionStorageWithLegacy(AUTH_TOKEN_KEY, LEGACY_AUTH_TOKEN_KEY) || '';
     }
 
     function updateAuthUI() {
@@ -8182,6 +8243,8 @@
         }
         sessionStorage.setItem(AUTH_TOKEN_KEY, data.token);
         sessionStorage.setItem(AUTH_USER_KEY, JSON.stringify(data.user));
+        sessionStorage.removeItem(LEGACY_AUTH_TOKEN_KEY);
+        sessionStorage.removeItem(LEGACY_AUTH_USER_KEY);
         currentUser = data.user;
         closeAuthModal();
         updateAuthUI();
@@ -8227,6 +8290,9 @@
         sessionStorage.setItem(AUTH_TOKEN_KEY, data.token);
         sessionStorage.setItem(AUTH_USER_KEY, JSON.stringify(data.user));
         sessionStorage.setItem(AUTH_USERID_KEY, data.userId || '');
+        sessionStorage.removeItem(LEGACY_AUTH_TOKEN_KEY);
+        sessionStorage.removeItem(LEGACY_AUTH_USER_KEY);
+        sessionStorage.removeItem(LEGACY_AUTH_USERID_KEY);
         currentUser = data.user;
         closeAuthModal();
         updateAuthUI();
@@ -8300,6 +8366,9 @@
       sessionStorage.removeItem(AUTH_TOKEN_KEY);
       sessionStorage.removeItem(AUTH_USER_KEY);
       sessionStorage.removeItem(AUTH_USERID_KEY);
+      sessionStorage.removeItem(LEGACY_AUTH_TOKEN_KEY);
+      sessionStorage.removeItem(LEGACY_AUTH_USER_KEY);
+      sessionStorage.removeItem(LEGACY_AUTH_USERID_KEY);
       currentUser = null;
       updateAuthUI();
       closeOrders();

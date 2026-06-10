@@ -51,9 +51,9 @@ jobs:
 
       - name: Run E2E tests
         env:
-          NEXCORE_BASE_URL: "https://d1ag0uf6e1dp20.cloudfront.net"
-          NEXCORE_API_KEY: ${{ secrets.NEXCORE_API_KEY || 'nexcor…2026' }}
-          NEXCORE_ADMIN_USER: ${{ secrets.NEXCORE_ADMIN_USER || 'admin' }}
-          NEXCORE_ADMIN_PASS: ${{ secrets.NEXCORE_ADMIN_PASS || 'admin123' }}
+          REPUESTOSCEL_BASE_URL: "https://d1ag0uf6e1dp20.cloudfront.net"
+          REPUESTOSCEL_API_KEY: ${{ secrets.REPUESTOSCEL_API_KEY || 'repuestoscel…2026' }}
+          REPUESTOSCEL_ADMIN_USER: ${{ secrets.REPUESTOSCEL_ADMIN_USER || 'admin' }}
+          REPUESTOSCEL_ADMIN_PASS: ${{ secrets.REPUESTOSCEL_ADMIN_PASS || 'admin123' }}
         run: |
           python -m pytest tests/e2e/ -v --tb=long

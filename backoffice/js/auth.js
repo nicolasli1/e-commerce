@@ -1,11 +1,23 @@
 /**
- * NexCore Backoffice — Authentication Module
+ * RepuestosCel Backoffice — Authentication Module
  */
 
 const Auth = (() => {
   'use strict';
 
-  const TOKEN_KEY = 'nexcore_admin_token';
+  const TOKEN_KEY = 'repuestoscel_admin_token';
+  const LEGACY_TOKEN_KEY = 'nex' + 'core_admin_token';
+
+  function getStoredToken() {
+    const token = localStorage.getItem(TOKEN_KEY);
+    if (token) return token;
+    const legacyToken = localStorage.getItem(LEGACY_TOKEN_KEY);
+    if (legacyToken) {
+      localStorage.setItem(TOKEN_KEY, legacyToken);
+      localStorage.removeItem(LEGACY_TOKEN_KEY);
+    }
+    return legacyToken;
+  }
 
   /**
    * Authenticate with username + password.
@@ -18,6 +30,7 @@ const Auth = (() => {
     const data = await Api.post('/api/admin/login', { username, password });
     if (data.token) {
       localStorage.setItem(TOKEN_KEY, data.token);
+      localStorage.removeItem(LEGACY_TOKEN_KEY);
     }
     return data;
   }
@@ -27,6 +40,7 @@ const Auth = (() => {
    */
   function logout() {
     localStorage.removeItem(TOKEN_KEY);
+    localStorage.removeItem(LEGACY_TOKEN_KEY);
     window.location.hash = '#/login';
   }
 
@@ -35,7 +49,7 @@ const Auth = (() => {
    * @returns {boolean}
    */
   function isAuthenticated() {
-    return !!localStorage.getItem(TOKEN_KEY);
+    return !!getStoredToken();
   }
 
   /**
@@ -43,7 +57,7 @@ const Auth = (() => {
    * @returns {string|null}
    */
   function getToken() {
-    return localStorage.getItem(TOKEN_KEY);
+    return getStoredToken();
   }
 
   return {

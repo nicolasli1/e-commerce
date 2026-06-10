@@ -1,8 +1,8 @@
-# Backoffice Plan — NexCore
+# Backoffice Plan — RepuestosCel
 
 ## Objetivo
 
-Crear un panel de administración web (backoffice) para gestionar el e-commerce NexCore desde un solo lugar.
+Crear un panel de administración web (backoffice) para gestionar el e-commerce RepuestosCel desde un solo lugar.
 
 ## Stack Técnico
 
