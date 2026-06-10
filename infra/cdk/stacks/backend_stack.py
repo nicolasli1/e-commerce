@@ -190,7 +190,7 @@ class BackendStack(Stack):
         if ses_domain:
             email_identity = ses.EmailIdentity(
                 self,
-                "OrderEmailIdentity",
+                "OrderEmailIdentityV2",
                 identity=ses.Identity.domain(ses_domain),
             )
             CfnOutput(self, "SesDomain", value=ses_domain)
