@@ -2179,6 +2179,7 @@ def create_checkout_session(event):
     widget_config = None
     mercadopago_config = None
     provider_data = {"name": provider}
+    user_id = (body.get("userId") or "").strip()
     if provider == "wompi":
         widget_config = build_widget_config(reference, total_cents, customer, shipping, redirect_url)
         provider_data["wompi"] = {
