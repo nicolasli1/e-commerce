@@ -5573,6 +5573,16 @@
                 </div>
               </label>
               <label class="checkout-provider">
+                <input type="radio" name="checkoutProvider" value="wompi" />
+                <div class="checkout-provider-card">
+                  <div class="checkout-provider-title">
+                    <span>Wompi</span>
+                    <span class="checkout-provider-tag">Checkout seguro</span>
+                  </div>
+                  <div class="checkout-provider-copy">Paga con tarjeta, PSE y métodos locales desde la pasarela de Bancolombia.</div>
+                </div>
+              </label>
+              <label class="checkout-provider">
                 <input type="radio" name="checkoutProvider" value="nequi" />
                 <div class="checkout-provider-card">
                   <div class="checkout-provider-title">
@@ -6102,6 +6112,13 @@
       return el ? el.value : 'mercadopago';
     }
 
+    function checkoutProviderLabel(provider) {
+      const key = String(provider || '').toLowerCase();
+      if (key === 'nequi') return 'Nequi';
+      if (key === 'wompi') return 'Wompi';
+      return 'Mercado Pago';
+    }
+
     function normalizeColombianMobile(value) {
       let digits = String(value || '').replace(/\D/g, '');
       if (digits.startsWith('57') && digits.length === 12) digits = digits.slice(2);
@@ -6115,12 +6132,16 @@
       const payBtn = document.getElementById('checkoutPayBtn');
       if (nequiWrap) nequiWrap.style.display = provider === 'nequi' ? 'block' : 'none';
       if (payBtn) {
-        payBtn.textContent = provider === 'nequi' ? 'Pagar con Nequi' : 'Pagar con Mercado Pago';
+        payBtn.textContent = `Pagar con ${checkoutProviderLabel(provider)}`;
       }
       if (note) {
-        note.textContent = provider === 'nequi'
-          ? 'Recibirás una notificación push en tu app Nequi. Aprueba el pago desde tu celular.'
-          : 'Mercado Pago usa Checkout Pro: serás redirigido a su entorno seguro para completar el pago.';
+        if (provider === 'nequi') {
+          note.textContent = 'Recibirás una notificación push en tu app Nequi. Aprueba el pago desde tu celular.';
+        } else if (provider === 'wompi') {
+          note.textContent = 'Wompi abrirá un checkout seguro. En modo pruebas puedes validar el flujo sin cobro real.';
+        } else {
+          note.textContent = 'Mercado Pago usa Checkout Pro: serás redirigido a su entorno seguro para completar el pago.';
+        }
       }
     }
 
@@ -6194,7 +6215,7 @@
       result.classList.add('visible');
       const status = (order?.status || 'PENDING').toUpperCase();
       const provider = (order?.provider || selectedCheckoutProvider()).toLowerCase();
-      const providerLabel = provider === 'nequi' ? 'Nequi' : 'Mercado Pago';
+      const providerLabel = checkoutProviderLabel(provider);
       const statusMap = {
         APPROVED: {
           badge: 'Pago aprobado',
@@ -6351,6 +6372,51 @@
       window.location.href = targetUrl;
     }
 
+    let wompiWidgetScriptPromise = null;
+
+    function loadWompiWidgetScript() {
+      if (window.WidgetCheckout) return Promise.resolve();
+      if (wompiWidgetScriptPromise) return wompiWidgetScriptPromise;
+
+      wompiWidgetScriptPromise = new Promise((resolve, reject) => {
+        const script = document.createElement('script');
+        script.src = 'https://checkout.wompi.co/widget.js';
+        script.async = true;
+        script.onload = () => resolve();
+        script.onerror = () => reject(new Error('No pudimos cargar el checkout de Wompi.'));
+        document.head.appendChild(script);
+      });
+
+      return wompiWidgetScriptPromise;
+    }
+
+    async function launchWompi(session) {
+      const config = session?.wompi;
+      if (!config?.publicKey || !config?.reference || !config?.amountInCents || !config?.signature?.integrity) {
+        throw new Error('Wompi no devolvió una configuración de checkout válida.');
+      }
+
+      await loadWompiWidgetScript();
+      const checkout = new window.WidgetCheckout(config);
+
+      checkout.open(async (result) => {
+        const transaction = result?.transaction || {};
+        const transactionId = transaction.id || transaction.transaction_id || '';
+        setCheckoutStatus('Wompi recibió la transacción. Estamos consultando el estado del pedido...', 'warning');
+        try {
+          const res = await fetch(`/api/checkout/orders/${encodeURIComponent(config.reference)}?transactionId=${encodeURIComponent(transactionId)}&_t=${Date.now()}`);
+          const data = await res.json();
+          if (!res.ok) {
+            throw new Error(data.error || 'No pudimos consultar el estado del pedido.');
+          }
+          showCheckoutResult(data.order || session.order, transactionId);
+        } catch (err) {
+          setCheckoutStatus(err.message || 'No pudimos validar el pago de Wompi todavía.', 'error');
+          showCheckoutResult(session.order, transactionId);
+        }
+      });
+    }
+
     async function submitCheckout(event) {
       event.preventDefault();
       if (cart.length === 0) {
@@ -6365,7 +6431,11 @@
       const provider = selectedCheckoutProvider();
       const payBtn = document.getElementById('checkoutPayBtn');
       payBtn.disabled = true;
-      payBtn.textContent = provider === 'nequi' ? 'Enviando notificación...' : 'Preparando checkout...';
+      payBtn.textContent = provider === 'nequi'
+        ? 'Enviando notificación...'
+        : provider === 'wompi'
+          ? 'Abriendo Wompi...'
+          : 'Preparando checkout...';
 
       // Nequi: validate phone field
       if (provider === 'nequi') {
@@ -6427,6 +6497,12 @@
             } catch (_) {}
           }, 4000);
         } else {
+          if (provider === 'wompi') {
+            setCheckoutStatus('Checkout creado. Abriremos Wompi con la referencia real del pedido.', 'success');
+            showCheckoutResult(data.order);
+            await launchWompi(data);
+            return;
+          }
           setCheckoutStatus('Preferencia creada. Te vamos a redirigir a Mercado Pago con la referencia real del pedido.', 'success');
           showCheckoutResult(data.order);
           await launchMercadoPago(data);

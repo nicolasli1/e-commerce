@@ -90,11 +90,11 @@ class FrontendStack(Stack):
                         content_security_policy=(
                             "default-src 'self'; "
                             "img-src 'self' data: https:; "
-                            "script-src 'self' 'unsafe-inline'; "
+                            "script-src 'self' 'unsafe-inline' https://checkout.wompi.co; "
                             "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; "
                             "font-src 'self' https://fonts.gstatic.com; "
                             "connect-src 'self' https:; "
-                            "frame-src 'none';"
+                            "frame-src https://checkout.wompi.co https://*.wompi.co;"
                         ),
                         override=True,
                     ),
