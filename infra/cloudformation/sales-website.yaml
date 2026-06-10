@@ -114,7 +114,7 @@ Resources:
         Name: !Sub '${ProjectName}-${Environment}-security-headers'
         SecurityHeadersConfig:
           ContentSecurityPolicy:
-            ContentSecurityPolicy: "default-src 'self'; img-src 'self' data: https:; script-src 'self' 'unsafe-inline' https://checkout.wompi.co; style-src 'self' 'unsafe-inline' https:; connect-src 'self' https:; frame-src https://checkout.wompi.co https://*.wompi.co;"
+            ContentSecurityPolicy: "default-src 'self'; img-src 'self' data: https:; script-src 'self' 'unsafe-inline' https://checkout.wompi.co https://*.wompi.co; style-src 'self' 'unsafe-inline' https:; connect-src 'self' https:; frame-src https://checkout.wompi.co https://*.wompi.co;"
             Override: true
           ContentTypeOptions:
             Override: true

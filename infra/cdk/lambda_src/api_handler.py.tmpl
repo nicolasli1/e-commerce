@@ -1194,13 +1194,16 @@ def get_origin(event):
     proto = headers.get("x-forwarded-proto") or headers.get("X-Forwarded-Proto") or "https"
     host = headers.get("x-forwarded-host") or headers.get("X-Forwarded-Host") or headers.get("host") or headers.get("Host") or ""
     candidate = f"{proto}://{host}".rstrip("/") if host else ""
-    # Only allow *.cloudfront.net and localhost (dev)
+    # Only allow known storefront origins. If the request reaches Lambda through
+    # an API Gateway host, fall back to the production storefront instead of
+    # returning an empty redirect URL to payment providers.
     allowed = (
-        candidate.endswith(".cloudfront.net")
+        candidate in ("https://repuestoscel.com", "https://www.repuestoscel.com")
+        or candidate.endswith(".cloudfront.net")
         or candidate.startswith("http://localhost")
         or candidate.startswith("http://127.0.0.1")
     )
-    return candidate if allowed else ""
+    return candidate if allowed else "https://repuestoscel.com"
 
 
 def generate_order_reference():
