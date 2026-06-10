@@ -50,6 +50,8 @@ class BackendStack(Stack):
         enable_backend: bool = True,
         allowed_origins: Optional[list] = None,
         ses_domain: Optional[str] = None,
+        order_notifications_from_email: Optional[str] = None,
+        order_alerts_to_email: Optional[str] = None,
         **kwargs,
     ) -> None:
         super().__init__(scope, id, **kwargs)
@@ -158,6 +160,8 @@ class BackendStack(Stack):
                 "NEQUI_WEBHOOK_SECRET_PARAM": f"/{project_name}/{environment}/nequi-webhook-secret",
                 "ORDER_NOTIFICATIONS_FROM_EMAIL_PARAM": f"/{project_name}/{environment}/order-notifications-from-email",
                 "ORDER_ALERTS_TO_EMAIL_PARAM": f"/{project_name}/{environment}/order-alerts-to-email",
+                "ORDER_NOTIFICATIONS_FROM_EMAIL": order_notifications_from_email or "",
+                "ORDER_ALERTS_TO_EMAIL": order_alerts_to_email or order_notifications_from_email or "",
                 "API_KEY_PARAM": f"/{project_name}/{environment}/api-key",
             },
         )

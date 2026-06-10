@@ -39,6 +39,11 @@ domain_names = raw_domains.split(",") if raw_domains else None
 raw_origins = app.node.try_get_context("allowed_origins") or None
 allowed_origins = raw_origins.split(",") if raw_origins else None
 ses_domain = app.node.try_get_context("ses_domain") or None
+backend_region = app.node.try_get_context("backend_region") or os.environ.get("CDK_DEFAULT_REGION", "us-east-1")
+order_notifications_from_email = app.node.try_get_context("order_notifications_from_email") or (
+    f"soporte@{ses_domain}" if ses_domain else None
+)
+order_alerts_to_email = app.node.try_get_context("order_alerts_to_email") or order_notifications_from_email
 
 enable_backend_bool = enable_backend.lower() in ("true", "1", "yes")
 
@@ -53,11 +58,13 @@ backend = BackendStack(
     enable_backend=enable_backend_bool,
     allowed_origins=allowed_origins,
     ses_domain=ses_domain,
+    order_notifications_from_email=order_notifications_from_email,
+    order_alerts_to_email=order_alerts_to_email,
     cross_region_references=True,
     description=f"Sales website backend – {project_name} {environment}",
     env=cdk.Environment(
         account=os.environ.get("CDK_DEFAULT_ACCOUNT"),
-        region=os.environ.get("CDK_DEFAULT_REGION", "us-east-2"),
+        region=backend_region,
     ),
 )
 
