@@ -40,12 +40,14 @@ raw_origins = app.node.try_get_context("allowed_origins") or None
 allowed_origins = raw_origins.split(",") if raw_origins else None
 ses_domain = app.node.try_get_context("ses_domain") or None
 backend_region = app.node.try_get_context("backend_region") or os.environ.get("CDK_DEFAULT_REGION", "us-east-1")
+manage_ses_identity_raw = app.node.try_get_context("manage_ses_identity") or "false"
 order_notifications_from_email = app.node.try_get_context("order_notifications_from_email") or (
     f"soporte@{ses_domain}" if ses_domain else None
 )
 order_alerts_to_email = app.node.try_get_context("order_alerts_to_email") or order_notifications_from_email
 
 enable_backend_bool = enable_backend.lower() in ("true", "1", "yes")
+manage_ses_identity = str(manage_ses_identity_raw).lower() in ("true", "1", "yes")
 
 # ------------------------------------------------------------------
 # Backend stack (optional – only if backend is enabled)
@@ -58,6 +60,7 @@ backend = BackendStack(
     enable_backend=enable_backend_bool,
     allowed_origins=allowed_origins,
     ses_domain=ses_domain,
+    manage_ses_identity=manage_ses_identity,
     order_notifications_from_email=order_notifications_from_email,
     order_alerts_to_email=order_alerts_to_email,
     cross_region_references=True,

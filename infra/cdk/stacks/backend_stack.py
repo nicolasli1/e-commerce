@@ -50,6 +50,7 @@ class BackendStack(Stack):
         enable_backend: bool = True,
         allowed_origins: Optional[list] = None,
         ses_domain: Optional[str] = None,
+        manage_ses_identity: bool = False,
         order_notifications_from_email: Optional[str] = None,
         order_alerts_to_email: Optional[str] = None,
         **kwargs,
@@ -191,7 +192,7 @@ class BackendStack(Stack):
         # Created in pending state; verification completes once the DKIM
         # CNAME records are added to the domain's DNS (Hostinger).
         # ------------------------------------------------------------------
-        if ses_domain:
+        if ses_domain and manage_ses_identity:
             email_identity = ses.EmailIdentity(
                 self,
                 "OrderEmailIdentityV2",

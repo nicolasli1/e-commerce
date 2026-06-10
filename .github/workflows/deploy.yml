@@ -197,6 +197,7 @@ jobs:
             --context backend_region=${{ env.BACKEND_REGION }} \
             --context allowed_origins=https://repuestoscel.com,https://www.repuestoscel.com,https://d1ag0uf6e1dp20.cloudfront.net \
             --context ses_domain=repuestoscel.com \
+            --context manage_ses_identity=false \
             --context order_notifications_from_email=${{ env.ORDER_EMAIL }} \
             --context order_alerts_to_email=${{ env.ORDER_EMAIL }} \
             --require-approval never
