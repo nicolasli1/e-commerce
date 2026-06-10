@@ -38,6 +38,7 @@ raw_domains = app.node.try_get_context("domain_names") or None
 domain_names = raw_domains.split(",") if raw_domains else None
 raw_origins = app.node.try_get_context("allowed_origins") or None
 allowed_origins = raw_origins.split(",") if raw_origins else None
+ses_domain = app.node.try_get_context("ses_domain") or None
 
 enable_backend_bool = enable_backend.lower() in ("true", "1", "yes")
 
@@ -51,6 +52,7 @@ backend = BackendStack(
     environment=environment,
     enable_backend=enable_backend_bool,
     allowed_origins=allowed_origins,
+    ses_domain=ses_domain,
     cross_region_references=True,
     description=f"Sales website backend – {project_name} {environment}",
     env=cdk.Environment(

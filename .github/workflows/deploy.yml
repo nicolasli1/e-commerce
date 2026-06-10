@@ -139,6 +139,26 @@ jobs:
             echo "   ✅ admin-session-secret already exists (not rotated)"
           fi
 
+          # order-notifications-from-email (String) — config, siempre actualizado
+          aws ssm put-parameter \
+            --name "${SSM_PATH}/order-notifications-from-email" \
+            --value "soporte@repuestoscel.com" \
+            --type "String" \
+            --description "From address for order notification emails (SES)" \
+            --overwrite \
+            --region ${{ env.BACKEND_REGION }} > /dev/null
+          echo "   ✅ Set order-notifications-from-email"
+
+          # order-alerts-to-email (String) — config, siempre actualizado
+          aws ssm put-parameter \
+            --name "${SSM_PATH}/order-alerts-to-email" \
+            --value "soporte@repuestoscel.com" \
+            --type "String" \
+            --description "Internal recipient for new-order alert emails" \
+            --overwrite \
+            --region ${{ env.BACKEND_REGION }} > /dev/null
+          echo "   ✅ Set order-alerts-to-email"
+
       # --- Setup ---
       - name: Setup Python ${{ env.PYTHON_VERSION }}
         uses: actions/setup-python@v5
@@ -174,6 +194,7 @@ jobs:
             --context environment=${{ env.ENVIRONMENT }} \
             --context enable_backend=true \
             --context allowed_origins=https://repuestoscel.com,https://www.repuestoscel.com,https://d1ag0uf6e1dp20.cloudfront.net \
+            --context ses_domain=repuestoscel.com \
             --require-approval never
 
       - name: Deploy Frontend Stack

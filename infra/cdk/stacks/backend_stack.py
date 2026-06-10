@@ -7,6 +7,7 @@ from aws_cdk import (
     aws_apigatewayv2_integrations as integrations,
     aws_iam as iam,
     aws_s3 as s3,
+    aws_ses as ses,
     CfnOutput,
     Stack,
     RemovalPolicy,
@@ -48,6 +49,7 @@ class BackendStack(Stack):
         environment: str = "dev",
         enable_backend: bool = True,
         allowed_origins: Optional[list] = None,
+        ses_domain: Optional[str] = None,
         **kwargs,
     ) -> None:
         super().__init__(scope, id, **kwargs)
@@ -179,6 +181,25 @@ class BackendStack(Stack):
                 resources=["*"],
             )
         )
+
+        # ------------------------------------------------------------------
+        # 2a. SES domain identity for order notification emails (Easy DKIM)
+        # Created in pending state; verification completes once the DKIM
+        # CNAME records are added to the domain's DNS (Hostinger).
+        # ------------------------------------------------------------------
+        if ses_domain:
+            email_identity = ses.EmailIdentity(
+                self,
+                "OrderEmailIdentity",
+                identity=ses.Identity.domain(ses_domain),
+            )
+            CfnOutput(self, "SesDomain", value=ses_domain)
+            CfnOutput(self, "SesDkimName1", value=email_identity.dkim_dns_token_name1)
+            CfnOutput(self, "SesDkimValue1", value=email_identity.dkim_dns_token_value1)
+            CfnOutput(self, "SesDkimName2", value=email_identity.dkim_dns_token_name2)
+            CfnOutput(self, "SesDkimValue2", value=email_identity.dkim_dns_token_value2)
+            CfnOutput(self, "SesDkimName3", value=email_identity.dkim_dns_token_name3)
+            CfnOutput(self, "SesDkimValue3", value=email_identity.dkim_dns_token_value3)
 
         # ------------------------------------------------------------------
         # 2b. S3 bucket for product images + image processing Lambda
