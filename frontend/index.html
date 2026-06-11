@@ -2159,6 +2159,17 @@
       padding: clamp(20px, 3vw, 32px);
       overflow: hidden auto;
     }
+    #checkoutModal {
+      align-items: flex-start;
+      overflow-y: auto;
+      -webkit-overflow-scrolling: touch;
+      overscroll-behavior: contain;
+    }
+    #checkoutModal .checkout-modal {
+      margin: clamp(16px, 4vh, 36px) auto;
+      max-height: none;
+      overflow: visible;
+    }
     .checkout-shell {
       display: grid;
       grid-template-columns: minmax(0, 1.1fr) minmax(280px, 0.75fr);
@@ -2761,6 +2772,9 @@
     }
     .checkout-shell.post-purchase {
       grid-template-columns: 1fr;
+    }
+    .checkout-shell.post-purchase .checkout-result {
+      margin-top: 0;
     }
 
     /* ==============================
@@ -6147,10 +6161,10 @@
             }
             <div>
               <div class="checkout-result-item-name">${item.name || 'Producto'}</div>
-              <div class="checkout-result-item-meta">${item.quantity || 0} x ${formatCents(item.unitPriceCents || 0)}</div>
+              <div class="checkout-result-item-meta">${item.quantity || 0} x ${formatCents(item.unitPriceCents ?? ((Number(item.price) || 0) * 100))}</div>
             </div>
           </div>
-          <div style="font-weight:700;">${formatCents(item.subtotalCents || 0)}</div>
+          <div style="font-weight:700;">${formatCents(item.subtotalCents ?? ((Number(item.price) || 0) * 100 * (Number(item.quantity) || 0)))}</div>
         </div>
       `).join('') || '<div class="tracking-empty">No encontramos ítems para este pedido.</div>';
     }
@@ -6457,49 +6471,42 @@
       window.location.href = targetUrl;
     }
 
-    let wompiWidgetScriptPromise = null;
-
-    function loadWompiWidgetScript() {
-      if (window.WidgetCheckout) return Promise.resolve();
-      if (wompiWidgetScriptPromise) return wompiWidgetScriptPromise;
-
-      wompiWidgetScriptPromise = new Promise((resolve, reject) => {
-        const script = document.createElement('script');
-        script.src = 'https://checkout.wompi.co/widget.js';
-        script.async = true;
-        script.onload = () => resolve();
-        script.onerror = () => reject(new Error('No pudimos cargar el checkout de Wompi.'));
-        document.head.appendChild(script);
-      });
-
-      return wompiWidgetScriptPromise;
-    }
-
-    async function launchWompi(session) {
+    function launchWompi(session) {
       const config = session?.wompi;
       if (!config?.publicKey || !config?.reference || !config?.amountInCents || !config?.signature?.integrity) {
         throw new Error('Wompi no devolvió una configuración de checkout válida.');
       }
 
-      await loadWompiWidgetScript();
-      const checkout = new window.WidgetCheckout(config);
+      const form = document.createElement('form');
+      form.method = 'GET';
+      form.action = 'https://checkout.wompi.co/p/';
+      form.style.display = 'none';
 
-      checkout.open(async (result) => {
-        const transaction = result?.transaction || {};
-        const transactionId = transaction.id || transaction.transaction_id || '';
-        setCheckoutStatus('Wompi recibió la transacción. Estamos consultando el estado del pedido...', 'warning');
-        try {
-          const res = await fetch(`/api/checkout/orders/${encodeURIComponent(config.reference)}?transactionId=${encodeURIComponent(transactionId)}&_t=${Date.now()}`);
-          const data = await res.json();
-          if (!res.ok) {
-            throw new Error(data.error || 'No pudimos consultar el estado del pedido.');
-          }
-          showCheckoutResult(data.order || session.order, transactionId);
-        } catch (err) {
-          setCheckoutStatus(err.message || 'No pudimos validar el pago de Wompi todavía.', 'error');
-          showCheckoutResult(session.order, transactionId);
-        }
+      const fields = {
+        'public-key': config.publicKey,
+        currency: config.currency || 'COP',
+        'amount-in-cents': String(config.amountInCents),
+        reference: config.reference,
+        'signature:integrity': config.signature.integrity,
+        'redirect-url': config.redirectUrl || `${window.location.origin}/?checkout=return&provider=wompi&reference=${encodeURIComponent(config.reference)}`,
+        'expiration-time': config.expirationTime || '',
+        'customer-data:email': config.customerData?.email || '',
+        'customer-data:full-name': config.customerData?.fullName || '',
+        'customer-data:phone-number': config.customerData?.phoneNumber || '',
+        'customer-data:phone-number-prefix': config.customerData?.phoneNumberPrefix || '+57',
+      };
+
+      Object.entries(fields).forEach(([name, value]) => {
+        if (!value) return;
+        const input = document.createElement('input');
+        input.type = 'hidden';
+        input.name = name;
+        input.value = value;
+        form.appendChild(input);
       });
+
+      document.body.appendChild(form);
+      form.submit();
     }
 
     async function submitCheckout(event) {
@@ -6583,9 +6590,8 @@
           }, 4000);
         } else {
           if (provider === 'wompi') {
-            setCheckoutStatus('Checkout creado. Abriremos Wompi con la referencia real del pedido.', 'success');
-            showCheckoutResult(data.order);
-            await launchWompi(data);
+            setCheckoutStatus('Checkout creado. Te llevamos a Wompi para completar el pago seguro.', 'success');
+            launchWompi(data);
             return;
           }
           setCheckoutStatus('Preferencia creada. Te vamos a redirigir a Mercado Pago con la referencia real del pedido.', 'success');

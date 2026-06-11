@@ -2426,7 +2426,14 @@ def get_checkout_order(reference, transaction_id=None):
         "createdAt": order.get("createdAt"),
         "updatedAt": order.get("updatedAt"),
         "items": [
-            {"name": i.get("name"), "quantity": i.get("quantity"), "price": i.get("price")}
+            {
+                "name": i.get("name"),
+                "quantity": i.get("quantity"),
+                "price": i.get("price"),
+                "imageUrl": i.get("imageUrl", ""),
+                "unitPriceCents": i.get("unitPriceCents", 0),
+                "subtotalCents": i.get("subtotalCents", 0),
+            }
             for i in (order.get("items") or [])
         ],
     }
