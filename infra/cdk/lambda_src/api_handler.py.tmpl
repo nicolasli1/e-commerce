@@ -2452,14 +2452,30 @@ def get_nested(data, path):
 def verify_wompi_event_signature(event_payload, checksum_header):
     signature = event_payload.get("signature") or {}
     properties = signature.get("properties") or []
-    timestamp = signature.get("timestamp")
+    timestamp = event_payload.get("timestamp", signature.get("timestamp"))
     expected_checksum = checksum_header or signature.get("checksum") or ""
     secret = get_wompi_events_secret()
     if not properties or timestamp is None or not expected_checksum or not secret:
+        print(json.dumps({
+            "event": "wompi_webhook_signature_missing_data",
+            "hasProperties": bool(properties),
+            "hasTimestamp": timestamp is not None,
+            "hasChecksum": bool(expected_checksum),
+            "hasSecret": bool(secret),
+        }))
         return False
     base = "".join(get_nested(event_payload.get("data") or {}, path) for path in properties)
     calculated = hashlib.sha256(f"{base}{timestamp}{secret}".encode("utf-8")).hexdigest().upper()
-    return calculated == expected_checksum.upper()
+    is_valid = calculated == expected_checksum.upper()
+    if not is_valid:
+        print(json.dumps({
+            "event": "wompi_webhook_invalid_signature",
+            "properties": properties,
+            "timestamp": timestamp,
+            "expectedPrefix": expected_checksum[:8],
+            "calculatedPrefix": calculated[:8],
+        }))
+    return is_valid
 
 
 def handle_wompi_webhook(event):
@@ -2474,6 +2490,13 @@ def handle_wompi_webhook(event):
         return response(200, {"ok": True, "ignored": True})
     transaction = (body.get("data") or {}).get("transaction") or {}
     reference = transaction.get("reference", "")
+    print(json.dumps({
+        "event": "wompi_webhook_received",
+        "wompiEvent": body.get("event"),
+        "reference": reference,
+        "status": transaction.get("status", ""),
+        "transactionId": transaction.get("id", ""),
+    }))
     if not reference:
         return response(400, {"error": "missing_reference"})
     existing = orders_table.get_item(Key={"reference": reference}).get("Item")
