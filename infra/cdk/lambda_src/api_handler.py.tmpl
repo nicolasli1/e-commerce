@@ -2296,11 +2296,69 @@ def fetch_wompi_transaction(transaction_id):
     return payload.get("data")
 
 
+def verify_wompi_transaction_with_provider(transaction):
+    transaction_id = transaction.get("id", "")
+    if not transaction_id:
+        return False, None, "missing_transaction_id"
+    provider_transaction = fetch_wompi_transaction(transaction_id)
+    if not provider_transaction:
+        return False, None, "provider_lookup_failed"
+    comparisons = {
+        "reference": transaction.get("reference") == provider_transaction.get("reference"),
+        "status": transaction.get("status") == provider_transaction.get("status"),
+        "amount": safe_int(transaction.get("amount_in_cents"), 0) == safe_int(provider_transaction.get("amount_in_cents"), 0),
+    }
+    if not all(comparisons.values()):
+        print(json.dumps({
+            "event": "wompi_webhook_provider_mismatch",
+            "transactionId": transaction_id,
+            "receivedReference": transaction.get("reference", ""),
+            "providerReference": provider_transaction.get("reference", ""),
+            "comparisons": comparisons,
+        }))
+        return False, provider_transaction, "provider_mismatch"
+    return True, provider_transaction, ""
+
+
 def update_order_from_transaction(reference, transaction):
     if not transaction:
         return None
     status = transaction.get("status", "PENDING")
     previous_order = orders_table.get_item(Key={"reference": reference}).get("Item")
+    expected_amount = safe_int(previous_order.get("amountInCents"), 0) if previous_order else 0
+    paid_amount = safe_int(transaction.get("amount_in_cents"), 0)
+    currency = (transaction.get("currency") or "COP").upper()
+    if status == "APPROVED" and (not previous_order or previous_order.get("provider") != "wompi" or paid_amount != expected_amount or currency != "COP"):
+        print(json.dumps({
+            "event": "wompi_payment_rejected_by_integrity_check",
+            "reference": reference,
+            "provider": previous_order.get("provider", "") if previous_order else "",
+            "expectedAmount": expected_amount,
+            "paidAmount": paid_amount,
+            "currency": currency,
+        }))
+        if previous_order:
+            orders_table.update_item(
+                Key={"reference": reference},
+                UpdateExpression="SET #statusMessage=:message, #updatedAt=:updatedAt, #wompi=:wompi",
+                ExpressionAttributeNames={
+                    "#statusMessage": "statusMessage",
+                    "#updatedAt": "updatedAt",
+                    "#wompi": "wompi",
+                },
+                ExpressionAttributeValues={
+                    ":message": "Pago recibido con datos inconsistentes. Revisión manual requerida.",
+                    ":updatedAt": now_iso(),
+                    ":wompi": {
+                        "environment": "sandbox" if get_wompi_public_key().startswith("pub_test_") else "production",
+                        "transactionId": transaction.get("id", ""),
+                        "paymentMethodType": transaction.get("payment_method_type", ""),
+                        "status": status,
+                        "integrity": "REJECTED",
+                    },
+                },
+            )
+        return orders_table.get_item(Key={"reference": reference}).get("Item") if previous_order else None
     orders_table.update_item(
         Key={"reference": reference},
         UpdateExpression="SET #status=:status, #statusMessage=:message, #updatedAt=:updatedAt, #wompi=:wompi, #fulfillmentStatus=if_not_exists(#fulfillmentStatus, :fulfillmentDefault)",
@@ -2333,6 +2391,42 @@ def update_order_from_mercadopago_payment(reference, payment):
         return None
     mapped_status = map_mercadopago_status(payment.get("status"))
     current = orders_table.get_item(Key={"reference": reference}).get("Item") or {}
+    expected_amount = safe_int(current.get("amountInCents"), 0)
+    paid_amount = int(Decimal(str(payment.get("transaction_amount") or 0)) * 100)
+    currency = (payment.get("currency_id") or "COP").upper()
+    if mapped_status == "APPROVED" and (current.get("provider") != "mercadopago" or paid_amount != expected_amount or currency != "COP"):
+        print(json.dumps({
+            "event": "mercadopago_payment_rejected_by_integrity_check",
+            "reference": reference,
+            "provider": current.get("provider", ""),
+            "expectedAmount": expected_amount,
+            "paidAmount": paid_amount,
+            "currency": currency,
+        }))
+        if current:
+            provider_data = current.get("providerData", {})
+            provider_data["mercadopago"] = {
+                "paymentId": payment.get("id", ""),
+                "status": payment.get("status", ""),
+                "statusDetail": payment.get("status_detail", ""),
+                "externalReference": payment.get("external_reference", ""),
+                "integrity": "REJECTED",
+            }
+            orders_table.update_item(
+                Key={"reference": reference},
+                UpdateExpression="SET #statusMessage=:message, #updatedAt=:updatedAt, #providerData=:providerData",
+                ExpressionAttributeNames={
+                    "#statusMessage": "statusMessage",
+                    "#updatedAt": "updatedAt",
+                    "#providerData": "providerData",
+                },
+                ExpressionAttributeValues={
+                    ":message": "Pago recibido con datos inconsistentes. Revisión manual requerida.",
+                    ":updatedAt": now_iso(),
+                    ":providerData": provider_data,
+                },
+            )
+        return orders_table.get_item(Key={"reference": reference}).get("Item") if current else None
     provider_data = current.get("providerData", {})
     provider_data["mercadopago"] = {
         "paymentId": payment.get("id", ""),
@@ -2524,7 +2618,11 @@ def handle_wompi_webhook(event):
     existing = orders_table.get_item(Key={"reference": reference}).get("Item")
     if not existing:
         return response(200, {"ok": True, "ignored": True})
-    updated = update_order_from_transaction(reference, transaction)
+    verified, provider_transaction, reason = verify_wompi_transaction_with_provider(transaction)
+    if not verified:
+        status_code = 503 if reason == "provider_lookup_failed" else 200
+        return response(status_code, {"ok": False, "error": reason})
+    updated = update_order_from_transaction(reference, provider_transaction)
     return response(200, {"ok": True, "order": updated})
 
 
