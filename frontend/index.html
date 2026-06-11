@@ -5821,7 +5821,7 @@
     }
 
     function clearCheckoutReferenceStorage() {
-      clearCheckoutReferenceStorage();
+      localStorage.removeItem(CHECKOUT_REFERENCE_STORAGE_KEY);
       localStorage.removeItem(LEGACY_CHECKOUT_REFERENCE_STORAGE_KEY);
     }
 
