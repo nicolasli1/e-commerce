@@ -5108,6 +5108,502 @@
     body[data-site-theme="repair"] .detail-info .detail-desc {
       color: #4b5563;
     }
+    /* Light-theme contrast fixes (WCAG AA) */
+    body[data-site-theme="repair"] .mobile-nav-close {
+      background: rgba(15,23,42,0.05);
+      border-color: rgba(15,23,42,0.12);
+      color: #17202a;
+    }
+    body[data-site-theme="repair"] .mobile-nav-close:active {
+      background: rgba(15,23,42,0.10);
+    }
+    body[data-site-theme="repair"] .btn-details {
+      background: rgba(15,23,42,0.04);
+      border-color: rgba(15,23,42,0.14);
+      color: #3f4a5a;
+    }
+    @media (hover: hover) and (pointer: fine) {
+      body[data-site-theme="repair"] .btn-details:hover {
+        background: rgba(15,118,110,0.08);
+        border-color: rgba(15,118,110,0.24);
+        color: #0f513f;
+        box-shadow: 0 4px 12px rgba(15,118,110,0.10);
+      }
+    }
+    body[data-site-theme="repair"] .search-quick-picks button {
+      background: rgba(15,23,42,0.04);
+      border-color: rgba(15,23,42,0.14);
+      color: #3f4a5a;
+    }
+    body[data-site-theme="repair"] .search-quick-picks button:hover {
+      background: rgba(15,118,110,0.10);
+      border-color: rgba(15,118,110,0.28);
+      color: #0f513f;
+    }
+    body[data-site-theme="repair"] .product-visual-copy span {
+      color: #5b6573;
+    }
+    body[data-site-theme="repair"] .footer-col h4 {
+      color: #55606e;
+    }
+
+    /* ==========================================================
+       EXPLODED PHONE — shared layer system (hero + anatomy)
+       9 components, GPU-only transforms driven by --ex (0..1)
+    ========================================================== */
+    .phone-stage {
+      position: relative;
+      width: 100%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      perspective: 1400px;
+      perspective-origin: 50% 42%;
+    }
+    .phone {
+      position: relative;
+      width: 230px;
+      aspect-ratio: 9 / 18.5;
+      transform-style: preserve-3d;
+      transform: rotateY(-22deg) rotateX(6deg);
+      --ex: 0;
+    }
+    .ph-layer {
+      position: absolute;
+      inset: 0;
+      border-radius: 38px;
+      transform: translate3d(calc(var(--tx, 0px) * var(--ex)), calc(var(--ty, 0px) * var(--ex)), calc(var(--tz) * var(--ex)));
+      backface-visibility: hidden;
+    }
+    /* 9 · Rear housing */
+    .ph-back {
+      --tz: -150px;
+      background: linear-gradient(148deg, #2e3138 0%, #1a1c21 52%, #24262c 100%);
+      border: 1px solid rgba(255,255,255,0.10);
+      box-shadow: inset 0 1px 1px rgba(255,255,255,0.10), 0 30px 80px rgba(0,0,0,0.55);
+    }
+    .ph-back::after {
+      content: '';
+      position: absolute;
+      left: 50%; top: 46%;
+      width: 34px; height: 34px;
+      transform: translate(-50%, -50%);
+      border-radius: 50%;
+      background: radial-gradient(circle at 35% 30%, rgba(255,255,255,0.16), rgba(255,255,255,0.03) 60%);
+      border: 1px solid rgba(255,255,255,0.10);
+    }
+    /* 8 · Motherboard */
+    .ph-board {
+      --tz: -96px;
+      --tx: -44px;
+      --ty: -10px;
+      inset: 4% 7%;
+      background: linear-gradient(160deg, #0c2718 0%, #081c11 70%);
+      border: 1px solid rgba(64,160,112,0.28);
+      border-radius: 26px;
+      box-shadow: inset 0 0 24px rgba(0,0,0,0.5);
+    }
+    .ph-board::before {
+      content: '';
+      position: absolute; inset: 8%;
+      background:
+        repeating-linear-gradient(0deg, transparent 0 14px, rgba(98,210,160,0.10) 14px 15px),
+        repeating-linear-gradient(90deg, transparent 0 18px, rgba(98,210,160,0.07) 18px 19px);
+      border-radius: 14px;
+    }
+    .ph-board::after {
+      content: '';
+      position: absolute;
+      left: 18%; top: 12%;
+      width: 34%; height: 13%;
+      background: linear-gradient(145deg, #3a3d44, #202228);
+      border-radius: 6px;
+      border: 1px solid rgba(255,255,255,0.14);
+      box-shadow: 24px 38px 0 -2px rgba(176,141,87,0.85), 8px 86px 0 -6px #2c2f36, 44px 110px 0 -8px #2c2f36;
+    }
+    /* 7 · Battery */
+    .ph-battery {
+      --tz: -56px;
+      --ty: 14px;
+      --tx: 92px;
+      inset: 30% 14% 14% 14%;
+      background: linear-gradient(168deg, #2b2e34 0%, #1d1f24 100%);
+      border: 1px solid rgba(255,255,255,0.13);
+      border-radius: 18px;
+      box-shadow: inset 0 1px 0 rgba(255,255,255,0.10);
+      display: flex; align-items: center; justify-content: center;
+    }
+    .ph-battery::before {
+      content: '⚡ Li-Ion';
+      font-size: 0.66rem;
+      font-weight: 700;
+      letter-spacing: 0.14em;
+      color: rgba(255,255,255,0.45);
+      text-transform: uppercase;
+    }
+    .ph-battery::after {
+      content: '';
+      position: absolute; inset: 12% 8% auto 8%;
+      height: 1px;
+      background: linear-gradient(90deg, transparent, rgba(255,255,255,0.22), transparent);
+    }
+    /* 6 · Charging port */
+    .ph-port {
+      --tz: -56px;
+      --ty: 64px;
+      --tx: 58px;
+      inset: auto 30% 4% 30%;
+      height: 5.5%;
+      background: linear-gradient(180deg, #26282e, #17181d);
+      border: 1px solid rgba(255,255,255,0.14);
+      border-radius: 10px;
+    }
+    .ph-port::before {
+      content: '';
+      position: absolute; inset: 34% 16%;
+      border-radius: 99px;
+      background: linear-gradient(90deg, #b08d57 0%, #8d6f43 50%, #b08d57 100%);
+      opacity: 0.9;
+    }
+    /* 5 · Mid frame */
+    .ph-frame {
+      --tz: 0px;
+      background: transparent;
+      border: 9px solid transparent;
+      border-radius: 40px;
+      background:
+        linear-gradient(#0000, #0000) padding-box,
+        linear-gradient(155deg, #585c64 0%, #2a2c31 38%, #6a6e76 52%, #232529 78%, #4c5058 100%) border-box;
+      box-shadow: 0 18px 48px rgba(0,0,0,0.38);
+    }
+    .ph-frame::before, .ph-frame::after {
+      content: '';
+      position: absolute;
+      right: -12px;
+      width: 3px;
+      border-radius: 2px;
+      background: linear-gradient(180deg, #6a6e76, #3a3d43);
+    }
+    .ph-frame::before { top: 18%; height: 9%; }
+    .ph-frame::after { top: 30%; height: 14%; }
+    /* 4 · Camera module */
+    .ph-cameras {
+      --tz: 34px;
+      --ty: -44px;
+      --tx: -58px;
+      inset: 4% auto auto 7%;
+      width: 38%;
+      aspect-ratio: 1;
+      background: linear-gradient(150deg, #33363d, #1c1e23);
+      border: 1px solid rgba(255,255,255,0.16);
+      border-radius: 26%;
+      box-shadow: inset 0 1px 1px rgba(255,255,255,0.12), 0 14px 30px rgba(0,0,0,0.4);
+    }
+    .ph-cameras::before, .ph-cameras::after {
+      content: '';
+      position: absolute;
+      width: 38%; aspect-ratio: 1;
+      border-radius: 50%;
+      background: radial-gradient(circle at 38% 32%, #3f6f8f 0%, #122433 38%, #050a10 72%);
+      border: 3px solid #3c4046;
+      box-shadow: inset 0 0 6px rgba(0,0,0,0.8), 0 1px 1px rgba(255,255,255,0.14);
+    }
+    .ph-cameras::before { left: 9%; top: 9%; }
+    .ph-cameras::after { right: 9%; bottom: 9%; }
+    /* 3 · Sensors */
+    .ph-sensors {
+      --tz: 60px;
+      --ty: -56px;
+      inset: 2.5% 30% auto 30%;
+      height: 3.4%;
+      background: linear-gradient(180deg, #2a2c32, #191b1f);
+      border: 1px solid rgba(255,255,255,0.15);
+      border-radius: 99px;
+      display: flex; align-items: center; justify-content: center; gap: 5px;
+    }
+    .ph-sensors::before {
+      content: '';
+      width: 38%; height: 30%;
+      border-radius: 99px;
+      background: repeating-linear-gradient(90deg, #43464d 0 2px, #1d1f24 2px 4px);
+    }
+    .ph-sensors::after {
+      content: '';
+      width: 7px; aspect-ratio: 1;
+      border-radius: 50%;
+      background: radial-gradient(circle at 35% 30%, #2c4a63, #0a1119 70%);
+      border: 1px solid rgba(255,255,255,0.18);
+    }
+    /* 2 · OLED display */
+    .ph-screen {
+      --tz: 96px;
+      inset: 1.8% 3.4%;
+      border-radius: 32px;
+      background:
+        radial-gradient(120% 90% at 18% 8%, rgba(45,212,191,0.32) 0%, transparent 52%),
+        radial-gradient(130% 100% at 85% 92%, rgba(59,130,246,0.30) 0%, transparent 58%),
+        linear-gradient(165deg, #0b1018 0%, #05070c 100%);
+      border: 1px solid rgba(255,255,255,0.07);
+      overflow: hidden;
+      display: flex; align-items: center; justify-content: center;
+    }
+    .ph-screen::before {
+      content: '12:30';
+      font-size: 2rem;
+      font-weight: 200;
+      letter-spacing: 0.04em;
+      color: rgba(255,255,255,0.88);
+      transform: translateY(-58%);
+    }
+    .ph-screen::after {
+      content: '';
+      position: absolute;
+      top: 3.5%; left: 50%;
+      width: 11%; aspect-ratio: 1;
+      transform: translateX(-50%);
+      border-radius: 50%;
+      background: #000;
+      border: 1px solid rgba(255,255,255,0.10);
+    }
+    /* 1 · Front glass */
+    .ph-glass {
+      --tz: 152px;
+      background: linear-gradient(118deg, rgba(255,255,255,0.13) 0%, rgba(255,255,255,0.025) 34%, rgba(255,255,255,0.0) 55%, rgba(255,255,255,0.06) 100%);
+      border: 1px solid rgba(255,255,255,0.22);
+      box-shadow: inset 0 1px 1px rgba(255,255,255,0.25);
+    }
+    .ph-glass::after {
+      content: '';
+      position: absolute;
+      top: -12%; left: 8%;
+      width: 30%; height: 130%;
+      background: linear-gradient(100deg, transparent 0%, rgba(255,255,255,0.10) 48%, transparent 100%);
+      transform: rotate(8deg);
+    }
+    /* Component highlight ring (anatomy stages) */
+    .ph-layer.is-hot {
+      box-shadow: 0 0 0 2px rgba(45,212,191,0.85), 0 0 44px rgba(45,212,191,0.35);
+      transition: box-shadow 600ms cubic-bezier(0.32, 0.72, 0, 1);
+    }
+
+    /* ── Hero idle phone ── */
+    .hero-phone-stage { min-height: 480px; }
+    .hero-phone-stage .phone { --ex: 0.16; }
+    .hero-phone-hint {
+      margin-top: 26px;
+      text-align: center;
+      font-size: 0.74rem;
+      font-weight: 650;
+      letter-spacing: 0.18em;
+      text-transform: uppercase;
+      color: rgba(255,255,255,0.34);
+    }
+
+    /* ── Anatomy scroll-story section ── */
+    .anatomy {
+      position: relative;
+      background:
+        radial-gradient(90% 60% at 50% 0%, rgba(45,212,191,0.05) 0%, transparent 60%),
+        #050507;
+    }
+    .anatomy-track { height: 380vh; }
+    .anatomy-sticky {
+      position: sticky;
+      top: 0;
+      height: 100vh;
+      height: 100dvh;
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+    }
+    .anatomy-head {
+      position: absolute;
+      top: clamp(28px, 6vh, 64px);
+      left: 50%;
+      transform: translateX(-50%);
+      text-align: center;
+      width: min(92vw, 760px);
+      z-index: 3;
+    }
+    .anatomy-eyebrow {
+      display: inline-block;
+      padding: 5px 14px;
+      border-radius: 999px;
+      border: 1px solid rgba(45,212,191,0.30);
+      background: rgba(45,212,191,0.07);
+      color: #5eead4;
+      font-size: 0.66rem;
+      font-weight: 750;
+      letter-spacing: 0.22em;
+      text-transform: uppercase;
+      margin-bottom: 14px;
+    }
+    .anatomy-head h2 {
+      font-size: clamp(1.7rem, 3.6vw, 2.7rem);
+      font-weight: 800;
+      letter-spacing: -0.03em;
+      color: #f5f5f7;
+      text-wrap: balance;
+    }
+    .anatomy-head p {
+      margin-top: 10px;
+      color: rgba(245,245,247,0.55);
+      font-size: clamp(0.92rem, 1.4vw, 1.05rem);
+    }
+    .anatomy-stage-caption {
+      position: absolute;
+      bottom: clamp(22px, 5vh, 56px);
+      left: 50%;
+      transform: translateX(-50%);
+      color: rgba(245,245,247,0.42);
+      font-size: 0.8rem;
+      letter-spacing: 0.06em;
+      text-align: center;
+      transition: opacity 500ms cubic-bezier(0.32, 0.72, 0, 1);
+      z-index: 3;
+    }
+    .anatomy .phone-stage { flex: 1; max-height: 62vh; margin-top: clamp(110px, 20vh, 190px); }
+    .anatomy .phone { width: min(225px, 52vw); }
+    /* Component cards */
+    .anatomy-card {
+      position: absolute;
+      top: 50%;
+      width: min(280px, 38vw);
+      padding: 2px;
+      border-radius: 22px;
+      background: linear-gradient(165deg, rgba(255,255,255,0.10), rgba(255,255,255,0.02));
+      opacity: 0;
+      pointer-events: none;
+      transform: translateY(calc(-50% + 28px));
+      transition: opacity 650ms cubic-bezier(0.32, 0.72, 0, 1), transform 650ms cubic-bezier(0.32, 0.72, 0, 1);
+      z-index: 4;
+    }
+    .anatomy-card.is-on {
+      opacity: 1;
+      pointer-events: auto;
+      transform: translateY(-50%);
+    }
+    .anatomy-card-core {
+      border-radius: 20px;
+      background: rgba(10,11,14,0.88);
+      backdrop-filter: blur(8px);
+      border: 1px solid rgba(255,255,255,0.07);
+      padding: 20px 22px;
+      text-align: left;
+      width: 100%;
+      cursor: pointer;
+      font: inherit;
+      color: inherit;
+      display: block;
+      transition: transform 400ms cubic-bezier(0.32, 0.72, 0, 1);
+    }
+    .anatomy-card-core:hover { transform: translateY(-3px); }
+    .anatomy-card-core:active { transform: scale(0.98); }
+    .anatomy-card-kicker {
+      font-size: 0.62rem;
+      font-weight: 750;
+      letter-spacing: 0.2em;
+      text-transform: uppercase;
+      color: #5eead4;
+    }
+    .anatomy-card-core h3 {
+      margin-top: 6px;
+      font-size: 1.18rem;
+      font-weight: 750;
+      letter-spacing: -0.02em;
+      color: #f5f5f7;
+    }
+    .anatomy-card-core p {
+      margin-top: 4px;
+      font-size: 0.84rem;
+      color: rgba(245,245,247,0.55);
+    }
+    .anatomy-card-cta {
+      display: inline-flex;
+      align-items: center;
+      gap: 7px;
+      margin-top: 12px;
+      font-size: 0.78rem;
+      font-weight: 700;
+      color: #5eead4;
+    }
+    .anatomy-card-cta::after { content: '→'; transition: transform 300ms cubic-bezier(0.32,0.72,0,1); }
+    .anatomy-card-core:hover .anatomy-card-cta::after { transform: translateX(3px); }
+    .anatomy-card[data-side="left"]  { left: clamp(8px, 9vw, 16%); }
+    .anatomy-card[data-side="right"] { right: clamp(8px, 9vw, 16%); }
+
+    /* ── Light (repair) theme ── */
+    body[data-site-theme="repair"] .anatomy {
+      background:
+        radial-gradient(90% 60% at 50% 0%, rgba(15,118,110,0.07) 0%, transparent 60%),
+        #eef1f4;
+    }
+    body[data-site-theme="repair"] .anatomy-head h2 { color: #17202a; }
+    body[data-site-theme="repair"] .anatomy-head p { color: rgba(23,32,42,0.62); }
+    body[data-site-theme="repair"] .anatomy-eyebrow {
+      border-color: rgba(15,118,110,0.34);
+      background: rgba(15,118,110,0.08);
+      color: #0f513f;
+    }
+    body[data-site-theme="repair"] .anatomy-stage-caption { color: rgba(23,32,42,0.55); }
+    body[data-site-theme="repair"] .anatomy-card {
+      background: linear-gradient(165deg, rgba(15,23,42,0.10), rgba(15,23,42,0.03));
+    }
+    body[data-site-theme="repair"] .anatomy-card-core {
+      background: rgba(255,255,255,0.92);
+      border-color: rgba(15,23,42,0.10);
+      box-shadow: 0 24px 60px rgba(31,45,55,0.14);
+    }
+    body[data-site-theme="repair"] .anatomy-card-core h3 { color: #17202a; }
+    body[data-site-theme="repair"] .anatomy-card-core p { color: rgba(23,32,42,0.62); }
+    body[data-site-theme="repair"] .anatomy-card-kicker,
+    body[data-site-theme="repair"] .anatomy-card-cta { color: #0f766e; }
+    body[data-site-theme="repair"] .ph-layer.is-hot {
+      box-shadow: 0 0 0 2px rgba(15,118,110,0.85), 0 0 44px rgba(15,118,110,0.30);
+    }
+    body[data-site-theme="repair"] .hero-phone-hint { color: rgba(23,32,42,0.45); }
+    body[data-site-theme="repair"] .ph-back { box-shadow: inset 0 1px 1px rgba(255,255,255,0.10), 0 30px 70px rgba(31,45,55,0.30); }
+
+    /* ── Mobile / fallback ── */
+    @media (max-width: 1023px) {
+      .anatomy-track { height: auto; }
+      .anatomy-sticky {
+        position: relative;
+        height: auto;
+        min-height: 0;
+        overflow: visible;
+        padding: 72px 0 56px;
+      }
+      .anatomy-head { position: static; transform: none; margin: 0 auto 34px; }
+      .anatomy .phone-stage { min-height: 430px; margin-top: 0; max-height: none; }
+      .anatomy .phone { --ex: 0.5; transform: rotateY(-20deg) rotateX(7deg) scale(0.88); }
+      .anatomy-cards-rail {
+        display: flex;
+        flex-direction: column;
+        gap: 14px;
+        width: min(92vw, 480px);
+        margin: 30px auto 0;
+      }
+      .anatomy-card {
+        position: static;
+        width: 100%;
+        opacity: 1;
+        pointer-events: auto;
+        transform: none;
+      }
+      .anatomy-stage-caption { display: none; }
+    }
+    @media (prefers-reduced-motion: reduce) {
+      .anatomy-track { height: auto; }
+      .anatomy-sticky { position: relative; height: auto; padding: 72px 0 56px; overflow: visible; }
+      .anatomy-head { position: static; transform: none; margin: 0 auto 34px; }
+      .anatomy .phone { --ex: 0.5 !important; transform: rotateY(-20deg) rotateX(7deg) !important; }
+      .hero-phone-stage .phone { --ex: 0.16 !important; transform: rotateY(-22deg) rotateX(6deg) !important; }
+      .anatomy-card { position: static; width: min(92vw, 480px); margin: 12px auto 0; opacity: 1; pointer-events: auto; transform: none; }
+      .anatomy-stage-caption { display: none; }
+    }
   </style>
 </head>
 <body data-site-theme="dark">
@@ -5261,24 +5757,25 @@
 
         </div>
 
-        <div class="hero-finder reveal visible reveal-delay-1" aria-label="Buscador de repuestos por modelo">
+        <div class="hero-finder reveal visible reveal-delay-1" aria-label="Componentes internos disponibles">
           <div class="finder-header">
             <span class="finder-eyebrow">Catálogo técnico</span>
             <strong>Encuentra la parte correcta</strong>
           </div>
-          <!-- Hero carousel: populated by JS from heroFeatured products -->
-          <div class="hero-carousel" id="heroCarousel">
-            <!-- Skeleton while loading -->
-            <div class="hero-carousel-skeleton">
-              <div class="hero-carousel-img skeleton-block"></div>
-              <div class="hero-carousel-body">
-                <div class="skeleton-block" style="height:14px;width:60%;border-radius:6px;"></div>
-                <div class="skeleton-block" style="height:20px;width:80%;border-radius:6px;margin-top:8px;"></div>
-                <div class="skeleton-block" style="height:14px;width:40%;border-radius:6px;margin-top:6px;"></div>
-              </div>
+          <div class="phone-stage hero-phone-stage" id="heroPhoneStage" aria-hidden="true">
+            <div class="phone" id="heroPhone">
+              <div class="ph-layer ph-back"></div>
+              <div class="ph-layer ph-board"></div>
+              <div class="ph-layer ph-battery"></div>
+              <div class="ph-layer ph-port"></div>
+              <div class="ph-layer ph-frame"></div>
+              <div class="ph-layer ph-cameras"></div>
+              <div class="ph-layer ph-sensors"></div>
+              <div class="ph-layer ph-screen"></div>
+              <div class="ph-layer ph-glass"></div>
             </div>
           </div>
-          <div class="hero-carousel-dots" id="heroCarouselDots"></div>
+          <div class="hero-phone-hint">Cada componente, disponible</div>
           <div class="finder-parts" id="heroFinderParts">
             <span data-search-pick="Pantallas">Pantallas</span>
             <span data-search-pick="Baterías">Baterías</span>
@@ -5305,6 +5802,69 @@
           <h3>30d</h3>
           <p>garantía disponible</p>
         </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============================
+       PHONE ANATOMY — scroll story
+  ============================ -->
+  <section class="anatomy" id="anatomia" role="region" aria-label="Componentes internos de tu celular">
+    <div class="anatomy-track" id="anatomyTrack">
+      <div class="anatomy-sticky">
+        <div class="anatomy-head">
+          <span class="anatomy-eyebrow">Anatomía del repuesto</span>
+          <h2>Cada pieza que hay adentro, la tenemos.</h2>
+          <p>Tu celular son nueve componentes que se pueden cambiar. Desliza para abrirlo.</p>
+        </div>
+        <div class="phone-stage" id="anatomyStage">
+          <div class="phone" id="anatomyPhone">
+            <div class="ph-layer ph-back"></div>
+            <div class="ph-layer ph-board"></div>
+            <div class="ph-layer ph-battery" data-part="battery"></div>
+            <div class="ph-layer ph-port" data-part="port"></div>
+            <div class="ph-layer ph-frame"></div>
+            <div class="ph-layer ph-cameras" data-part="camera"></div>
+            <div class="ph-layer ph-sensors"></div>
+            <div class="ph-layer ph-screen" data-part="screen"></div>
+            <div class="ph-layer ph-glass"></div>
+          </div>
+        </div>
+        <div class="anatomy-cards-rail">
+          <div class="anatomy-card" data-part="screen" data-side="left">
+            <button type="button" class="anatomy-card-core" data-search-pick="Pantalla">
+              <span class="anatomy-card-kicker">Display</span>
+              <h3>Pantalla OLED</h3>
+              <p>Reemplazo de alta calidad, probado antes de enviarse.</p>
+              <span class="anatomy-card-cta">Ver pantallas</span>
+            </button>
+          </div>
+          <div class="anatomy-card" data-part="battery" data-side="right">
+            <button type="button" class="anatomy-card-core" data-search-pick="Batería">
+              <span class="anatomy-card-kicker">Energía</span>
+              <h3>Batería</h3>
+              <p>Rendimiento que vuelve a durar el día completo.</p>
+              <span class="anatomy-card-cta">Ver baterías</span>
+            </button>
+          </div>
+          <div class="anatomy-card" data-part="camera" data-side="left">
+            <button type="button" class="anatomy-card-core" data-search-pick="Cámara">
+              <span class="anatomy-card-kicker">Óptica</span>
+              <h3>Módulo de cámara</h3>
+              <p>Compatibilidad original para recuperar el enfoque.</p>
+              <span class="anatomy-card-cta">Ver cámaras</span>
+            </button>
+          </div>
+          <div class="anatomy-card" data-part="port" data-side="right">
+            <button type="button" class="anatomy-card-core" data-search-pick="Puerto de carga">
+              <span class="anatomy-card-kicker">Conectividad</span>
+              <h3>Puerto de carga</h3>
+              <p>Carga rápida estable, sin cables en posición mágica.</p>
+              <span class="anatomy-card-cta">Ver puertos</span>
+            </button>
+          </div>
+        </div>
+        <div class="anatomy-stage-caption" id="anatomyCaption">Ensamblado de fábrica · desliza</div>
       </div>
     </div>
   </section>
@@ -8590,5 +9150,121 @@
     </div>
   </div>
 
+  <script>
+    /* ── Exploded phone engine: hero idle + anatomy scroll story ── */
+    (function () {
+      var reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+      if (reduced) return; // CSS provides the static exploded fallback
+
+      var heroPhone = document.getElementById('heroPhone');
+      var heroStage = document.getElementById('heroPhoneStage');
+      var anatomyPhone = document.getElementById('anatomyPhone');
+      var anatomyTrack = document.getElementById('anatomyTrack');
+      var anatomyCaption = document.getElementById('anatomyCaption');
+      var isDesktop = window.matchMedia('(min-width: 1024px)');
+
+      var heroVisible = false, anatomyVisible = false, rafId = null;
+      var mouseRX = 0, mouseRY = 0, curRX = 6, curRY = -22;
+
+      /* Hero: cursor parallax targets */
+      var hero = document.getElementById('inicio');
+      if (hero && heroPhone) {
+        hero.addEventListener('mousemove', function (e) {
+          var r = hero.getBoundingClientRect();
+          var nx = (e.clientX - r.left) / r.width - 0.5;   // -0.5 .. 0.5
+          var ny = (e.clientY - r.top) / r.height - 0.5;
+          mouseRY = -22 + nx * 14;
+          mouseRX = 6 - ny * 10;
+        }, { passive: true });
+        hero.addEventListener('mouseleave', function () {
+          mouseRY = -22; mouseRX = 6;
+        }, { passive: true });
+        mouseRY = -22; mouseRX = 6;
+      }
+
+      var parts = ['screen', 'battery', 'camera', 'port'];
+      var stageWindows = { screen: [0.52, 0.66], battery: [0.66, 0.78], camera: [0.78, 0.89], port: [0.89, 1.01] };
+      var cardEls = {}, layerEls = {};
+      parts.forEach(function (p) {
+        cardEls[p] = document.querySelector('.anatomy-card[data-part="' + p + '"]');
+        layerEls[p] = anatomyPhone ? anatomyPhone.querySelector('.ph-layer[data-part="' + p + '"]') : null;
+      });
+      var activePart = '';
+
+      function easeInOut(t) { return t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2; }
+      function clamp01(v) { return v < 0 ? 0 : (v > 1 ? 1 : v); }
+
+      function frame(now) {
+        rafId = null;
+        var keepRunning = false;
+
+        if (heroVisible && heroPhone) {
+          keepRunning = true;
+          var breathe = 0.16 + Math.sin(now * 0.00042) * 0.05;
+          var floatY = Math.sin(now * 0.0006) * 6;
+          curRY += (mouseRY - curRY) * 0.055;
+          curRX += (mouseRX - curRX) * 0.055;
+          heroPhone.style.setProperty('--ex', breathe.toFixed(4));
+          heroPhone.style.transform = 'translateY(' + floatY.toFixed(2) + 'px) rotateY(' + curRY.toFixed(2) + 'deg) rotateX(' + curRX.toFixed(2) + 'deg)';
+        }
+
+        if (anatomyVisible && anatomyPhone && anatomyTrack && isDesktop.matches) {
+          keepRunning = true;
+          var rect = anatomyTrack.getBoundingClientRect();
+          var total = rect.height - window.innerHeight;
+          var p = total > 0 ? clamp01(-rect.top / total) : 0;
+
+          var ex = easeInOut(clamp01((p - 0.08) / 0.47));
+          var rotY = -22 + p * 38;
+          anatomyPhone.style.setProperty('--ex', ex.toFixed(4));
+          anatomyPhone.style.transform = 'rotateY(' + rotY.toFixed(2) + 'deg) rotateX(6deg)';
+
+          var current = '';
+          for (var i = 0; i < parts.length; i++) {
+            var w = stageWindows[parts[i]];
+            if (p >= w[0] && p < w[1]) { current = parts[i]; break; }
+          }
+          if (current !== activePart) {
+            parts.forEach(function (pt) {
+              if (cardEls[pt]) cardEls[pt].classList.toggle('is-on', pt === current);
+              if (layerEls[pt]) layerEls[pt].classList.toggle('is-hot', pt === current);
+            });
+            activePart = current;
+          }
+          if (anatomyCaption) {
+            anatomyCaption.style.opacity = (current || p > 0.5) ? '0' : '1';
+            anatomyCaption.textContent = p < 0.12 ? 'Ensamblado de fábrica · desliza' : 'Cada componente, por separado';
+          }
+        }
+
+        if (keepRunning) rafId = requestAnimationFrame(frame);
+      }
+      function wake() { if (!rafId) rafId = requestAnimationFrame(frame); }
+
+      var io = new IntersectionObserver(function (entries) {
+        entries.forEach(function (en) {
+          if (en.target === heroStage) heroVisible = en.isIntersecting;
+          if (en.target === anatomyTrack) anatomyVisible = en.isIntersecting;
+        });
+        if (heroVisible || anatomyVisible) wake();
+      }, { rootMargin: '60px' });
+      if (heroStage) io.observe(heroStage);
+      if (anatomyTrack) io.observe(anatomyTrack);
+
+      window.addEventListener('scroll', wake, { passive: true });
+
+      /* Mobile / non-sticky: cards always on, phone half-exploded via CSS */
+      function applyModeFallback() {
+        if (!isDesktop.matches) {
+          parts.forEach(function (pt) { if (cardEls[pt]) cardEls[pt].classList.add('is-on'); });
+          if (anatomyPhone) { anatomyPhone.style.transform = ''; anatomyPhone.style.removeProperty('--ex'); }
+        } else {
+          parts.forEach(function (pt) { if (cardEls[pt]) cardEls[pt].classList.remove('is-on'); });
+        }
+      }
+      isDesktop.addEventListener ? isDesktop.addEventListener('change', applyModeFallback) : isDesktop.addListener(applyModeFallback);
+      applyModeFallback();
+    })();
+  </script>
 </body>
 </html>
