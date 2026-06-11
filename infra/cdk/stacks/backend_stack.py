@@ -186,6 +186,17 @@ class BackendStack(Stack):
                 resources=["*"],
             )
         )
+        # Allow the API Lambda to self-invoke asynchronously for out-of-band
+        # post-payment side effects (so payment webhooks respond fast). Uses the
+        # deterministic function name to avoid a circular dependency.
+        api_lambda.add_to_role_policy(
+            iam.PolicyStatement(
+                actions=["lambda:InvokeFunction"],
+                resources=[
+                    f"arn:aws:lambda:{self.region}:{self.account}:function:{project_name}-{environment}-api"
+                ],
+            )
+        )
 
         # ------------------------------------------------------------------
         # 2a. SES domain identity for order notification emails (Easy DKIM)

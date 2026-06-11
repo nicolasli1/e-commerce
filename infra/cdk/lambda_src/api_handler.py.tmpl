@@ -17,6 +17,7 @@ import boto3
 dynamodb = boto3.resource("dynamodb")
 ssm = boto3.client("ssm")
 ses = boto3.client("sesv2")
+lambda_client = boto3.client("lambda")
 
 leads_table = dynamodb.Table("__LEADS_TABLE_NAME__")
 products_table = dynamodb.Table("__PRODUCTS_TABLE_NAME__")
@@ -1993,6 +1994,33 @@ def ensure_post_payment_side_effects(order, previous_order=None):
     return sync_order_notifications(order, previous_order=previous_order)
 
 
+def dispatch_post_payment_side_effects(reference):
+    """Run post-payment side effects (emails + inventory) out of band.
+
+    Payment providers (e.g. Wompi) time out the webhook in a few seconds. The
+    side effects (SES emails + inventory deduction) can take several seconds on
+    a cold start, which makes the provider report the webhook as failed even
+    though processing succeeds. To respond fast, we self-invoke the Lambda
+    asynchronously and do the heavy work there. The side effects are idempotent
+    (guarded by notification status + inventory stockDeductedAt), so retries and
+    the synchronous fallback are safe.
+    """
+    function_name = os.environ.get("AWS_LAMBDA_FUNCTION_NAME", "")
+    if function_name:
+        try:
+            lambda_client.invoke(
+                FunctionName=function_name,
+                InvocationType="Event",
+                Payload=json.dumps({"_task": "post_payment_side_effects", "reference": reference}).encode("utf-8"),
+            )
+            return
+        except Exception as exc:
+            print(json.dumps({"event": "side_effects_dispatch_failed", "reference": reference, "error": str(exc)}))
+    order = orders_table.get_item(Key={"reference": reference}).get("Item")
+    if order:
+        ensure_post_payment_side_effects(order)
+
+
 def normalize_customer(body):
     customer = body.get("customer") or {}
     full_name = (customer.get("fullName") or "").strip()
@@ -2296,10 +2324,8 @@ def update_order_from_transaction(reference, transaction):
             },
         },
     )
-    return ensure_post_payment_side_effects(
-        orders_table.get_item(Key={"reference": reference}).get("Item"),
-        previous_order=previous_order,
-    )
+    dispatch_post_payment_side_effects(reference)
+    return orders_table.get_item(Key={"reference": reference}).get("Item")
 
 
 def update_order_from_mercadopago_payment(reference, payment):
@@ -2333,10 +2359,8 @@ def update_order_from_mercadopago_payment(reference, payment):
             ":providerData": provider_data,
         },
     )
-    return ensure_post_payment_side_effects(
-        orders_table.get_item(Key={"reference": reference}).get("Item"),
-        previous_order=current,
-    )
+    dispatch_post_payment_side_effects(reference)
+    return orders_table.get_item(Key={"reference": reference}).get("Item")
 
 
 def update_order_from_nequi(reference, transaction_id=None, status_payload=None):
@@ -2377,10 +2401,8 @@ def update_order_from_nequi(reference, transaction_id=None, status_payload=None)
             ":fulfillmentDefault": "PENDING_PAYMENT",
         },
     )
-    return ensure_post_payment_side_effects(
-        orders_table.get_item(Key={"reference": reference}).get("Item"),
-        previous_order=current,
-    )
+    dispatch_post_payment_side_effects(reference)
+    return orders_table.get_item(Key={"reference": reference}).get("Item")
 
 
 def fetch_mercadopago_payment(payment_id):
@@ -2577,6 +2599,15 @@ def handle_mercadopago_webhook(event):
 
 # Auto-seed on cold start (once per Lambda container lifecycle)
 def handler(event, context):
+    # Out-of-band async task (self-invoked) for post-payment side effects so the
+    # payment webhook can return 200 within the provider's timeout window.
+    if isinstance(event, dict) and event.get("_task") == "post_payment_side_effects":
+        reference = event.get("reference", "")
+        order = orders_table.get_item(Key={"reference": reference}).get("Item") if reference else None
+        if order:
+            ensure_post_payment_side_effects(order)
+        return {"ok": True}
+
     method = event.get("requestContext", {}).get("http", {}).get("method", "")
     path = event.get("rawPath", "").rstrip("/")
     body = event.get("body")
