@@ -2032,7 +2032,7 @@ def normalize_shipping(body):
 
 
 def build_widget_config(reference, amount_in_cents, customer, shipping, redirect_url):
-    expiration_time = (datetime.now(timezone.utc) + timedelta(minutes=30)).replace(microsecond=0).isoformat().replace("+00:00", "Z")
+    expiration_time = (datetime.now(timezone.utc) + timedelta(minutes=30)).strftime("%Y-%m-%dT%H:%M:%S.000Z")
     signature = build_integrity_signature(reference, amount_in_cents, "COP", expiration_time)
     config = {
         "publicKey": get_wompi_public_key(),
@@ -2178,7 +2178,7 @@ def create_checkout_session(event):
 
     reference = generate_order_reference()
     origin = get_origin(event)
-    redirect_url = f"{origin}/?checkout=return&reference={urllib.parse.quote(reference)}" if origin else ""
+    redirect_url = f"{origin}/?checkout=return&provider={urllib.parse.quote(provider)}&reference={urllib.parse.quote(reference)}" if origin else ""
     widget_config = None
     mercadopago_config = None
     provider_data = {"name": provider}
