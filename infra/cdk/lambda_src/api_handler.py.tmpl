@@ -1,9 +1,13 @@
 # Template v2 — 36 productos seed con imágenes + auth users + order tickets
 import base64
+from email.message import EmailMessage
+from email.utils import formataddr
 import hashlib
 import hmac
 import json
 import os
+import smtplib
+import ssl
 import time
 import urllib.error
 import urllib.parse
@@ -43,6 +47,11 @@ ORDER_NOTIFICATIONS_FROM_EMAIL_PARAM = os.environ.get("ORDER_NOTIFICATIONS_FROM_
 ORDER_ALERTS_TO_EMAIL_PARAM = os.environ.get("ORDER_ALERTS_TO_EMAIL_PARAM", "")
 ORDER_NOTIFICATIONS_FROM_EMAIL = os.environ.get("ORDER_NOTIFICATIONS_FROM_EMAIL", "")
 ORDER_ALERTS_TO_EMAIL = os.environ.get("ORDER_ALERTS_TO_EMAIL", "")
+EMAIL_PROVIDER_PARAM = os.environ.get("EMAIL_PROVIDER_PARAM", "/sales-website/dev/email-provider")
+SMTP_HOST_PARAM = os.environ.get("SMTP_HOST_PARAM", "/sales-website/dev/smtp-host")
+SMTP_PORT_PARAM = os.environ.get("SMTP_PORT_PARAM", "/sales-website/dev/smtp-port")
+SMTP_USERNAME_PARAM = os.environ.get("SMTP_USERNAME_PARAM", "/sales-website/dev/smtp-username")
+SMTP_PASSWORD_PARAM = os.environ.get("SMTP_PASSWORD_PARAM", "/sales-website/dev/smtp-password")
 FRONTEND_URL = os.environ.get("FRONTEND_URL", "").rstrip("/")
 
 _param_cache = {}
@@ -277,6 +286,41 @@ def get_order_alerts_to_email():
         return get_parameter(ORDER_ALERTS_TO_EMAIL_PARAM, decrypt=False) or ORDER_ALERTS_TO_EMAIL
     except Exception:
         return ORDER_ALERTS_TO_EMAIL
+
+
+def get_email_provider():
+    try:
+        return (get_parameter(EMAIL_PROVIDER_PARAM, decrypt=False) or "ses").strip().lower()
+    except Exception:
+        return "ses"
+
+
+def get_smtp_host():
+    try:
+        return (get_parameter(SMTP_HOST_PARAM, decrypt=False) or "").strip()
+    except Exception:
+        return ""
+
+
+def get_smtp_port():
+    try:
+        return safe_int(get_parameter(SMTP_PORT_PARAM, decrypt=False), 465)
+    except Exception:
+        return 465
+
+
+def get_smtp_username():
+    try:
+        return (get_parameter(SMTP_USERNAME_PARAM, decrypt=False) or "").strip()
+    except Exception:
+        return ""
+
+
+def get_smtp_password():
+    try:
+        return get_parameter(SMTP_PASSWORD_PARAM, decrypt=True)
+    except Exception:
+        return ""
 
 
 def wompi_enabled():
@@ -1305,33 +1349,80 @@ def capture_notification_result(notifications, key, result):
     notifications[key] = entry
 
 
+def send_ses_email(sender, recipient, subject, text_body, html_body):
+    result = ses.send_email(
+        FromEmailAddress=sender,
+        Destination={"ToAddresses": [recipient]},
+        Content={
+            "Simple": {
+                "Subject": {"Data": subject, "Charset": "UTF-8"},
+                "Body": {
+                    "Text": {"Data": text_body, "Charset": "UTF-8"},
+                    "Html": {"Data": html_body, "Charset": "UTF-8"},
+                },
+            }
+        },
+    )
+    return result.get("MessageId", "")
+
+
+def send_smtp_email(sender, recipient, subject, text_body, html_body):
+    host = get_smtp_host()
+    port = get_smtp_port()
+    username = get_smtp_username()
+    password = get_smtp_password()
+    if not host or not username or not password:
+        raise RuntimeError("smtp_not_configured")
+
+    msg = EmailMessage()
+    msg["Subject"] = subject
+    msg["From"] = formataddr(("RepuestosCel", sender or username))
+    msg["To"] = recipient
+    msg["Reply-To"] = sender or username
+    msg.set_content(text_body or "")
+    msg.add_alternative(html_body or text_body or "", subtype="html")
+
+    timeout = 12
+    if port == 465:
+        context = ssl.create_default_context()
+        with smtplib.SMTP_SSL(host, port, context=context, timeout=timeout) as smtp:
+            smtp.login(username, password)
+            smtp.send_message(msg)
+    else:
+        context = ssl.create_default_context()
+        with smtplib.SMTP(host, port, timeout=timeout) as smtp:
+            smtp.ehlo()
+            smtp.starttls(context=context)
+            smtp.ehlo()
+            smtp.login(username, password)
+            smtp.send_message(msg)
+    return f"smtp-{uuid.uuid4()}"
+
+
 def send_email(recipient, subject, text_body, html_body):
-    sender = get_order_notifications_from_email()
+    provider = get_email_provider()
+    sender = get_order_notifications_from_email() or get_smtp_username()
     if not sender or not recipient:
         return {
             "ok": False,
             "error": "missing_sender_or_recipient",
         }
     try:
-        result = ses.send_email(
-            FromEmailAddress=sender,
-            Destination={"ToAddresses": [recipient]},
-            Content={
-                "Simple": {
-                    "Subject": {"Data": subject, "Charset": "UTF-8"},
-                    "Body": {
-                        "Text": {"Data": text_body, "Charset": "UTF-8"},
-                        "Html": {"Data": html_body, "Charset": "UTF-8"},
-                    },
-                }
-            },
-        )
+        if provider == "smtp":
+            message_id = send_smtp_email(sender, recipient, subject, text_body, html_body)
+        else:
+            message_id = send_ses_email(sender, recipient, subject, text_body, html_body)
         return {
             "ok": True,
-            "messageId": result.get("MessageId", ""),
+            "messageId": message_id,
         }
     except Exception as exc:
-        print(f"SES send_email failed for {recipient}: {exc}")
+        print(json.dumps({
+            "event": "send_email_failed",
+            "provider": provider,
+            "recipient": recipient,
+            "error": str(exc),
+        }))
         return {
             "ok": False,
             "error": str(exc),
@@ -1790,6 +1881,11 @@ def send_campaign(body):
         return response(400, {"error": "missing_campaign_fields"})
     if audience == "test" and not test_email:
         return response(400, {"error": "missing_test_email"})
+    if get_email_provider() == "smtp" and audience != "test" and not dry_run:
+        return response(403, {
+            "error": "smtp_campaigns_disabled",
+            "message": "Las publicaciones masivas están deshabilitadas con SMTP. Usa pruebas o un proveedor de marketing con bajas automáticas.",
+        })
 
     recipients = collect_campaign_recipients(audience, test_email if audience == "test" else "")
     max_recipients = min(safe_int(body.get("limit"), 50), 100)

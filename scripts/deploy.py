@@ -144,6 +144,31 @@ SSM_SECRETS = {
         "default": "",
         "type": "String",
     },
+    "email-provider": {
+        "description": "Email delivery provider: ses or smtp",
+        "default": "ses",
+        "type": "String",
+    },
+    "smtp-host": {
+        "description": "SMTP host for transactional email fallback",
+        "default": "smtp.hostinger.com",
+        "type": "String",
+    },
+    "smtp-port": {
+        "description": "SMTP port, usually 465 for SSL or 587 for STARTTLS",
+        "default": "465",
+        "type": "String",
+    },
+    "smtp-username": {
+        "description": "SMTP username, usually the sender mailbox",
+        "default": "",
+        "type": "String",
+    },
+    "smtp-password": {
+        "description": "SMTP mailbox password",
+        "default": "",
+        "type": "SecureString",
+    },
 }
 
 
