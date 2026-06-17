@@ -1,7 +1,7 @@
 # Template v2 — 36 productos seed con imágenes + auth users + order tickets
 import base64
 from email.message import EmailMessage
-from email.utils import formataddr
+from email.utils import formataddr, formatdate, make_msgid
 import hashlib
 import hmac
 import json
@@ -1379,6 +1379,9 @@ def send_smtp_email(sender, recipient, subject, text_body, html_body):
     msg["From"] = formataddr(("RepuestosCel", sender or username))
     msg["To"] = recipient
     msg["Reply-To"] = sender or username
+    msg["Date"] = formatdate(localtime=False)
+    msg["Message-ID"] = make_msgid(domain="repuestoscel.com")
+    msg["X-Mailer"] = "RepuestosCel Transactional Mailer"
     msg.set_content(text_body or "")
     msg.add_alternative(html_body or text_body or "", subtype="html")
 
