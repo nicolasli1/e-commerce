@@ -1381,7 +1381,7 @@ def send_smtp_email(sender, recipient, subject, text_body, html_body):
     msg["Reply-To"] = sender or username
     msg["Date"] = formatdate(localtime=False)
     msg["Message-ID"] = make_msgid(domain="repuestoscel.com")
-    msg["X-Mailer"] = "RepuestosCel Transactional Mailer"
+    msg["Auto-Submitted"] = "auto-generated"
     msg.set_content(text_body or "")
     msg.add_alternative(html_body or text_body or "", subtype="html")
 
@@ -1436,22 +1436,24 @@ def send_internal_test_email(recipient=""):
     recipient = normalize_email(recipient) or get_order_alerts_to_email() or get_order_notifications_from_email() or get_smtp_username()
     if not recipient.endswith("@repuestoscel.com"):
         return {"ok": False, "error": "test_recipient_not_allowed"}
-    subject = "RepuestosCel: prueba de correo transaccional"
+    subject = "Confirmación de pedido RepuestosCel"
     text_body = (
         "Hola,\n\n"
-        "Este es un correo de prueba enviado desde la Lambda de RepuestosCel usando el proveedor configurado.\n"
-        "Si recibes este mensaje, el motor de correo transaccional está funcionando.\n\n"
+        "Tu pedido en RepuestosCel quedó registrado correctamente.\n"
+        "Referencia: NXC-VALIDACION\n"
+        "Estado: Pago recibido\n\n"
+        "Puedes usar la referencia para consultar el estado del pedido en repuestoscel.com.\n\n"
         "RepuestosCel"
     )
     html_body = receipt_email_shell(
-        "Prueba de correo transaccional",
-        "Correo transaccional activo",
-        "Este mensaje confirma que la Lambda puede enviar correos con el proveedor configurado.",
-        "SMTP-TEST",
-        "$0 COP",
-        "<p style='margin:0 0 14px;font-size:15px;line-height:1.7;color:#344054;'>Si recibes este correo, el motor de email de RepuestosCel está funcionando correctamente.</p>",
+        "Pedido registrado correctamente",
+        "Tu pedido quedó confirmado",
+        "Recibimos tu pedido y lo dejamos asociado a una referencia para seguimiento.",
+        "NXC-VALIDACION",
+        "$10.000 COP",
+        "<p style='margin:0 0 14px;font-size:15px;line-height:1.7;color:#344054;'>Este mensaje valida el envío de correos transaccionales de RepuestosCel con un formato similar al que reciben los clientes después de comprar.</p>",
         active_step="paid",
-        footer_note="Mensaje interno de prueba.",
+        footer_note="Mensaje interno de validación.",
     )
     return send_email(recipient, subject, text_body, html_body)
 
