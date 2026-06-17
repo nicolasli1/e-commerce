@@ -1429,6 +1429,30 @@ def send_email(recipient, subject, text_body, html_body):
         }
 
 
+def send_internal_test_email(recipient=""):
+    recipient = normalize_email(recipient) or get_order_alerts_to_email() or get_order_notifications_from_email() or get_smtp_username()
+    if not recipient.endswith("@repuestoscel.com"):
+        return {"ok": False, "error": "test_recipient_not_allowed"}
+    subject = "RepuestosCel: prueba de correo transaccional"
+    text_body = (
+        "Hola,\n\n"
+        "Este es un correo de prueba enviado desde la Lambda de RepuestosCel usando el proveedor configurado.\n"
+        "Si recibes este mensaje, el motor de correo transaccional está funcionando.\n\n"
+        "RepuestosCel"
+    )
+    html_body = receipt_email_shell(
+        "Prueba de correo transaccional",
+        "Correo transaccional activo",
+        "Este mensaje confirma que la Lambda puede enviar correos con el proveedor configurado.",
+        "SMTP-TEST",
+        "$0 COP",
+        "<p style='margin:0 0 14px;font-size:15px;line-height:1.7;color:#344054;'>Si recibes este correo, el motor de email de RepuestosCel está funcionando correctamente.</p>",
+        active_step="paid",
+        footer_note="Mensaje interno de prueba.",
+    )
+    return send_email(recipient, subject, text_body, html_body)
+
+
 def frontend_tracking_url(reference):
     base = FRONTEND_URL or "https://repuestoscel.com"
     return f"{base}/#rastrear-pedido"
@@ -2801,6 +2825,9 @@ def handler(event, context):
         if order:
             ensure_post_payment_side_effects(order)
         return {"ok": True}
+
+    if isinstance(event, dict) and event.get("_task") == "send_test_email":
+        return send_internal_test_email(event.get("recipient", ""))
 
     method = event.get("requestContext", {}).get("http", {}).get("method", "")
     path = event.get("rawPath", "").rstrip("/")
