@@ -2160,13 +2160,15 @@
     }
     .cart-remove {
       position: static;
-      width: 28px;
-      height: 28px;
+      width: auto;
+      height: 30px;
+      padding: 0 10px;
       border-radius: 9999px;
       border: none;
-      background: transparent;
-      color: rgba(255,255,255,0.2);
-      font-size: 0.7rem;
+      background: rgba(239,68,68,0.08);
+      color: #fca5a5;
+      font-size: 0.72rem;
+      font-weight: 800;
       cursor: pointer;
       display: flex;
       align-items: center;
@@ -3389,10 +3391,10 @@
       }
       .cart-item {
         display: grid;
-        grid-template-columns: 52px minmax(0, 1fr) 32px;
+        grid-template-columns: 52px minmax(0, 1fr);
         gap: 12px;
         padding: 12px;
-        max-height: 165px;
+        max-height: 172px;
       }
       .cart-thumb {
         width: 52px;
@@ -3405,18 +3407,28 @@
         -webkit-box-orient: vertical;
       }
       .cart-item-right {
-        grid-column: 2 / 4;
+        grid-column: 1 / -1;
         width: 100%;
         flex-direction: row;
         align-items: center;
         justify-content: space-between;
-        margin-top: 6px;
+        margin-top: 4px;
+        padding-top: 10px;
+        border-top: 1px solid rgba(15,23,42,0.08);
       }
       .cart-remove {
-        grid-column: 3;
-        grid-row: 1;
-        justify-self: end;
-        align-self: start;
+        grid-column: 2;
+        grid-row: 2;
+        justify-self: start;
+        align-self: end;
+        height: auto;
+        padding: 0;
+        background: transparent;
+        border: 0;
+        border-radius: 0;
+        color: #9f1239;
+        font-size: 0.76rem;
+        line-height: 1.2;
       }
       .cart-total-card {
         padding: 16px;
@@ -5231,6 +5243,18 @@
       background: #dc2626;
       border-color: #dc2626;
     }
+    @media (max-width: 768px) {
+      body[data-site-theme="repair"] .cart-remove {
+        color: #9f1239;
+        background: transparent;
+        border: 0;
+        box-shadow: none;
+      }
+      body[data-site-theme="repair"] .cart-remove:hover {
+        color: #be123c;
+        background: transparent;
+      }
+    }
     body[data-site-theme="repair"] .cart-total-card {
       background: linear-gradient(180deg, #ffffff, #f7fafc);
       border-color: rgba(15,23,42,0.12);
@@ -6250,7 +6274,7 @@
               <button class="cart-qty-btn" onclick='updateQuantity(${JSON.stringify(key)}, 1)' aria-label="Sumar">+</button>
             </div>
             <div class="cart-item-subtotal">$${(Number(c.price) * c.quantity).toLocaleString('es-CO', {minimumFractionDigits:0})}</div>
-            <button class="cart-remove" onclick='removeFromCart(${JSON.stringify(key)})' aria-label="Eliminar">✕</button>
+            <button class="cart-remove" onclick='removeFromCart(${JSON.stringify(key)})' aria-label="Eliminar ${htmlSafe(c.name)}">Eliminar</button>
           </div>
         </div>`;
       }).join('');
