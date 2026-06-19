@@ -6202,7 +6202,12 @@
     function updateQuantity(key, delta) {
       const item = cart.find(c => cartItemKey(c) === key);
       if (item) {
-        item.quantity = Math.max(1, item.quantity + delta);
+        const nextQuantity = item.quantity + delta;
+        if (nextQuantity <= 0) {
+          removeFromCart(key);
+          return;
+        }
+        item.quantity = nextQuantity;
         saveCart();
         updateCartCount();
         renderCart();
