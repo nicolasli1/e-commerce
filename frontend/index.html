@@ -2609,6 +2609,7 @@
     }
     .checkout-provider {
       position: relative;
+      display: grid;
       border-radius: 20px;
       border: 1px solid rgba(255,255,255,0.08);
       background: rgba(255,255,255,0.03);
@@ -2709,7 +2710,11 @@
     .checkout-provider-foot {
       color: #9ca3af;
       font-size: 0.76rem;
+      line-height: 1.4;
+      margin-top: auto;
     }
+    .checkout-provider-foot strong { color: #c4b5fd; font-weight: 700; }
+    .checkout-provider-foot .cod { color: #34d399; }
     .checkout-delivery-card {
       position: relative;
       margin: 18px 0 22px;
@@ -6312,6 +6317,7 @@
                     <span class="checkout-provider-tag">Pago online</span>
                   </div>
                   <div class="checkout-provider-copy">Paga con tarjeta, PSE, Nequi y métodos locales desde la pasarela de Bancolombia.</div>
+                  <div class="checkout-provider-foot"><strong>Recomendado.</strong> Alistamos tu pedido apenas se aprueba el pago.</div>
                 </div>
               </label>
               <label class="checkout-provider">
@@ -6321,7 +6327,8 @@
                     <span>Pago contra entrega</span>
                     <span class="checkout-provider-tag checkout-provider-tag-nequi">Inter Rapidísimo</span>
                   </div>
-                  <div class="checkout-provider-copy">Pagas al recibir. Confirmaremos disponibilidad y despacho antes de enviar.</div>
+                  <div class="checkout-provider-copy">Pagas en efectivo al recibir. Inter Rapidísimo recauda en la entrega.</div>
+                  <div class="checkout-provider-foot"><span class="cod">Sujeto a cobertura.</span> Confirmamos disponibilidad y despacho antes de enviar.</div>
                 </div>
               </label>
             </div>
@@ -6376,24 +6383,6 @@
                         <small>Entrega estimada</small>
                         <strong id="checkoutEstimatedDelivery">Mismo día o siguiente día hábil</strong>
                       </div>
-                    </div>
-                    <div class="checkout-delivery-options" aria-label="Opciones de entrega">
-                      <label class="checkout-delivery-option">
-                        <input type="radio" name="checkoutDeliveryMode" value="prepaid" checked />
-                        <span>
-                          <strong>Envío con pago online</strong>
-                          <em>Pagas con Wompi y alistamos el pedido al aprobarse.</em>
-                          <b>Recomendado</b>
-                        </span>
-                      </label>
-                      <label class="checkout-delivery-option">
-                        <input type="radio" name="checkoutDeliveryMode" value="cod" />
-                        <span>
-                          <strong>Pago contra entrega</strong>
-                          <em>Inter Rapidísimo recauda al entregar, sujeto a cobertura.</em>
-                          <b>Confirmación manual</b>
-                        </span>
-                      </label>
                     </div>
                   </div>
                 </div>
@@ -7144,8 +7133,6 @@
       const provider = selectedCheckoutProvider();
       const note = document.getElementById('checkoutInlineNote');
       const payBtn = document.getElementById('checkoutPayBtn');
-      const deliveryMode = document.querySelector(`input[name="checkoutDeliveryMode"][value="${provider === 'interrapidisimo_cod' ? 'cod' : 'prepaid'}"]`);
-      if (deliveryMode && !deliveryMode.checked) deliveryMode.checked = true;
       if (payBtn) {
         payBtn.textContent = provider === 'interrapidisimo_cod' ? 'Confirmar pedido contra entrega' : 'Pagar con Wompi';
       }
@@ -7569,14 +7556,6 @@
       });
       document.querySelectorAll('input[name="checkoutProvider"]').forEach((input) => {
         input.addEventListener('change', syncCheckoutProviderUI);
-      });
-      document.querySelectorAll('input[name="checkoutDeliveryMode"]').forEach((input) => {
-        input.addEventListener('change', () => {
-          const providerValue = input.value === 'cod' ? 'interrapidisimo_cod' : 'wompi';
-          const provider = document.querySelector(`input[name="checkoutProvider"][value="${providerValue}"]`);
-          if (provider) provider.checked = true;
-          syncCheckoutProviderUI();
-        });
       });
       document.getElementById('checkoutShippingZone')?.addEventListener('change', () => {
         updateDeliveryPreview();

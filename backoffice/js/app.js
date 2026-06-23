@@ -1913,6 +1913,31 @@ Si tienes dudas de compatibilidad, responde este correo y te ayudamos a elegir e
         </tr>
       `).join('');
 
+      // Dirección de envío: usa el objeto estructurado del pedido y cae al texto plano si es un pedido viejo
+      const sa = order.shippingAddress || {};
+      const addrLine1 = sa.addressLine1 || order.customer?.shippingAddress || '';
+      const addrLine2 = sa.addressLine2 || '';
+      const addrCityRegion = [sa.city, sa.region].filter(Boolean).join(', ');
+      const orderNotes = order.notes || '';
+      const mapsQuery = [addrLine1, addrLine2, sa.city, sa.region, 'Colombia'].filter(Boolean).join(', ');
+      const mapsUrl = addrLine1 ? `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(mapsQuery)}` : '';
+      const addressHtml = addrLine1 ? `
+        <div class="form-group">
+          <label class="form-label">📍 Dirección de envío</label>
+          <div style="padding:12px 14px;border-radius:10px;background:rgba(99,102,241,0.07);border:1px solid rgba(99,102,241,0.18);color:var(--text-primary);font-size:0.875rem;line-height:1.5;">
+            <div style="font-weight:600;">${esc(addrLine1)}</div>
+            ${addrLine2 ? `<div style="color:var(--text-secondary);">🏢 ${esc(addrLine2)}</div>` : ''}
+            ${addrCityRegion ? `<div style="color:var(--text-secondary);">${esc(addrCityRegion)}</div>` : ''}
+            ${order.customer?.phoneNumber ? `<div style="color:var(--text-secondary);">📞 ${esc(order.customer.phoneNumber)}</div>` : ''}
+            ${mapsUrl ? `<a href="${esc(mapsUrl)}" target="_blank" rel="noopener" style="display:inline-flex;align-items:center;gap:6px;margin-top:10px;padding:7px 13px;border-radius:8px;background:rgba(99,102,241,0.16);border:1px solid rgba(99,102,241,0.32);color:#c4b5fd;font-weight:600;text-decoration:none;font-size:0.8rem;">🗺️ Ver en Google Maps ↗</a>` : ''}
+          </div>
+        </div>
+        ${orderNotes ? `
+        <div class="form-group">
+          <label class="form-label">📝 Notas del cliente</label>
+          <div style="padding:10px 14px;border-radius:10px;background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.08);color:var(--text-secondary);font-size:0.85rem;line-height:1.5;">${esc(orderNotes)}</div>
+        </div>` : ''}` : '';
+
       modalContent.innerHTML = `
         <div class="form-group">
           <label class="form-label">Referencia</label>
@@ -1931,13 +1956,7 @@ Si tienes dudas de compatibilidad, responde este correo y te ayudamos a elegir e
             <div>${formatCurrencyCopFromCents(order.amountInCents || 0)}</div>
           </div>
         </div>
-        ${order.customer?.shippingAddress ? `
-        <div class="form-group">
-          <label class="form-label">📍 Dirección de envío</label>
-          <div style="padding:10px 14px;border-radius:10px;background:rgba(99,102,241,0.07);border:1px solid rgba(99,102,241,0.18);color:var(--text-primary);font-size:0.875rem;">
-            ${esc(order.customer.shippingAddress)}
-          </div>
-        </div>` : ''}
+        ${addressHtml}
         <div class="form-row">
           <div class="form-group">
             <label class="form-label">Estado de pago</label>
