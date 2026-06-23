@@ -150,6 +150,7 @@ class BackendStack(Stack):
                 "ADMIN_PASSWORD_PARAM": f"/{project_name}/{environment}/admin-password",
                 "ADMIN_SESSION_SECRET_PARAM": f"/{project_name}/{environment}/admin-session-secret",
                 "WOMPI_PUBLIC_KEY_PARAM": f"/{project_name}/{environment}/wompi-public-key",
+                "GOOGLE_MAPS_EMBED_KEY_PARAM": f"/{project_name}/{environment}/google-maps-embed-key",
                 "WOMPI_INTEGRITY_SECRET_PARAM": f"/{project_name}/{environment}/wompi-integrity-secret",
                 "WOMPI_EVENTS_SECRET_PARAM": f"/{project_name}/{environment}/wompi-events-secret",
                 "MERCADOPAGO_PUBLIC_KEY_PARAM": f"/{project_name}/{environment}/mercadopago-public-key",

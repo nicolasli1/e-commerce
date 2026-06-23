@@ -94,7 +94,7 @@ class FrontendStack(Stack):
                             "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; "
                             "font-src 'self' https://fonts.gstatic.com; "
                             "connect-src 'self' https:; "
-                            "frame-src https://checkout.wompi.co https://*.wompi.co;"
+                            "frame-src https://checkout.wompi.co https://*.wompi.co https://www.google.com https://maps.google.com;"
                         ),
                         override=True,
                     ),

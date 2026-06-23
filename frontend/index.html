@@ -61,9 +61,6 @@
   </script>
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Inter+Tight:wght@500;600;700;800&display=swap" rel="stylesheet" />
-  <!-- Leaflet (self-hosted to comply with the production CSP, which only allows scripts/styles from 'self') -->
-  <link rel="stylesheet" href="vendor/leaflet.css" />
-  <script src="vendor/leaflet.js" defer></script>
   <style>
     :root {
       --bg: #05060a;
@@ -2734,8 +2731,14 @@
     .checkout-map {
       position: absolute;
       inset: 0;
+      width: 100%;
+      height: 100%;
+      border: 0;
       z-index: 1;
+      /* Truco para que el embed (claro por defecto) combine con el checkout oscuro */
+      filter: invert(0.92) hue-rotate(180deg) brightness(0.96) contrast(0.9);
     }
+    body[data-site-theme="repair"] .checkout-map { filter: none; }
     /* Leaflet overrides so the map blends into the dark checkout */
     .checkout-map.leaflet-container {
       background: #0d1220;
@@ -6366,12 +6369,8 @@
               <div class="checkout-field checkout-field-wide">
                 <div class="checkout-delivery-card">
                   <div class="checkout-map-preview">
-                    <div class="checkout-map" id="checkoutMap"></div>
+                    <iframe class="checkout-map" id="checkoutMapEmbed" title="Mapa de la dirección de entrega" loading="lazy" referrerpolicy="no-referrer-when-downgrade"></iframe>
                     <span class="checkout-map-chip" id="checkoutMapAddress">Entrega en Bogotá</span>
-                    <button type="button" class="checkout-map-locate" id="checkoutLocateBtn">
-                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="3"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3"/></svg>
-                      Mi ubicación
-                    </button>
                   </div>
                   <div class="checkout-delivery-body">
                     <div class="checkout-delivery-summary">
@@ -6467,7 +6466,8 @@
     const DEFAULT_SITE_SETTINGS = {
       visualTheme: 'dark',
       shippingBogotaCents: 1000000,
-      shippingNationalCents: 1800000
+      shippingNationalCents: 1800000,
+      googleMapsEmbedKey: ''
     };
     let siteSettings = { ...DEFAULT_SITE_SETTINGS };
 
@@ -6802,8 +6802,7 @@
       document.getElementById('checkoutModal')?.classList.add('open');
       document.body.classList.add('modal-open');
       renderCheckoutSummary();
-      // el mapa necesita estar visible para medir su tamaño
-      requestAnimationFrame(() => initCheckoutMap());
+      requestAnimationFrame(() => updateCheckoutMapEmbed());
     }
 
     function closeCheckout() {
@@ -6860,33 +6859,11 @@
       renderCheckoutSummary();
     }
 
-    // ----- Mapa de entrega (Leaflet + OpenStreetMap/CARTO, alojado en 'self') -----
-    const BOGOTA_CENTER = [4.6486, -74.0846];
-    let checkoutMap = null;
-    let checkoutMarker = null;
-    let checkoutGeo = null;          // { lat, lng } del punto confirmado
-    let geocodeTimer = null;
-    let geocodeSeq = 0;              // descarta respuestas fuera de orden
-    let lastGeocodedQuery = '';
-
-    function checkoutPinIcon() {
-      return L.divIcon({
-        className: 'checkout-pin-wrap',
-        html: '<div class="checkout-pin"></div>',
-        iconSize: [30, 30],
-        iconAnchor: [15, 28],
-      });
-    }
-
-    function checkoutTileLayer() {
-      const dark = document.body.dataset.siteTheme !== 'repair';
-      const style = dark ? 'dark_all' : 'light_all';
-      return L.tileLayer('https://{s}.basemaps.cartocdn.com/' + style + '/{z}/{x}/{y}{r}.png', {
-        subdomains: 'abcd',
-        maxZoom: 20,
-        attribution: '&copy; OpenStreetMap &copy; CARTO',
-      });
-    }
+    // ----- Mapa de entrega (Google Maps Embed) -----
+    // La key de "Maps Embed API" llega desde el backend en /api/site-settings (vive en AWS SSM,
+    // no en el repo). Si no hay key, cae a un embed sin key para no dejar el mapa en blanco.
+    let mapEmbedTimer = null;
+    let lastEmbedQuery = '';
 
     function setCheckoutMapHint(text, isSet) {
       const hint = document.getElementById('checkoutMapHint');
@@ -6895,112 +6872,44 @@
       hint.classList.toggle('is-set', !!isSet);
     }
 
-    function initCheckoutMap() {
-      if (typeof L === 'undefined') return;
-      const el = document.getElementById('checkoutMap');
-      if (!el) return;
-      if (checkoutMap) {
-        // el contenedor estuvo oculto: recalcula tamaño al reabrir el modal
-        setTimeout(() => checkoutMap.invalidateSize(), 60);
-        return;
+    function googleEmbedSrc(query) {
+      const key = (siteSettings && siteSettings.googleMapsEmbedKey) || '';
+      if (key) {
+        // Embed oficial (Maps Embed API). La key va restringida por HTTP referrer.
+        return 'https://www.google.com/maps/embed/v1/place?key=' + encodeURIComponent(key)
+          + '&q=' + encodeURIComponent(query) + '&zoom=16';
       }
-      checkoutMap = L.map(el, {
-        center: BOGOTA_CENTER,
-        zoom: 12,
-        zoomControl: true,
-        scrollWheelZoom: false,   // no robar el scroll del formulario
-        attributionControl: true,
-      });
-      checkoutTileLayer().addTo(checkoutMap);
-      checkoutMarker = L.marker(BOGOTA_CENTER, {
-        draggable: true,
-        icon: checkoutPinIcon(),
-        keyboard: false,
-      }).addTo(checkoutMap);
-      checkoutMarker.on('dragend', () => {
-        const { lat, lng } = checkoutMarker.getLatLng();
-        checkoutGeo = { lat: +lat.toFixed(6), lng: +lng.toFixed(6) };
-        setCheckoutMapHint('Punto ajustado manualmente en el mapa.', true);
-      });
-      setTimeout(() => checkoutMap.invalidateSize(), 60);
-      scheduleGeocode(0); // geocodifica lo que ya esté escrito
+      // Fallback sin key: URL de embed directa, enmarcable. (El atajo
+      // maps.google.com?output=embed ya no sirve: redirige con X-Frame-Options.)
+      return 'https://www.google.com/maps/embed?pb=!1m3!2m1!1s' + encodeURIComponent(query) + '!6i16';
     }
 
-    function placeCheckoutPin(lat, lng, opts) {
-      if (!checkoutMap || !checkoutMarker) return;
-      const ll = [lat, lng];
-      checkoutMarker.setLatLng(ll);
-      checkoutMap.setView(ll, (opts && opts.zoom) || Math.max(checkoutMap.getZoom(), 16), { animate: true });
-      checkoutGeo = { lat: +(+lat).toFixed(6), lng: +(+lng).toFixed(6) };
-    }
-
-    function buildGeocodeQuery() {
+    function buildMapQuery() {
       const addr = document.getElementById('checkoutAddress')?.value.trim() || '';
       if (addr.length < 6) return '';
       const tail = selectedShippingZone() === 'bogota' ? 'Bogotá, Colombia' : 'Colombia';
       return /colombia/i.test(addr) ? addr : addr + ', ' + tail;
     }
 
-    async function runGeocode() {
-      if (!checkoutMap) return;
-      const query = buildGeocodeQuery();
-      if (!query || query === lastGeocodedQuery) return;
-      lastGeocodedQuery = query;
-      const seq = ++geocodeSeq;
-      setCheckoutMapHint('Buscando la dirección en el mapa…');
-      try {
-        const url = 'https://nominatim.openstreetmap.org/search?format=jsonv2&limit=1&countrycodes=co&q=' + encodeURIComponent(query);
-        const res = await fetch(url, { headers: { Accept: 'application/json' } });
-        if (!res.ok) throw new Error('geocode http ' + res.status);
-        const data = await res.json();
-        if (seq !== geocodeSeq) return; // llegó una respuesta más nueva
-        if (Array.isArray(data) && data.length) {
-          placeCheckoutPin(parseFloat(data[0].lat), parseFloat(data[0].lon), { zoom: 16 });
-          setCheckoutMapHint('Dirección ubicada. Arrastra el pin si necesitas afinar el punto.', true);
-        } else {
-          setCheckoutMapHint('No encontramos esa dirección. Ajusta el texto o arrastra el pin manualmente.');
-        }
-      } catch (err) {
-        if (seq !== geocodeSeq) return;
-        setCheckoutMapHint('No pudimos ubicar la dirección en el mapa. Puedes arrastrar el pin manualmente.');
-      }
-    }
-
-    function scheduleGeocode(delay) {
-      clearTimeout(geocodeTimer);
-      geocodeTimer = setTimeout(runGeocode, delay == null ? 800 : delay);
-    }
-
-    function locateCheckoutUser() {
-      const btn = document.getElementById('checkoutLocateBtn');
-      if (!navigator.geolocation) {
-        setCheckoutMapHint('Tu navegador no permite usar la ubicación. Escribe la dirección manualmente.');
+    function updateCheckoutMapEmbed() {
+      const iframe = document.getElementById('checkoutMapEmbed');
+      if (!iframe) return;
+      const query = buildMapQuery();
+      if (!query) {
+        if (!iframe.getAttribute('src')) iframe.src = googleEmbedSrc('Bogotá, Colombia');
+        setCheckoutMapHint('Escribe tu dirección para verla en el mapa.');
+        lastEmbedQuery = '';
         return;
       }
-      if (!checkoutMap) initCheckoutMap();
-      if (btn) btn.disabled = true;
-      setCheckoutMapHint('Obteniendo tu ubicación…');
-      navigator.geolocation.getCurrentPosition(async (pos) => {
-        const { latitude, longitude } = pos.coords;
-        placeCheckoutPin(latitude, longitude, { zoom: 17 });
-        setCheckoutMapHint('Ubicación detectada. Confirma o arrastra el pin si hace falta.', true);
-        if (btn) btn.disabled = false;
-        try {
-          const res = await fetch('https://nominatim.openstreetmap.org/reverse?format=jsonv2&lat=' + latitude + '&lon=' + longitude, { headers: { Accept: 'application/json' } });
-          const data = await res.json();
-          const addrInput = document.getElementById('checkoutAddress');
-          if (data && data.address && addrInput && !addrInput.value.trim()) {
-            const a = data.address;
-            addrInput.value = [a.road, a.house_number].filter(Boolean).join(' ') || data.display_name || '';
-            lastGeocodedQuery = '';
-          }
-        } catch (_) { /* reverse geocoding es opcional */ }
-      }, (err) => {
-        if (btn) btn.disabled = false;
-        setCheckoutMapHint(err && err.code === 1
-          ? 'Permiso de ubicación denegado. Escribe la dirección manualmente.'
-          : 'No pudimos obtener tu ubicación. Escribe la dirección manualmente.');
-      }, { enableHighAccuracy: true, timeout: 10000, maximumAge: 60000 });
+      if (query === lastEmbedQuery) return;
+      lastEmbedQuery = query;
+      iframe.src = googleEmbedSrc(query);
+      setCheckoutMapHint('Mostrando tu dirección en el mapa de Google. Verifica que el punto sea correcto.', true);
+    }
+
+    function scheduleMapEmbed(delay) {
+      clearTimeout(mapEmbedTimer);
+      mapEmbedTimer = setTimeout(updateCheckoutMapEmbed, delay == null ? 700 : delay);
     }
 
     function humanizeStatus(status) {
@@ -7351,8 +7260,7 @@
           region: shippingZoneRegion(shippingZone),
           phoneNumber,
           name: fullName,
-          zone: shippingZone,
-          ...(checkoutGeo ? { geoLat: checkoutGeo.lat, geoLng: checkoutGeo.lng } : {})
+          zone: shippingZone
         },
         cart: cart.map((item) => ({
           productId: item.productId || item.id || '',
@@ -7559,12 +7467,11 @@
       });
       document.getElementById('checkoutShippingZone')?.addEventListener('change', () => {
         updateDeliveryPreview();
-        lastGeocodedQuery = '';
-        scheduleGeocode(150);
+        lastEmbedQuery = '';
+        scheduleMapEmbed(150);
       });
-      document.getElementById('checkoutAddress')?.addEventListener('input', () => scheduleGeocode());
-      document.getElementById('checkoutAddress')?.addEventListener('blur', () => runGeocode());
-      document.getElementById('checkoutLocateBtn')?.addEventListener('click', locateCheckoutUser);
+      document.getElementById('checkoutAddress')?.addEventListener('input', () => scheduleMapEmbed());
+      document.getElementById('checkoutAddress')?.addEventListener('blur', () => updateCheckoutMapEmbed());
       document.getElementById('checkoutForm')?.addEventListener('submit', submitCheckout);
       document.getElementById('checkoutBtn')?.addEventListener('click', goToCheckout);
       document.getElementById('trackingForm')?.addEventListener('submit', (e) => {
@@ -9085,6 +8992,9 @@
         const data = await res.json();
         siteSettings = { ...DEFAULT_SITE_SETTINGS, ...(data.settings || {}) };
         updateDeliveryPreview();
+        // si el mapa ya se pintó (fallback), re-renderiza con la key oficial recién cargada
+        lastEmbedQuery = '';
+        if (document.getElementById('checkoutMapEmbed')?.getAttribute('src')) updateCheckoutMapEmbed();
       } catch (_) {
         siteSettings = { ...DEFAULT_SITE_SETTINGS };
       }

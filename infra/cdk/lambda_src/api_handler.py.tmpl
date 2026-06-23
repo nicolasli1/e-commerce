@@ -34,6 +34,7 @@ ADMIN_SESSION_SECRET_PARAM = os.environ.get("ADMIN_SESSION_SECRET_PARAM", "")
 API_KEY_PARAM = os.environ.get("API_KEY_PARAM", "")
 
 WOMPI_PUBLIC_KEY_PARAM = os.environ.get("WOMPI_PUBLIC_KEY_PARAM", "")
+GOOGLE_MAPS_EMBED_KEY_PARAM = os.environ.get("GOOGLE_MAPS_EMBED_KEY_PARAM", "")
 WOMPI_INTEGRITY_SECRET_PARAM = os.environ.get("WOMPI_INTEGRITY_SECRET_PARAM", "")
 WOMPI_EVENTS_SECRET_PARAM = os.environ.get("WOMPI_EVENTS_SECRET_PARAM", "")
 MERCADOPAGO_PUBLIC_KEY_PARAM = os.environ.get("MERCADOPAGO_PUBLIC_KEY_PARAM", "")
@@ -241,6 +242,14 @@ def get_api_key():
 def get_wompi_public_key():
     try:
         return get_parameter(WOMPI_PUBLIC_KEY_PARAM, decrypt=False)
+    except Exception:
+        return ""
+
+
+def get_google_maps_embed_key():
+    # Public, referrer-restricted Maps Embed key. Safe to expose to the frontend.
+    try:
+        return get_parameter(GOOGLE_MAPS_EMBED_KEY_PARAM, decrypt=False)
     except Exception:
         return ""
 
@@ -752,6 +761,8 @@ def get_site_settings():
     existing = products_table.get_item(Key={"productId": SITE_SETTINGS_ID}).get("Item") or {}
     settings = DEFAULT_SITE_SETTINGS.copy()
     settings.update(normalize_site_settings(existing.get("settings") or existing))
+    # Llave pública del mapa: vive en SSM, no en la tabla de settings.
+    settings["googleMapsEmbedKey"] = get_google_maps_embed_key()
     return response(200, {"ok": True, "settings": settings})
 
 
