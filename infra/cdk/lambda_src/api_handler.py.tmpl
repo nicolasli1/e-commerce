@@ -68,6 +68,8 @@ PRODUCT_CATEGORIES = {
 SITE_SETTINGS_ID = "__site_settings__"
 DEFAULT_SITE_SETTINGS = {
     "visualTheme": "dark",
+    "shippingBogotaCents": 1000000,
+    "shippingNationalCents": 1800000,
 }
 
 
@@ -122,8 +124,12 @@ def normalize_site_settings(body):
     theme = (body.get("visualTheme") or DEFAULT_SITE_SETTINGS["visualTheme"]).strip()
     if theme not in ("dark", "repair"):
         theme = DEFAULT_SITE_SETTINGS["visualTheme"]
+    bogota_cents = max(0, safe_int(body.get("shippingBogotaCents"), DEFAULT_SITE_SETTINGS["shippingBogotaCents"]))
+    national_cents = max(0, safe_int(body.get("shippingNationalCents"), DEFAULT_SITE_SETTINGS["shippingNationalCents"]))
     return {
         "visualTheme": theme,
+        "shippingBogotaCents": bogota_cents,
+        "shippingNationalCents": national_cents,
     }
 
 
@@ -750,7 +756,12 @@ def get_site_settings():
 
 
 def update_site_settings(body):
-    settings = normalize_site_settings(body)
+    existing = products_table.get_item(Key={"productId": SITE_SETTINGS_ID}).get("Item") or {}
+    merged = DEFAULT_SITE_SETTINGS.copy()
+    merged.update(existing.get("settings") or existing)
+    if isinstance(body, dict):
+        merged.update(body)
+    settings = normalize_site_settings(merged)
     item = {
         "productId": SITE_SETTINGS_ID,
         "itemType": "site_settings",
@@ -1324,6 +1335,26 @@ def build_order_items(cart_items):
     return built, total
 
 
+def normalize_delivery_zone(value):
+    normalized = slugify(value or "")
+    if normalized in ("bogota", "bogota-dc", "bogota-d-c", "bogota-distrito-capital"):
+        return "bogota"
+    return "national"
+
+
+def delivery_label(zone):
+    return "Bogotá" if zone == "bogota" else "Fuera de Bogotá"
+
+
+def delivery_eta(zone):
+    return "Mismo día o siguiente día hábil" if zone == "bogota" else "2 a 5 días hábiles"
+
+
+def delivery_fee_cents(settings, zone):
+    key = "shippingBogotaCents" if zone == "bogota" else "shippingNationalCents"
+    return max(0, safe_int(settings.get(key), DEFAULT_SITE_SETTINGS[key]))
+
+
 def build_order_summary_lines(order):
     lines = []
     for item in order.get("items", []):
@@ -1331,6 +1362,9 @@ def build_order_summary_lines(order):
         lines.append(
             f"- {item.get('name', 'Producto')}{label} x{item.get('quantity', 1)} · {cents_to_cop_text(item.get('subtotalCents', 0))}"
         )
+    delivery = order.get("delivery") or {}
+    if delivery:
+        lines.append(f"- Envío {delivery.get('label', 'Entrega')} · {cents_to_cop_text(delivery.get('feeInCents', 0))}")
     return "\n".join(lines) if lines else "- Sin items"
 
 
@@ -1570,7 +1604,7 @@ def receipt_email_shell(preheader, title, intro, reference, total, body_html, ac
                     </td>
                     <td width="14"></td>
                     <td align="right" style="padding:16px;border-radius:20px;background:#f8fafc;border:1px solid #eef0f5;">
-                      <div style="font-size:11px;font-weight:800;text-transform:uppercase;letter-spacing:0.14em;color:#667085;">Total pagado</div>
+                      <div style="font-size:11px;font-weight:800;text-transform:uppercase;letter-spacing:0.14em;color:#667085;">Total del pedido</div>
                       <div style="font-size:24px;font-weight:900;letter-spacing:-0.8px;color:#101828;margin-top:4px;">{html_escape(total)}</div>
                     </td>
                   </tr>
@@ -1611,6 +1645,7 @@ def send_customer_confirmation(order):
     total = cents_to_cop_text(order.get("amountInCents", 0))
     reference = order.get("reference", "")
     customer_name = customer.get("fullName", "")
+    is_cod = order.get("status") == "PAY_ON_DELIVERY"
     items_text = build_order_summary_lines(order)
     shipping_lines = order_shipping_lines(order)
     shipping_text = "\n".join(shipping_lines)
@@ -1647,8 +1682,12 @@ def send_customer_confirmation(order):
     )
     html_body = receipt_email_shell(
         preheader=f"Recibimos tu compra {reference} por {total}.",
-        title="Compra confirmada",
-        intro=f"Hola {customer_name or 'hola'}, recibimos tu pago y ya dejamos tu pedido listo para preparación.",
+        title="Pedido recibido" if is_cod else "Compra confirmada",
+        intro=(
+            f"Hola {customer_name or 'hola'}, recibimos tu pedido con pago contra entrega. Validaremos cobertura antes del despacho."
+            if is_cod else
+            f"Hola {customer_name or 'hola'}, recibimos tu pago y ya dejamos tu pedido listo para preparación."
+        ),
         reference=reference,
         total=total,
         body_html=body_html,
@@ -1668,17 +1707,22 @@ def send_internal_order_alert(order):
     total = cents_to_cop_text(order.get("amountInCents", 0))
     reference = order.get("reference", "")
     items_text = build_order_summary_lines(order)
+    is_cod = order.get("status") == "PAY_ON_DELIVERY"
     text_body = (
-        f"Nuevo pedido aprobado.\n\n"
+        f"{'Nuevo pedido contra entrega' if is_cod else 'Nuevo pedido aprobado'}.\n\n"
         f"Referencia: {reference}\n"
         f"Cliente: {customer.get('fullName', '')} <{customer.get('email', '')}>\n"
         f"Total: {total}\n\n"
         f"Productos:\n{items_text}\n"
     )
     html_body = receipt_email_shell(
-        preheader=f"Nuevo pedido aprobado {reference} por {total}.",
-        title="Nuevo pedido aprobado",
-        intro=f"{customer.get('fullName', 'Cliente')} completó una compra. Revisa preparación, inventario y despacho.",
+        preheader=f"{'Nuevo contra entrega' if is_cod else 'Nuevo pedido aprobado'} {reference} por {total}.",
+        title="Nuevo pedido contra entrega" if is_cod else "Nuevo pedido aprobado",
+        intro=(
+            f"{customer.get('fullName', 'Cliente')} creó un pedido para pago al recibir. Confirma cobertura, inventario y despacho."
+            if is_cod else
+            f"{customer.get('fullName', 'Cliente')} completó una compra. Revisa preparación, inventario y despacho."
+        ),
         reference=reference,
         total=total,
         body_html=(
@@ -2045,7 +2089,7 @@ def sync_order_notifications(order, previous_order=None):
     order, inventory_updates = sync_order_inventory(order, previous_order=previous_order)
     updates.update(inventory_updates)
 
-    if order.get("status") == "APPROVED":
+    if order.get("status") in ("APPROVED", "PAY_ON_DELIVERY"):
         if order.get("fulfillmentStatus") in ("", "PENDING_PAYMENT", None):
             updates["fulfillmentStatus"] = "READY_TO_FULFILL"
 
@@ -2168,14 +2212,21 @@ def normalize_customer(body):
 
 def normalize_shipping(body):
     shipping = body.get("shippingAddress") or {}
+    if not isinstance(shipping, dict):
+        shipping = {"addressLine1": str(shipping or "").strip()}
+    customer = body.get("customer") if isinstance(body.get("customer"), dict) else {}
+    zone = normalize_delivery_zone(body.get("shippingZone") or body.get("deliveryZone") or shipping.get("zone") or "")
+    default_city = "Bogotá" if zone == "bogota" else "Nacional"
+    default_region = "Cundinamarca" if zone == "bogota" else "Colombia"
     normalized = {
-        "addressLine1": (shipping.get("addressLine1") or "").strip(),
+        "addressLine1": (shipping.get("addressLine1") or customer.get("shippingAddress") or "").strip(),
         "addressLine2": (shipping.get("addressLine2") or "").strip(),
         "country": (shipping.get("country") or "CO").strip().upper(),
-        "city": (shipping.get("city") or "").strip(),
-        "phoneNumber": (shipping.get("phoneNumber") or "").strip(),
-        "region": (shipping.get("region") or "").strip(),
-        "name": (shipping.get("name") or "").strip(),
+        "city": (shipping.get("city") or customer.get("city") or default_city).strip(),
+        "phoneNumber": (shipping.get("phoneNumber") or customer.get("phoneNumber") or "").strip(),
+        "region": (shipping.get("region") or default_region).strip(),
+        "name": (shipping.get("name") or customer.get("fullName") or "").strip(),
+        "zone": zone,
     }
     required = ["addressLine1", "country", "city", "phoneNumber", "region"]
     if any(normalized[field] for field in normalized):
@@ -2313,8 +2364,10 @@ def create_checkout_session(event):
     body = get_json_body(event)
     if not body:
         return response(400, {"error": "invalid_json"})
-    provider = (body.get("provider") or "mercadopago").strip().lower()
-    if provider not in ("wompi", "mercadopago", "nequi"):
+    provider = (body.get("provider") or "wompi").strip().lower()
+    if provider in ("cod", "contraentrega", "contra_entrega", "interrapidisimo"):
+        provider = "interrapidisimo_cod"
+    if provider not in ("wompi", "mercadopago", "nequi", "interrapidisimo_cod"):
         return response(400, {"error": "unsupported_provider"})
     if provider == "wompi" and not wompi_enabled():
         return response(503, {"error": "checkout_unavailable", "message": "Wompi no está configurado."})
@@ -2325,10 +2378,27 @@ def create_checkout_session(event):
     try:
         customer = normalize_customer(body)
         shipping = normalize_shipping(body)
-        items, total_cents = build_order_items(body.get("cart") or [])
+        items, subtotal_cents = build_order_items(body.get("cart") or [])
     except ValueError as exc:
         return response(400, {"error": str(exc)})
 
+    settings = DEFAULT_SITE_SETTINGS.copy()
+    try:
+        existing = products_table.get_item(Key={"productId": SITE_SETTINGS_ID}).get("Item") or {}
+        settings.update(normalize_site_settings(existing.get("settings") or existing))
+    except Exception:
+        pass
+    delivery_zone = normalize_delivery_zone(body.get("shippingZone") or body.get("deliveryZone") or (shipping or {}).get("zone") or "")
+    delivery_cents = delivery_fee_cents(settings, delivery_zone)
+    delivery = {
+        "provider": "Inter Rapidísimo",
+        "method": "Pago contra entrega" if provider == "interrapidisimo_cod" else "Envío nacional",
+        "zone": delivery_zone,
+        "label": delivery_label(delivery_zone),
+        "eta": delivery_eta(delivery_zone),
+        "feeInCents": delivery_cents,
+    }
+    total_cents = subtotal_cents + delivery_cents
     reference = generate_order_reference()
     origin = get_origin(event)
     redirect_url = f"{origin}/?checkout=return&provider={urllib.parse.quote(provider)}&reference={urllib.parse.quote(reference)}" if origin else ""
@@ -2356,6 +2426,12 @@ def create_checkout_session(event):
             "status": "PENDING",
             "statusMessage": "Notificación enviada a la app Nequi",
         }
+    elif provider == "interrapidisimo_cod":
+        provider_data["interrapidisimo"] = {
+            "collectionType": "PAY_ON_DELIVERY",
+            "courier": "Inter Rapidísimo",
+            "status": "TO_CONFIRM",
+        }
     else:
         api_gateway_origin = get_api_gateway_origin(event)
         preference = build_mercadopago_preference(reference, items, customer, shipping, origin, api_gateway_origin=api_gateway_origin)
@@ -2373,14 +2449,17 @@ def create_checkout_session(event):
     order = {
         "reference": reference,
         "orderId": str(uuid.uuid4()),
-        "status": "CHECKOUT_CREATED",
-        "statusMessage": "Checkout creado y listo para pago",
-        "fulfillmentStatus": "PENDING_PAYMENT",
+        "status": "PAY_ON_DELIVERY" if provider == "interrapidisimo_cod" else "CHECKOUT_CREATED",
+        "statusMessage": "Pedido contra entrega listo para confirmar" if provider == "interrapidisimo_cod" else "Checkout creado y listo para pago",
+        "fulfillmentStatus": "READY_TO_FULFILL" if provider == "interrapidisimo_cod" else "PENDING_PAYMENT",
         "currency": "COP",
+        "subtotalInCents": subtotal_cents,
+        "deliveryFeeInCents": delivery_cents,
         "amountInCents": total_cents,
         "items": items,
         "customer": customer,
         "shippingAddress": shipping,
+        "delivery": delivery,
         "notes": (body.get("notes") or "").strip(),
         "redirectUrl": redirect_url,
         "provider": provider,
@@ -2394,6 +2473,8 @@ def create_checkout_session(event):
         "updatedAt": now_iso(),
     }
     orders_table.put_item(Item=order)
+    if provider == "interrapidisimo_cod":
+        dispatch_post_payment_side_effects(reference)
     payload = {
         "ok": True,
         "reference": reference,
@@ -2666,6 +2747,10 @@ def get_checkout_order(reference, transaction_id=None):
         "provider": order.get("provider"),
         "createdAt": order.get("createdAt"),
         "updatedAt": order.get("updatedAt"),
+        "subtotalInCents": order.get("subtotalInCents", 0),
+        "deliveryFeeInCents": order.get("deliveryFeeInCents", 0),
+        "amountInCents": order.get("amountInCents", 0),
+        "delivery": order.get("delivery") or {},
         "items": [
             {
                 "name": i.get("name"),

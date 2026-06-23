@@ -163,6 +163,7 @@ const App = (() => {
     const labels = {
       'CHECKOUT_CREATED': 'Creado',
       'PENDING': 'Pendiente',
+      'PAY_ON_DELIVERY': 'Contra entrega',
       'APPROVED': 'Aprobado',
       'DECLINED': 'Rechazado',
       'CANCELLED': 'Cancelado',
@@ -1262,6 +1263,8 @@ const App = (() => {
 
   function renderDesignSettingsContent(settings) {
     const currentTheme = settings.visualTheme || 'dark';
+    const shippingBogotaCop = Math.round((Number(settings.shippingBogotaCents) || 1000000) / 100);
+    const shippingNationalCop = Math.round((Number(settings.shippingNationalCents) || 1800000) / 100);
     $main.innerHTML = `
       <div class="page-header">
         <div>
@@ -1306,6 +1309,25 @@ const App = (() => {
               <strong>Recomendación:</strong> usa Repair catalog si quieres que el sitio se sienta menos IA/SaaS y más tienda especializada en repuestos.
             </div>
 
+            <div class="form-section-heading" style="margin-top:24px;">
+              <span class="form-section-icon">🚚</span>
+              <div>
+                <h3>Entrega y pago contra entrega</h3>
+                <p>Configura los valores que se muestran y se cobran en el checkout público.</p>
+              </div>
+            </div>
+
+            <div class="form-row">
+              <div class="form-group">
+                <label class="form-label" for="shippingBogotaCop">Envío Bogotá (COP)</label>
+                <input class="form-input" id="shippingBogotaCop" type="number" min="0" step="500" value="${shippingBogotaCop}" />
+              </div>
+              <div class="form-group">
+                <label class="form-label" for="shippingNationalCop">Envío fuera de Bogotá (COP)</label>
+                <input class="form-input" id="shippingNationalCop" type="number" min="0" step="500" value="${shippingNationalCop}" />
+              </div>
+            </div>
+
             <div class="modal-footer settings-footer">
               <button type="submit" class="btn btn-gradient" id="saveDesignSettingsBtn">Guardar diseño</button>
             </div>
@@ -1347,12 +1369,14 @@ const App = (() => {
     form.addEventListener('submit', async (event) => {
       event.preventDefault();
       const visualTheme = form.querySelector('input[name="visualTheme"]:checked')?.value || 'dark';
+      const shippingBogotaCents = Math.max(0, parseInt(document.getElementById('shippingBogotaCop')?.value || '0', 10) || 0) * 100;
+      const shippingNationalCents = Math.max(0, parseInt(document.getElementById('shippingNationalCop')?.value || '0', 10) || 0) * 100;
       const button = document.getElementById('saveDesignSettingsBtn');
       button.disabled = true;
       button.textContent = 'Guardando…';
       try {
-        await Api.put('/api/admin/site-settings', { visualTheme });
-        showToast('Diseño actualizado. La tienda tomará este estilo al cargar.');
+        await Api.put('/api/admin/site-settings', { visualTheme, shippingBogotaCents, shippingNationalCents });
+        showToast('Diseño y tarifas de envío actualizadas.');
       } catch (err) {
         showToast(err.message, 'error');
       } finally {
@@ -1711,6 +1735,7 @@ Si tienes dudas de compatibilidad, responde este correo y te ayudamos a elegir e
     { key: 'ALL',              label: 'Todos' },
     { key: 'APPROVED',         label: '✅ Aprobados' },
     { key: 'READY_TO_FULFILL', label: '📦 Por despachar' },
+    { key: 'PAY_ON_DELIVERY',   label: '💵 Contra entrega' },
     { key: 'SHIPPED',          label: '🚚 En camino' },
     { key: 'DELIVERED',        label: '🏠 Entregados' },
     { key: 'CHECKOUT_CREATED', label: '⏳ Pendientes' },
@@ -1778,6 +1803,7 @@ Si tienes dudas de compatibilidad, responde este correo y te ayudamos a elegir e
   function paymentBadge(status) {
     return ({
       APPROVED: 'badge-active',
+      PAY_ON_DELIVERY: 'badge-contacted',
       PENDING: 'badge-pending',
       DECLINED: 'badge-inactive',
       CHECKOUT_CREATED: 'badge-pending',
@@ -1801,7 +1827,7 @@ Si tienes dudas de compatibilidad, responde este correo y te ayudamos a elegir e
       tr.innerHTML = `
         <td><span style="display:inline-flex;align-items:center;padding:6px 10px;border-radius:9999px;background:rgba(99,102,241,0.14);border:1px solid rgba(99,102,241,0.28);color:#c4b5fd;font-size:0.75rem;font-weight:700;">${esc(order.reference || '—')}</span><br><span style="color:var(--text-secondary);font-size:0.75rem;">${esc(order.provider || '—')}</span></td>
         <td>${esc(order.customer?.fullName || '—')}<br><span style="color:var(--text-secondary);font-size:0.75rem;">${esc(order.customer?.email || '—')}</span></td>
-        <td><span class="badge ${paymentBadge(order.status)}">${esc(order.status || '—')}</span></td>
+        <td><span class="badge ${paymentBadge(order.status)}">${esc(statusLabel(order.status) || '—')}</span></td>
         <td><span class="badge ${fulfillmentBadge(order.fulfillmentStatus)}">${esc(order.fulfillmentStatus || '—')}</span></td>
         <td>${formatCurrencyCopFromCents(order.amountInCents || 0)}</td>
         <td style="color:var(--text-secondary);font-size:0.8125rem;">${formatDate(order.createdAt)}</td>

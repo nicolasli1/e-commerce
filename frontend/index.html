@@ -1886,7 +1886,7 @@
       background: rgba(6, 8, 15, 0.78);
       backdrop-filter: blur(18px);
       -webkit-backdrop-filter: blur(18px);
-      z-index: 3000;
+      z-index: 12000;
       animation: modalFadeIn 0.22s cubic-bezier(0.16, 1, 0.3, 1);
     }
     .modal-overlay.open {
@@ -2706,6 +2706,178 @@
     .checkout-provider-foot {
       color: #9ca3af;
       font-size: 0.76rem;
+    }
+    .checkout-delivery-card {
+      position: relative;
+      margin: 18px 0 22px;
+      border-radius: 26px;
+      overflow: hidden;
+      border: 1px solid rgba(255,255,255,0.08);
+      background: linear-gradient(180deg, rgba(255,255,255,0.052), rgba(255,255,255,0.022));
+      box-shadow: inset 0 1px 0 rgba(255,255,255,0.04);
+    }
+    .checkout-map-preview {
+      position: relative;
+      min-height: 148px;
+      overflow: hidden;
+      border-bottom: 1px solid rgba(255,255,255,0.07);
+      background:
+        linear-gradient(115deg, transparent 0 47%, rgba(125, 211, 252, 0.13) 48% 52%, transparent 53%),
+        linear-gradient(22deg, transparent 0 42%, rgba(167, 139, 250, 0.16) 43% 47%, transparent 48%),
+        linear-gradient(90deg, rgba(255,255,255,0.055) 1px, transparent 1px),
+        linear-gradient(rgba(255,255,255,0.05) 1px, transparent 1px),
+        radial-gradient(circle at 52% 48%, rgba(34, 197, 94, 0.16), transparent 34%),
+        #0d1220;
+      background-size: auto, auto, 34px 34px, 34px 34px, auto, auto;
+    }
+    .checkout-map-preview::before,
+    .checkout-map-preview::after {
+      content: '';
+      position: absolute;
+      border-radius: 999px;
+      background: rgba(255,255,255,0.18);
+    }
+    .checkout-map-preview::before {
+      width: 72%;
+      height: 14px;
+      left: -7%;
+      top: 36%;
+      transform: rotate(-10deg);
+    }
+    .checkout-map-preview::after {
+      width: 58%;
+      height: 12px;
+      right: -10%;
+      bottom: 28%;
+      transform: rotate(14deg);
+    }
+    .checkout-map-pin {
+      position: absolute;
+      left: 50%;
+      top: 48%;
+      width: 44px;
+      height: 44px;
+      display: grid;
+      place-items: center;
+      transform: translate(-50%, -62%);
+      border-radius: 999px 999px 999px 6px;
+      rotate: 45deg;
+      background: linear-gradient(145deg, #f43f5e, #8b5cf6);
+      border: 2px solid rgba(255,255,255,0.84);
+      box-shadow: 0 16px 34px rgba(244,63,94,0.28);
+      z-index: 2;
+    }
+    .checkout-map-pin span {
+      rotate: -45deg;
+      width: 10px;
+      height: 10px;
+      border-radius: 999px;
+      background: #fff;
+    }
+    .checkout-map-chip {
+      position: absolute;
+      left: 14px;
+      bottom: 12px;
+      z-index: 2;
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 8px 11px;
+      border-radius: 999px;
+      color: #e5f4ff;
+      background: rgba(6, 10, 22, 0.72);
+      border: 1px solid rgba(255,255,255,0.12);
+      backdrop-filter: blur(14px);
+      font-size: 0.74rem;
+      font-weight: 780;
+    }
+    .checkout-delivery-body {
+      display: grid;
+      gap: 14px;
+      padding: 16px;
+    }
+    .checkout-delivery-options {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 10px;
+    }
+    .checkout-delivery-option {
+      position: relative;
+      border-radius: 18px;
+      overflow: hidden;
+      border: 1px solid rgba(255,255,255,0.08);
+      background: rgba(255,255,255,0.035);
+    }
+    .checkout-delivery-option input {
+      position: absolute;
+      inset: 0;
+      opacity: 0;
+      cursor: pointer;
+    }
+    .checkout-delivery-option span {
+      min-height: 86px;
+      display: grid;
+      gap: 5px;
+      padding: 13px 14px;
+      transition: background 160ms var(--ease-out), box-shadow 160ms var(--ease-out), transform 160ms var(--ease-out);
+    }
+    .checkout-delivery-option strong {
+      font-size: 0.9rem;
+      color: #f8fafc;
+    }
+    .checkout-delivery-option em {
+      font-style: normal;
+      color: #9ca3af;
+      font-size: 0.78rem;
+      line-height: 1.35;
+    }
+    .checkout-delivery-option b {
+      color: #c4b5fd;
+      font-size: 0.82rem;
+    }
+    .checkout-delivery-option input:checked + span {
+      background: linear-gradient(180deg, rgba(99,102,241,0.18), rgba(14,165,233,0.08));
+      box-shadow: inset 0 0 0 1px rgba(139,92,246,0.36);
+      transform: translateY(-1px);
+    }
+    .checkout-delivery-summary {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 10px;
+    }
+    .checkout-delivery-stat {
+      border-radius: 16px;
+      padding: 12px 13px;
+      background: rgba(255,255,255,0.035);
+      border: 1px solid rgba(255,255,255,0.07);
+    }
+    .checkout-delivery-stat small {
+      display: block;
+      color: #9ca3af;
+      font-size: 0.72rem;
+      margin-bottom: 4px;
+    }
+    .checkout-delivery-stat strong {
+      color: #f8fafc;
+      font-size: 0.88rem;
+    }
+    .checkout-summary-total-row {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) auto;
+      gap: 12px;
+      padding-top: 12px;
+      margin-top: 6px;
+      border-top: 1px solid rgba(255,255,255,0.06);
+      color: #cbd5e1;
+      font-size: 0.86rem;
+      font-weight: 700;
+    }
+    .checkout-summary-total-row.muted {
+      color: #9ca3af;
+      font-weight: 650;
+      border-top: 0;
+      margin-top: 0;
+      padding-top: 0;
     }
 
     /* ==============================
@@ -3562,6 +3734,13 @@
       }
       .checkout-provider-grid {
         gap: 10px;
+      }
+      .checkout-delivery-options,
+      .checkout-delivery-summary {
+        grid-template-columns: 1fr;
+      }
+      .checkout-map-preview {
+        min-height: 132px;
       }
       .checkout-provider-card {
         padding: 16px;
@@ -5176,9 +5355,30 @@
     body[data-site-theme="repair"] .cart-modal,
     body[data-site-theme="repair"] .mobile-nav-panel,
     body[data-site-theme="repair"] .search-bar-wrap {
-      background: rgba(248,250,250,0.96);
+      background: #fbfcfd;
       color: #17202a;
       border-color: rgba(15,23,42,0.12);
+    }
+    body[data-site-theme="repair"] #checkoutModal,
+    body[data-site-theme="repair"] #cartModal {
+      background: rgba(15,23,42,0.84);
+      backdrop-filter: blur(24px) saturate(0.92);
+      -webkit-backdrop-filter: blur(24px) saturate(0.92);
+    }
+    body[data-site-theme="repair"] .checkout-modal,
+    body[data-site-theme="repair"] .cart-modal {
+      box-shadow: 0 34px 90px rgba(15,23,42,0.28);
+    }
+    body[data-site-theme="repair"] .modal-close {
+      background: rgba(255,255,255,0.9);
+      border-color: rgba(15,23,42,0.12);
+      color: #17202a;
+      box-shadow: 0 12px 28px rgba(15,23,42,0.1);
+    }
+    body[data-site-theme="repair"] .modal-close:hover {
+      background: #ffffff;
+      border-color: rgba(37,99,235,0.24);
+      color: #0f172a;
     }
     body[data-site-theme="repair"] .floating-cart {
       background: #ffffff;
@@ -5320,6 +5520,62 @@
     }
     body[data-site-theme="repair"] .checkout-provider-copy,
     body[data-site-theme="repair"] .checkout-provider-foot {
+      color: #526172;
+    }
+    body[data-site-theme="repair"] .checkout-delivery-card {
+      background: #ffffff;
+      border-color: rgba(15,23,42,0.12);
+      box-shadow: 0 16px 38px rgba(31,45,55,0.08);
+    }
+    body[data-site-theme="repair"] .checkout-map-preview {
+      border-bottom-color: rgba(15,23,42,0.1);
+      background:
+        linear-gradient(115deg, transparent 0 47%, rgba(37, 99, 235, 0.16) 48% 52%, transparent 53%),
+        linear-gradient(22deg, transparent 0 42%, rgba(15, 118, 110, 0.14) 43% 47%, transparent 48%),
+        linear-gradient(90deg, rgba(15,23,42,0.055) 1px, transparent 1px),
+        linear-gradient(rgba(15,23,42,0.05) 1px, transparent 1px),
+        radial-gradient(circle at 52% 48%, rgba(20, 184, 166, 0.16), transparent 34%),
+        #eef6f8;
+      background-size: auto, auto, 34px 34px, 34px 34px, auto, auto;
+    }
+    body[data-site-theme="repair"] .checkout-map-preview::before,
+    body[data-site-theme="repair"] .checkout-map-preview::after {
+      background: rgba(255,255,255,0.82);
+      box-shadow: 0 0 0 1px rgba(15,23,42,0.05);
+    }
+    body[data-site-theme="repair"] .checkout-map-chip {
+      color: #0f513f;
+      background: rgba(255,255,255,0.82);
+      border-color: rgba(15,23,42,0.12);
+    }
+    body[data-site-theme="repair"] .checkout-delivery-option {
+      background: #f8fafc;
+      border-color: rgba(15,23,42,0.1);
+    }
+    body[data-site-theme="repair"] .checkout-delivery-option strong,
+    body[data-site-theme="repair"] .checkout-delivery-stat strong {
+      color: #111827;
+    }
+    body[data-site-theme="repair"] .checkout-delivery-option em,
+    body[data-site-theme="repair"] .checkout-delivery-stat small {
+      color: #526172;
+    }
+    body[data-site-theme="repair"] .checkout-delivery-option b {
+      color: #0f766e;
+    }
+    body[data-site-theme="repair"] .checkout-delivery-option input:checked + span {
+      background: linear-gradient(180deg, rgba(236,253,245,0.98), rgba(239,246,255,0.9));
+      box-shadow: inset 0 0 0 2px rgba(15,118,110,0.24);
+    }
+    body[data-site-theme="repair"] .checkout-delivery-stat {
+      background: #f8fafc;
+      border-color: rgba(15,23,42,0.1);
+    }
+    body[data-site-theme="repair"] .checkout-summary-total-row {
+      border-top-color: rgba(15,23,42,0.1);
+      color: #111827;
+    }
+    body[data-site-theme="repair"] .checkout-summary-total-row.muted {
       color: #526172;
     }
     body[data-site-theme="repair"] .checkout-total,
@@ -5959,7 +6215,7 @@
               Continuar al pago →
             </button>
           </div>
-          <p class="cart-secure-note">🔒 Pago procesado por Mercado Pago · Envío a toda Colombia</p>
+          <p class="cart-secure-note">🔒 Pago online con Wompi · Pago contra entrega disponible con Inter Rapidísimo</p>
         </div>
       </div>
       </div><!-- /z-index wrapper -->
@@ -5979,17 +6235,17 @@
       <div class="checkout-shell">
         <div class="checkout-panel">
           <div id="checkoutStatus" class="checkout-status"></div>
-          <div class="checkout-trust">🔒 Pago seguro y confirmación por correo al aprobarse la compra</div>
-          <p class="checkout-lead">Confirma tus datos, revisa tu pedido y elige el medio de pago. Tu compra quedará asociada a una referencia única para seguimiento.</p>
+          <div class="checkout-trust">🔒 Pago seguro, entrega rastreable y confirmación por correo</div>
+          <p class="checkout-lead">Confirma tus datos, revisa la entrega y elige si pagas online con Wompi o contra entrega con Inter Rapidísimo.</p>
 
           <div class="checkout-meta-strip">
             <div class="checkout-meta-card">
               <strong>Pago seguro</strong>
-              <span>Procesamos el cobro en una pasarela confiable y te notificamos cuando el pago quede confirmado.</span>
+              <span>Wompi procesa tarjetas, PSE y métodos locales desde una pasarela bancaria confiable.</span>
             </div>
             <div class="checkout-meta-card">
-              <strong>Seguimiento del pedido</strong>
-              <span>Recibirás una referencia para consultar estado de pago, alistamiento y despacho.</span>
+              <strong>Entrega clara</strong>
+              <span>La referencia del pedido queda lista para alistamiento, despacho y seguimiento.</span>
             </div>
           </div>
 
@@ -5997,40 +6253,25 @@
             <span class="checkout-label">Método de pago</span>
             <div class="checkout-provider-grid">
               <label class="checkout-provider">
-                <input type="radio" name="checkoutProvider" value="mercadopago" checked />
-                <div class="checkout-provider-card">
-                  <div class="checkout-provider-title">
-                    <span>Mercado Pago</span>
-                    <span class="checkout-provider-tag">Checkout Pro</span>
-                  </div>
-                  <div class="checkout-provider-copy">Tarjeta, PSE, Nequi y más métodos en un entorno seguro.</div>
-                </div>
-              </label>
-              <label class="checkout-provider">
-                <input type="radio" name="checkoutProvider" value="wompi" />
+                <input type="radio" name="checkoutProvider" value="wompi" checked />
                 <div class="checkout-provider-card">
                   <div class="checkout-provider-title">
                     <span>Wompi</span>
-                    <span class="checkout-provider-tag">Checkout seguro</span>
+                    <span class="checkout-provider-tag">Pago online</span>
                   </div>
-                  <div class="checkout-provider-copy">Paga con tarjeta, PSE y métodos locales desde la pasarela de Bancolombia.</div>
+                  <div class="checkout-provider-copy">Paga con tarjeta, PSE, Nequi y métodos locales desde la pasarela de Bancolombia.</div>
                 </div>
               </label>
               <label class="checkout-provider">
-                <input type="radio" name="checkoutProvider" value="nequi" />
+                <input type="radio" name="checkoutProvider" value="interrapidisimo_cod" />
                 <div class="checkout-provider-card">
                   <div class="checkout-provider-title">
-                    <span>Nequi</span>
-                    <span class="checkout-provider-tag checkout-provider-tag-nequi">Directo</span>
+                    <span>Pago contra entrega</span>
+                    <span class="checkout-provider-tag checkout-provider-tag-nequi">Inter Rapidísimo</span>
                   </div>
-                  <div class="checkout-provider-copy">Recibes una notificación en tu app Nequi y apruebas el pago sin salir del sitio.</div>
+                  <div class="checkout-provider-copy">Pagas al recibir. Confirmaremos disponibilidad y despacho antes de enviar.</div>
                 </div>
               </label>
-            </div>
-            <div id="nequiPhoneWrap" style="display:none;margin-top:10px;">
-              <label class="checkout-label" for="nequiPhone">Número Nequi</label>
-              <input class="checkout-input" id="nequiPhone" type="tel" placeholder="3001234567" maxlength="10" style="margin-top:4px;" />
-              <p style="font-size:0.72rem;color:#86868b;margin-top:4px;">El número celular registrado en tu cuenta Nequi.</p>
             </div>
           </div>
 
@@ -6046,15 +6287,60 @@
               </div>
               <div class="checkout-field">
                 <label class="checkout-label" for="checkoutPhone">Celular</label>
-                <input class="checkout-input" id="checkoutPhone" placeholder="3001234567" />
+                <input class="checkout-input" id="checkoutPhone" placeholder="3001234567" required />
+              </div>
+              <div class="checkout-field">
+                <label class="checkout-label" for="checkoutShippingZone">Zona de entrega</label>
+                <select class="checkout-select" id="checkoutShippingZone">
+                  <option value="bogota">Bogotá</option>
+                  <option value="national">Fuera de Bogotá</option>
+                </select>
               </div>
               <div class="checkout-field checkout-field-wide">
                 <label class="checkout-label" for="checkoutAddress">Dirección de envío</label>
-                <input class="checkout-input" id="checkoutAddress" type="text" placeholder="Ej: Cra 15 #93-47, Apto 301, Bogotá" />
+                <input class="checkout-input" id="checkoutAddress" type="text" placeholder="Ej: Cra 15 #93-47, Apto 301, Bogotá" required />
+              </div>
+              <div class="checkout-field checkout-field-wide">
+                <div class="checkout-delivery-card">
+                  <div class="checkout-map-preview" aria-hidden="true">
+                    <div class="checkout-map-pin"><span></span></div>
+                    <div class="checkout-map-chip" id="checkoutMapAddress">Entrega en Bogotá</div>
+                  </div>
+                  <div class="checkout-delivery-body">
+                    <div class="checkout-delivery-summary">
+                      <div class="checkout-delivery-stat">
+                        <small>Envío</small>
+                        <strong id="checkoutDeliveryCost">$0 COP</strong>
+                      </div>
+                      <div class="checkout-delivery-stat">
+                        <small>Entrega estimada</small>
+                        <strong id="checkoutEstimatedDelivery">Mismo día o siguiente día hábil</strong>
+                      </div>
+                    </div>
+                    <div class="checkout-delivery-options" aria-label="Opciones de entrega">
+                      <label class="checkout-delivery-option">
+                        <input type="radio" name="checkoutDeliveryMode" value="prepaid" checked />
+                        <span>
+                          <strong>Envío con pago online</strong>
+                          <em>Pagas con Wompi y alistamos el pedido al aprobarse.</em>
+                          <b>Recomendado</b>
+                        </span>
+                      </label>
+                      <label class="checkout-delivery-option">
+                        <input type="radio" name="checkoutDeliveryMode" value="cod" />
+                        <span>
+                          <strong>Pago contra entrega</strong>
+                          <em>Inter Rapidísimo recauda al entregar, sujeto a cobertura.</em>
+                          <b>Confirmación manual</b>
+                        </span>
+                      </label>
+                    </div>
+                  </div>
+                </div>
               </div>
               <div class="checkout-field checkout-field-wide">
                 <label class="checkout-label" for="checkoutNotes">Notas del pedido</label>
-                <textarea class="checkout-textarea" id="checkoutNotes" placeholder="Ejemplo: necesito entrega en Medellín y confirmar compatibilidad antes del envío."></textarea>
+                <textarea class="checkout-textarea" id="checkoutNotes" placeholder="Ejemplo: apartamento, barrio, horario de entrega o referencia del lugar."></textarea>
               </div>
             </div>
 
@@ -6065,14 +6351,14 @@
               </label>
               <label class="checkout-checkbox">
                 <input type="checkbox" id="checkoutAcceptPayment" required />
-                <span>Entiendo que el pago se realizará en la pasarela seleccionada y que el estado final se confirma por webhook seguro.</span>
+                <span>Entiendo que el pago online se confirma por Wompi; si elijo contra entrega, pagaré al recibir el pedido.</span>
               </label>
             </div>
 
-            <p class="checkout-inline-note" id="checkoutInlineNote">Este checkout crea la sesión en backend y nunca confía en precios enviados por el navegador. Cada pasarela se conecta con su propio webhook para cerrar el estado real del pedido.</p>
+            <p class="checkout-inline-note" id="checkoutInlineNote">El backend calcula productos y envío antes de crear el pago. Nadie puede modificar el total desde el navegador.</p>
 
             <div class="checkout-actions">
-              <button type="submit" class="btn btn-gradient" id="checkoutPayBtn">Pagar con Mercado Pago</button>
+              <button type="submit" class="btn btn-gradient" id="checkoutPayBtn">Pagar con Wompi</button>
               <button type="button" class="btn btn-secondary" id="checkoutBackBtn">Volver al carrito</button>
             </div>
           </form>
@@ -6105,7 +6391,7 @@
             <div>
               <div class="checkout-kicker">Resumen</div>
               <div class="checkout-total" id="checkoutGrandTotal">$0</div>
-              <p style="color:#9ca3af;font-size:0.875rem;margin-top:6px;">Monto firmado desde backend en centavos para que nadie pueda alterar el valor.</p>
+              <p style="color:#9ca3af;font-size:0.875rem;margin-top:6px;">Incluye productos y envío calculado por backend.</p>
             </div>
             <div style="text-align:right;color:#9ca3af;font-size:0.8125rem;">
               <div id="checkoutItemCount">0 ítems</div>
@@ -6128,6 +6414,12 @@
     const LEGACY_CART_STORAGE_KEY = 'nex' + 'core_cart';
     const CHECKOUT_REFERENCE_STORAGE_KEY = 'repuestoscel_checkout_reference';
     const LEGACY_CHECKOUT_REFERENCE_STORAGE_KEY = 'nex' + 'core_checkout_reference';
+    const DEFAULT_SITE_SETTINGS = {
+      visualTheme: 'dark',
+      shippingBogotaCents: 1000000,
+      shippingNationalCents: 1800000
+    };
+    let siteSettings = { ...DEFAULT_SITE_SETTINGS };
 
     function readLocalStorageWithLegacy(key, legacyKey, fallback = '') {
       const currentValue = localStorage.getItem(key);
@@ -6475,10 +6767,52 @@
       return formatCOP((Number(value) || 0) / 100) + ' COP';
     }
 
+    function selectedShippingZone() {
+      return document.getElementById('checkoutShippingZone')?.value === 'national' ? 'national' : 'bogota';
+    }
+
+    function shippingFeeCents(zone = selectedShippingZone()) {
+      const key = zone === 'bogota' ? 'shippingBogotaCents' : 'shippingNationalCents';
+      return Math.max(0, Number(siteSettings[key] || DEFAULT_SITE_SETTINGS[key] || 0));
+    }
+
+    function shippingZoneLabel(zone = selectedShippingZone()) {
+      return zone === 'bogota' ? 'Bogotá' : 'fuera de Bogotá';
+    }
+
+    function shippingMapLabel(zone = selectedShippingZone()) {
+      return zone === 'bogota' ? 'Entrega en Bogotá' : 'Entrega fuera de Bogotá';
+    }
+
+    function shippingZoneCity(zone = selectedShippingZone()) {
+      return zone === 'bogota' ? 'Bogotá' : 'Nacional';
+    }
+
+    function shippingZoneRegion(zone = selectedShippingZone()) {
+      return zone === 'bogota' ? 'Cundinamarca' : 'Colombia';
+    }
+
+    function shippingEta(zone = selectedShippingZone()) {
+      return zone === 'bogota' ? 'Mismo día o siguiente día hábil' : '2 a 5 días hábiles';
+    }
+
+    function updateDeliveryPreview() {
+      const zone = selectedShippingZone();
+      const fee = shippingFeeCents(zone);
+      const costEl = document.getElementById('checkoutDeliveryCost');
+      const etaEl = document.getElementById('checkoutEstimatedDelivery');
+      const mapEl = document.getElementById('checkoutMapAddress');
+      if (costEl) costEl.textContent = formatCents(fee);
+      if (etaEl) etaEl.textContent = shippingEta(zone);
+      if (mapEl) mapEl.textContent = shippingMapLabel(zone);
+      renderCheckoutSummary();
+    }
+
     function humanizeStatus(status) {
       const labels = {
         CHECKOUT_CREATED: 'Checkout creado',
         PENDING: 'Pago en proceso',
+        PAY_ON_DELIVERY: 'Pago contra entrega',
         APPROVED: 'Pago aprobado',
         DECLINED: 'Pago rechazado',
         CANCELLED: 'Cancelado',
@@ -6493,24 +6827,42 @@
     }
 
     function orderItemsHtml(order) {
-      return (order?.items || []).map((item) => `
+      const productRows = (order?.items || []).map((item) => {
+        const quantity = Number(item.quantity) || 0;
+        const unitCents = Number(item.unitPriceCents ?? item.unitPriceInCents ?? item.priceInCents ?? ((Number(item.price) || 0) * 100));
+        const subtotalCents = Number(item.subtotalCents ?? item.subtotalInCents ?? (unitCents * quantity));
+        const thumb = item.imageUrl
+          ? (typeof item.imageUrl === 'object' && item.imageUrl.sm
+            ? `<img class="checkout-result-item-thumb" src="${item.imageUrl.sm}" srcset="${item.imageUrl.sm} 180w${item.imageUrl.md ? ', ' + item.imageUrl.md + ' 700w' : ''}" sizes="150px" alt="${item.name || 'Producto'}" loading="lazy" />`
+            : `<img class="checkout-result-item-thumb" src="${typeof item.imageUrl === 'string' ? item.imageUrl : item.imageUrl.md || item.imageUrl.lg}" alt="${item.name || 'Producto'}" loading="lazy" />`)
+          : `<div class="checkout-result-item-icon">📦</div>`;
+        return `
+          <div class="checkout-result-item">
+            <div class="checkout-result-item-main">
+              ${thumb}
+              <div>
+                <div class="checkout-result-item-name">${item.name || 'Producto'}</div>
+                <div class="checkout-result-item-meta">${quantity} x ${formatCents(unitCents)}</div>
+              </div>
+            </div>
+            <div style="font-weight:700;">${formatCents(subtotalCents)}</div>
+          </div>
+        `;
+      }).join('');
+      const deliveryFee = Number(order?.deliveryFeeInCents || order?.delivery?.feeInCents || 0);
+      const deliveryRow = deliveryFee > 0 ? `
         <div class="checkout-result-item">
           <div class="checkout-result-item-main">
-            ${
-              item.imageUrl
-                ? (typeof item.imageUrl === 'object' && item.imageUrl.sm
-                  ? `<img class="checkout-result-item-thumb" src="${item.imageUrl.sm}" srcset="${item.imageUrl.sm} 180w${item.imageUrl.md ? ', ' + item.imageUrl.md + ' 700w' : ''}" sizes="150px" alt="${item.name || 'Producto'}" loading="lazy" />`
-                  : `<img class="checkout-result-item-thumb" src="${typeof item.imageUrl === 'string' ? item.imageUrl : item.imageUrl.md || item.imageUrl.lg}" alt="${item.name || 'Producto'}" loading="lazy" />`)
-                : `<div class="checkout-result-item-icon">📦</div>`
-            }
+            <div class="checkout-result-item-icon">🚚</div>
             <div>
-              <div class="checkout-result-item-name">${item.name || 'Producto'}</div>
-              <div class="checkout-result-item-meta">${item.quantity || 0} x ${formatCents(item.unitPriceCents ?? ((Number(item.price) || 0) * 100))}</div>
+              <div class="checkout-result-item-name">Envío ${order?.delivery?.label || ''}</div>
+              <div class="checkout-result-item-meta">${order?.delivery?.provider || 'Inter Rapidísimo'} · ${order?.delivery?.eta || 'Entrega estimada'}</div>
             </div>
           </div>
-          <div style="font-weight:700;">${formatCents(item.subtotalCents ?? ((Number(item.price) || 0) * 100 * (Number(item.quantity) || 0)))}</div>
+          <div style="font-weight:700;">${formatCents(deliveryFee)}</div>
         </div>
-      `).join('') || '<div class="tracking-empty">No encontramos ítems para este pedido.</div>';
+      ` : '';
+      return (productRows + deliveryRow) || '<div class="tracking-empty">No encontramos ítems para este pedido.</div>';
     }
 
     function copyReference(reference) {
@@ -6526,12 +6878,14 @@
 
     function renderCheckoutSummary() {
       const list = document.getElementById('checkoutSummaryList');
-      const total = cartTotal();
-      const totalCents = Math.round(total * 100);
+      const subtotal = cartTotal();
+      const deliveryCents = shippingFeeCents();
+      const deliveryCop = deliveryCents / 100;
+      const total = subtotal + deliveryCop;
       const itemCount = cart.reduce((sum, item) => sum + item.quantity, 0);
       if (!list) return;
 
-      list.innerHTML = cart.map((item) => `
+      const productRows = cart.map((item) => `
         <div class="checkout-summary-item">
           <div>
             <div class="checkout-summary-name">${item.name}</div>
@@ -6540,25 +6894,37 @@
           <div style="font-weight:700;">${formatCOP((Number(item.price) || 0) * item.quantity)}</div>
         </div>
       `).join('');
+      list.innerHTML = productRows + `
+        <div class="checkout-summary-total-row muted">
+          <span>Subtotal</span>
+          <strong>${formatCOP(subtotal)}</strong>
+        </div>
+        <div class="checkout-summary-total-row muted">
+          <span>Envío ${shippingZoneLabel()}</span>
+          <strong>${formatCents(deliveryCents)}</strong>
+        </div>
+      `;
 
       document.getElementById('checkoutGrandTotal').textContent = formatCOP(total);
       document.getElementById('checkoutItemCount').textContent = itemCount + ' ítems';
-      document.getElementById('cartTotal').textContent = formatCOP(total) + ' COP';
+      document.getElementById('cartTotal').textContent = formatCOP(subtotal) + ' COP';
       const notesField = document.getElementById('checkoutNotes');
-      if (notesField && !notesField.value) {
-        notesField.value = `Pedido web con ${itemCount} ítems por ${formatCents(totalCents)}.`;
+      const autoNote = `Pedido web con ${itemCount} ${itemCount === 1 ? 'ítem' : 'ítems'}.`;
+      if (notesField && (!notesField.value || /^Pedido web con \d+ ítems?\.$/.test(notesField.value.trim()))) {
+        notesField.value = autoNote;
       }
     }
 
     function selectedCheckoutProvider() {
       const el = document.querySelector('input[name="checkoutProvider"]:checked');
-      return el ? el.value : 'mercadopago';
+      return el ? el.value : 'wompi';
     }
 
     function checkoutProviderLabel(provider) {
       const key = String(provider || '').toLowerCase();
       if (key === 'nequi') return 'Nequi';
       if (key === 'wompi') return 'Wompi';
+      if (key === 'interrapidisimo_cod') return 'pago contra entrega';
       return 'Mercado Pago';
     }
 
@@ -6570,20 +6936,20 @@
 
     function syncCheckoutProviderUI() {
       const provider = selectedCheckoutProvider();
-      const nequiWrap = document.getElementById('nequiPhoneWrap');
       const note = document.getElementById('checkoutInlineNote');
       const payBtn = document.getElementById('checkoutPayBtn');
-      if (nequiWrap) nequiWrap.style.display = provider === 'nequi' ? 'block' : 'none';
+      const deliveryMode = document.querySelector(`input[name="checkoutDeliveryMode"][value="${provider === 'interrapidisimo_cod' ? 'cod' : 'prepaid'}"]`);
+      if (deliveryMode && !deliveryMode.checked) deliveryMode.checked = true;
       if (payBtn) {
-        payBtn.textContent = `Pagar con ${checkoutProviderLabel(provider)}`;
+        payBtn.textContent = provider === 'interrapidisimo_cod' ? 'Confirmar pedido contra entrega' : 'Pagar con Wompi';
       }
       if (note) {
-        if (provider === 'nequi') {
-          note.textContent = 'Recibirás una notificación push en tu app Nequi. Aprueba el pago desde tu celular.';
-        } else if (provider === 'wompi') {
-          note.textContent = 'Wompi abrirá un checkout seguro. En modo pruebas puedes validar el flujo sin cobro real.';
+        if (provider === 'wompi') {
+          note.textContent = 'Wompi abrirá un checkout seguro. El total incluye productos y envío calculado por backend.';
+        } else if (provider === 'interrapidisimo_cod') {
+          note.textContent = 'Crearemos el pedido para pago contra entrega con Inter Rapidísimo. Validaremos cobertura antes del despacho.';
         } else {
-          note.textContent = 'Mercado Pago usa Checkout Pro: serás redirigido a su entorno seguro para completar el pago.';
+          note.textContent = 'Este método no está habilitado para nuevos pedidos.';
         }
       }
     }
@@ -6684,6 +7050,12 @@
           copy: `Cuando ${providerLabel} redirija al usuario, aquí mostraremos el resultado final del pedido.`,
           nextStep: 'Todavía estamos esperando confirmación de la pasarela.',
         },
+        PAY_ON_DELIVERY: {
+          badge: 'Pago contra entrega',
+          title: 'Pedido creado para entrega',
+          copy: 'Registramos tu pedido con pago al recibir. Confirmaremos cobertura de Inter Rapidísimo antes del despacho.',
+          nextStep: 'Guarda la referencia. Te contactaremos para validar dirección, cobertura y horario de entrega.',
+        },
         PENDING: {
           badge: 'Pago en proceso',
           title: 'Estamos esperando confirmación',
@@ -6715,9 +7087,9 @@
         };
       }
 
-      setCheckoutMode(status === 'APPROVED' ? 'confirmed' : 'active');
+      setCheckoutMode(['APPROVED', 'PAY_ON_DELIVERY'].includes(status) ? 'confirmed' : 'active');
 
-      if (status === 'APPROVED') {
+      if (['APPROVED', 'PAY_ON_DELIVERY'].includes(status)) {
         cart = [];
         clearCartStorage();
         clearCheckoutReferenceStorage();
@@ -6771,12 +7143,23 @@
       const email = document.getElementById('checkoutEmail').value.trim();
       const phoneNumber = document.getElementById('checkoutPhone').value.trim();
       const shippingAddress = document.getElementById('checkoutAddress').value.trim();
+      const shippingZone = selectedShippingZone();
       const notes = document.getElementById('checkoutNotes').value.trim();
 
       return {
         provider: selectedCheckoutProvider(),
+        shippingZone,
+        shippingAddress: {
+          addressLine1: shippingAddress,
+          country: 'CO',
+          city: shippingZoneCity(shippingZone),
+          region: shippingZoneRegion(shippingZone),
+          phoneNumber,
+          name: fullName,
+          zone: shippingZone
+        },
         cart: cart.map((item) => ({
-          productId: item.productId,
+          productId: item.productId || item.id || '',
           variantId: item.variantId || '',
           quantity: item.quantity
         })),
@@ -6867,29 +7250,12 @@
       const provider = selectedCheckoutProvider();
       const payBtn = document.getElementById('checkoutPayBtn');
       payBtn.disabled = true;
-      payBtn.textContent = provider === 'nequi'
-        ? 'Enviando notificación...'
-        : provider === 'wompi'
-          ? 'Abriendo Wompi...'
-          : 'Preparando checkout...';
-
-      // Nequi: validate phone field
-      if (provider === 'nequi') {
-        const nequiPhone = normalizeColombianMobile(document.getElementById('nequiPhone')?.value || '');
-        if (!nequiPhone) {
-          setCheckoutStatus('Ingresa un número Nequi válido de 10 dígitos.', 'error');
-          payBtn.disabled = false;
-          syncCheckoutProviderUI();
-          return;
-        }
-        document.getElementById('nequiPhone').value = nequiPhone;
-      }
+      payBtn.textContent = provider === 'interrapidisimo_cod'
+        ? 'Confirmando pedido...'
+        : 'Abriendo Wompi...';
 
       try {
         const payload = checkoutPayload();
-        if (provider === 'nequi') {
-          payload.nequiPhone = normalizeColombianMobile(document.getElementById('nequiPhone')?.value || '');
-        }
         const res = await fetch('/api/checkout/session', {
           method: 'POST',
           headers: {
@@ -6905,48 +7271,23 @@
 
         saveCheckoutReference(data.reference);
 
-        if (provider === 'nequi') {
-          const phone = payload.nequiPhone;
-          showNequiWaiting(phone);
-          setCheckoutStatus('Notificación enviada. Esperando aprobación...', 'warning');
-          // Poll order status every 4s until approved/rejected (max 3 min)
-          const ref = data.reference;
-          let polls = 0;
-          const poll = setInterval(async () => {
-            polls++;
-            if (polls > 45) { clearInterval(poll); return; }
-            try {
-              const r = await fetch(`/api/checkout/orders/${encodeURIComponent(ref)}?_t=${Date.now()}`);
-              const d = await r.json();
-              const status = (d.order?.status || '').toLowerCase();
-              if (status === 'approved') {
-                clearInterval(poll);
-                showCheckoutResult(d.order);
-                setCheckoutMode('confirmed');
-                setCheckoutStatus('¡Pago aprobado! Tu pedido está confirmado.', 'success');
-                cart = []; clearCartStorage(); updateCartCount();
-              } else if (['rejected','declined','error'].includes(status)) {
-                clearInterval(poll);
-                setCheckoutStatus('El pago fue rechazado o cancelado en Nequi.', 'error');
-                setCheckoutMode('form');
-              }
-            } catch (_) {}
-          }, 4000);
+        if (provider === 'interrapidisimo_cod') {
+          setCheckoutStatus('Pedido creado. Te contactaremos para confirmar cobertura y despacho.', 'success');
+          showCheckoutResult(data.order || data);
+          setCheckoutMode('confirmed');
         } else {
           if (provider === 'wompi') {
             setCheckoutStatus('Checkout creado. Te llevamos a Wompi para completar el pago seguro.', 'success');
             launchWompi(data);
             return;
           }
-          setCheckoutStatus('Preferencia creada. Te vamos a redirigir a Mercado Pago con la referencia real del pedido.', 'success');
-          showCheckoutResult(data.order);
-          await launchMercadoPago(data);
+          throw new Error('Este método de pago no está disponible.');
         }
       } catch (err) {
         setCheckoutStatus(err.message || 'No pudimos iniciar el pago.', 'error');
       } finally {
         payBtn.disabled = false;
-        if (provider !== 'nequi') syncCheckoutProviderUI();
+        syncCheckoutProviderUI();
       }
     }
 
@@ -7020,6 +7361,15 @@
       document.querySelectorAll('input[name="checkoutProvider"]').forEach((input) => {
         input.addEventListener('change', syncCheckoutProviderUI);
       });
+      document.querySelectorAll('input[name="checkoutDeliveryMode"]').forEach((input) => {
+        input.addEventListener('change', () => {
+          const providerValue = input.value === 'cod' ? 'interrapidisimo_cod' : 'wompi';
+          const provider = document.querySelector(`input[name="checkoutProvider"][value="${providerValue}"]`);
+          if (provider) provider.checked = true;
+          syncCheckoutProviderUI();
+        });
+      });
+      document.getElementById('checkoutShippingZone')?.addEventListener('change', updateDeliveryPreview);
       document.getElementById('checkoutForm')?.addEventListener('submit', submitCheckout);
       document.getElementById('checkoutBtn')?.addEventListener('click', goToCheckout);
       document.getElementById('trackingForm')?.addEventListener('submit', (e) => {
@@ -7028,6 +7378,7 @@
       });
       updateCartCount();
       syncCheckoutProviderUI();
+      updateDeliveryPreview();
       syncReturnedCheckout();
     });
 
@@ -8532,8 +8883,21 @@
       }
     }
 
+    async function loadSiteSettings() {
+      try {
+        const res = await fetch('/api/site-settings?_t=' + Date.now(), { cache: 'no-store' });
+        if (!res.ok) throw new Error('settings_unavailable');
+        const data = await res.json();
+        siteSettings = { ...DEFAULT_SITE_SETTINGS, ...(data.settings || {}) };
+        updateDeliveryPreview();
+      } catch (_) {
+        siteSettings = { ...DEFAULT_SITE_SETTINGS };
+      }
+    }
+
     async function initStorefront() {
       initThemePreference();
+      await loadSiteSettings();
       await loadProducts();
     }
 
