@@ -61,6 +61,9 @@
   </script>
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Inter+Tight:wght@500;600;700;800&display=swap" rel="stylesheet" />
+  <!-- Leaflet (self-hosted to comply with the production CSP, which only allows scripts/styles from 'self') -->
+  <link rel="stylesheet" href="vendor/leaflet.css" />
+  <script src="vendor/leaflet.js" defer></script>
   <style>
     :root {
       --bg: #05060a;
@@ -2718,78 +2721,119 @@
     }
     .checkout-map-preview {
       position: relative;
-      min-height: 148px;
+      min-height: 210px;
       overflow: hidden;
       border-bottom: 1px solid rgba(255,255,255,0.07);
-      background:
-        linear-gradient(115deg, transparent 0 47%, rgba(125, 211, 252, 0.13) 48% 52%, transparent 53%),
-        linear-gradient(22deg, transparent 0 42%, rgba(167, 139, 250, 0.16) 43% 47%, transparent 48%),
-        linear-gradient(90deg, rgba(255,255,255,0.055) 1px, transparent 1px),
-        linear-gradient(rgba(255,255,255,0.05) 1px, transparent 1px),
-        radial-gradient(circle at 52% 48%, rgba(34, 197, 94, 0.16), transparent 34%),
-        #0d1220;
-      background-size: auto, auto, 34px 34px, 34px 34px, auto, auto;
+      background: #0d1220;
     }
-    .checkout-map-preview::before,
-    .checkout-map-preview::after {
-      content: '';
+    .checkout-map {
       position: absolute;
-      border-radius: 999px;
-      background: rgba(255,255,255,0.18);
+      inset: 0;
+      z-index: 1;
     }
-    .checkout-map-preview::before {
-      width: 72%;
-      height: 14px;
-      left: -7%;
-      top: 36%;
-      transform: rotate(-10deg);
+    /* Leaflet overrides so the map blends into the dark checkout */
+    .checkout-map.leaflet-container {
+      background: #0d1220;
+      font-family: inherit;
+      cursor: grab;
     }
-    .checkout-map-preview::after {
-      width: 58%;
-      height: 12px;
-      right: -10%;
-      bottom: 28%;
-      transform: rotate(14deg);
+    .checkout-map.leaflet-container a { color: #93c5fd; }
+    .checkout-map .leaflet-control-attribution {
+      background: rgba(6, 10, 22, 0.6);
+      color: rgba(255,255,255,0.5);
+      font-size: 0.6rem;
+      padding: 1px 6px;
+      border-radius: 6px 0 0 0;
     }
-    .checkout-map-pin {
-      position: absolute;
-      left: 50%;
-      top: 48%;
-      width: 44px;
-      height: 44px;
-      display: grid;
-      place-items: center;
-      transform: translate(-50%, -62%);
+    .checkout-map .leaflet-control-attribution a { color: rgba(147,197,253,0.7); }
+    .checkout-map .leaflet-control-zoom {
+      border: none;
+      box-shadow: 0 6px 18px rgba(0,0,0,0.4);
+    }
+    .checkout-map .leaflet-control-zoom a {
+      background: rgba(13, 18, 32, 0.92);
+      color: #e5f4ff;
+      border-color: rgba(255,255,255,0.1);
+    }
+    .checkout-map .leaflet-control-zoom a:hover { background: rgba(30, 41, 64, 0.96); }
+    /* Draggable pin (Leaflet divIcon) */
+    .checkout-pin {
+      width: 30px;
+      height: 30px;
       border-radius: 999px 999px 999px 6px;
       rotate: 45deg;
+      display: grid;
+      place-items: center;
       background: linear-gradient(145deg, #f43f5e, #8b5cf6);
-      border: 2px solid rgba(255,255,255,0.84);
-      box-shadow: 0 16px 34px rgba(244,63,94,0.28);
-      z-index: 2;
+      border: 2px solid rgba(255,255,255,0.9);
+      box-shadow: 0 12px 26px rgba(244,63,94,0.4);
+      cursor: grab;
+      transition: transform 140ms cubic-bezier(0.16, 1, 0.3, 1);
     }
-    .checkout-map-pin span {
+    .checkout-pin::after {
+      content: '';
       rotate: -45deg;
-      width: 10px;
-      height: 10px;
+      width: 8px;
+      height: 8px;
       border-radius: 999px;
       background: #fff;
     }
+    .leaflet-marker-draggable .checkout-pin:active { cursor: grabbing; transform: scale(1.12); }
     .checkout-map-chip {
       position: absolute;
-      left: 14px;
-      bottom: 12px;
-      z-index: 2;
+      left: 12px;
+      bottom: 10px;
+      z-index: 1000;
       display: inline-flex;
       align-items: center;
       gap: 8px;
+      max-width: calc(100% - 24px);
       padding: 8px 11px;
       border-radius: 999px;
       color: #e5f4ff;
-      background: rgba(6, 10, 22, 0.72);
+      background: rgba(6, 10, 22, 0.78);
       border: 1px solid rgba(255,255,255,0.12);
       backdrop-filter: blur(14px);
+      font-size: 0.72rem;
+      font-weight: 700;
+      line-height: 1.25;
+      pointer-events: none;
+    }
+    .checkout-map-locate {
+      position: absolute;
+      right: 12px;
+      top: 12px;
+      z-index: 1000;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 8px 12px;
+      border-radius: 999px;
+      border: 1px solid rgba(255,255,255,0.14);
+      background: rgba(6, 10, 22, 0.78);
+      backdrop-filter: blur(14px);
+      color: #e5f4ff;
+      font-family: inherit;
+      font-size: 0.72rem;
+      font-weight: 700;
+      cursor: pointer;
+      transition: background 140ms ease, border-color 140ms ease;
+    }
+    .checkout-map-locate:hover { background: rgba(30, 41, 64, 0.92); border-color: rgba(255,255,255,0.28); }
+    .checkout-map-locate:disabled { opacity: 0.6; cursor: progress; }
+    .checkout-map-locate svg { width: 14px; height: 14px; }
+    .checkout-map-hint {
+      margin: 8px 2px 0;
       font-size: 0.74rem;
-      font-weight: 780;
+      color: rgba(229, 244, 255, 0.62);
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+    .checkout-map-hint.is-set { color: #6ee7b7; }
+    .checkout-optional {
+      font-weight: 500;
+      color: rgba(209, 213, 219, 0.6);
     }
     .checkout-delivery-body {
       display: grid;
@@ -3740,7 +3784,7 @@
         grid-template-columns: 1fr;
       }
       .checkout-map-preview {
-        min-height: 132px;
+        min-height: 180px;
       }
       .checkout-provider-card {
         padding: 16px;
@@ -5529,25 +5573,33 @@
     }
     body[data-site-theme="repair"] .checkout-map-preview {
       border-bottom-color: rgba(15,23,42,0.1);
-      background:
-        linear-gradient(115deg, transparent 0 47%, rgba(37, 99, 235, 0.16) 48% 52%, transparent 53%),
-        linear-gradient(22deg, transparent 0 42%, rgba(15, 118, 110, 0.14) 43% 47%, transparent 48%),
-        linear-gradient(90deg, rgba(15,23,42,0.055) 1px, transparent 1px),
-        linear-gradient(rgba(15,23,42,0.05) 1px, transparent 1px),
-        radial-gradient(circle at 52% 48%, rgba(20, 184, 166, 0.16), transparent 34%),
-        #eef6f8;
-      background-size: auto, auto, 34px 34px, 34px 34px, auto, auto;
+      background: #eef6f8;
     }
-    body[data-site-theme="repair"] .checkout-map-preview::before,
-    body[data-site-theme="repair"] .checkout-map-preview::after {
-      background: rgba(255,255,255,0.82);
-      box-shadow: 0 0 0 1px rgba(15,23,42,0.05);
+    body[data-site-theme="repair"] .checkout-map.leaflet-container { background: #eef6f8; }
+    body[data-site-theme="repair"] .checkout-map .leaflet-control-attribution {
+      background: rgba(255,255,255,0.78);
+      color: rgba(15,23,42,0.55);
+    }
+    body[data-site-theme="repair"] .checkout-map .leaflet-control-attribution a { color: #0f766e; }
+    body[data-site-theme="repair"] .checkout-map .leaflet-control-zoom a {
+      background: rgba(255,255,255,0.94);
+      color: #0f172a;
+      border-color: rgba(15,23,42,0.1);
     }
     body[data-site-theme="repair"] .checkout-map-chip {
       color: #0f513f;
-      background: rgba(255,255,255,0.82);
+      background: rgba(255,255,255,0.86);
       border-color: rgba(15,23,42,0.12);
     }
+    body[data-site-theme="repair"] .checkout-map-locate {
+      color: #0f513f;
+      background: rgba(255,255,255,0.86);
+      border-color: rgba(15,23,42,0.14);
+    }
+    body[data-site-theme="repair"] .checkout-map-locate:hover { background: rgba(255,255,255,0.98); }
+    body[data-site-theme="repair"] .checkout-map-hint { color: rgba(15,23,42,0.6); }
+    body[data-site-theme="repair"] .checkout-map-hint.is-set { color: #0f766e; }
+    body[data-site-theme="repair"] .checkout-optional { color: rgba(15,23,42,0.5); }
     body[data-site-theme="repair"] .checkout-delivery-option {
       background: #f8fafc;
       border-color: rgba(15,23,42,0.1);
@@ -6298,13 +6350,21 @@
               </div>
               <div class="checkout-field checkout-field-wide">
                 <label class="checkout-label" for="checkoutAddress">Dirección de envío</label>
-                <input class="checkout-input" id="checkoutAddress" type="text" placeholder="Ej: Cra 15 #93-47, Apto 301, Bogotá" required />
+                <input class="checkout-input" id="checkoutAddress" type="text" placeholder="Ej: Cra 15 #93-47, Bogotá" autocomplete="street-address" required />
+              </div>
+              <div class="checkout-field checkout-field-wide">
+                <label class="checkout-label" for="checkoutAddressDetail">Apartamento / Torre / Interior <span class="checkout-optional">(opcional)</span></label>
+                <input class="checkout-input" id="checkoutAddressDetail" type="text" placeholder="Ej: Apto 301, Torre B, Interior 2" autocomplete="address-line2" />
               </div>
               <div class="checkout-field checkout-field-wide">
                 <div class="checkout-delivery-card">
-                  <div class="checkout-map-preview" aria-hidden="true">
-                    <div class="checkout-map-pin"><span></span></div>
-                    <div class="checkout-map-chip" id="checkoutMapAddress">Entrega en Bogotá</div>
+                  <div class="checkout-map-preview">
+                    <div class="checkout-map" id="checkoutMap"></div>
+                    <span class="checkout-map-chip" id="checkoutMapAddress">Entrega en Bogotá</span>
+                    <button type="button" class="checkout-map-locate" id="checkoutLocateBtn">
+                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="3"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3"/></svg>
+                      Mi ubicación
+                    </button>
                   </div>
                   <div class="checkout-delivery-body">
                     <div class="checkout-delivery-summary">
@@ -6337,10 +6397,11 @@
                     </div>
                   </div>
                 </div>
+                <p class="checkout-map-hint" id="checkoutMapHint">Escribe tu dirección y confirma el punto en el mapa. Puedes arrastrar el pin para ajustarlo.</p>
               </div>
               <div class="checkout-field checkout-field-wide">
-                <label class="checkout-label" for="checkoutNotes">Notas del pedido</label>
-                <textarea class="checkout-textarea" id="checkoutNotes" placeholder="Ejemplo: apartamento, barrio, horario de entrega o referencia del lugar."></textarea>
+                <label class="checkout-label" for="checkoutNotes">Notas para el repartidor <span class="checkout-optional">(opcional)</span></label>
+                <textarea class="checkout-textarea" id="checkoutNotes" placeholder="Ej: dejar en portería, llamar antes de llegar, horario de entrega o punto de referencia."></textarea>
               </div>
             </div>
 
@@ -6752,6 +6813,8 @@
       document.getElementById('checkoutModal')?.classList.add('open');
       document.body.classList.add('modal-open');
       renderCheckoutSummary();
+      // el mapa necesita estar visible para medir su tamaño
+      requestAnimationFrame(() => initCheckoutMap());
     }
 
     function closeCheckout() {
@@ -6806,6 +6869,149 @@
       if (etaEl) etaEl.textContent = shippingEta(zone);
       if (mapEl) mapEl.textContent = shippingMapLabel(zone);
       renderCheckoutSummary();
+    }
+
+    // ----- Mapa de entrega (Leaflet + OpenStreetMap/CARTO, alojado en 'self') -----
+    const BOGOTA_CENTER = [4.6486, -74.0846];
+    let checkoutMap = null;
+    let checkoutMarker = null;
+    let checkoutGeo = null;          // { lat, lng } del punto confirmado
+    let geocodeTimer = null;
+    let geocodeSeq = 0;              // descarta respuestas fuera de orden
+    let lastGeocodedQuery = '';
+
+    function checkoutPinIcon() {
+      return L.divIcon({
+        className: 'checkout-pin-wrap',
+        html: '<div class="checkout-pin"></div>',
+        iconSize: [30, 30],
+        iconAnchor: [15, 28],
+      });
+    }
+
+    function checkoutTileLayer() {
+      const dark = document.body.dataset.siteTheme !== 'repair';
+      const style = dark ? 'dark_all' : 'light_all';
+      return L.tileLayer('https://{s}.basemaps.cartocdn.com/' + style + '/{z}/{x}/{y}{r}.png', {
+        subdomains: 'abcd',
+        maxZoom: 20,
+        attribution: '&copy; OpenStreetMap &copy; CARTO',
+      });
+    }
+
+    function setCheckoutMapHint(text, isSet) {
+      const hint = document.getElementById('checkoutMapHint');
+      if (!hint) return;
+      hint.textContent = text;
+      hint.classList.toggle('is-set', !!isSet);
+    }
+
+    function initCheckoutMap() {
+      if (typeof L === 'undefined') return;
+      const el = document.getElementById('checkoutMap');
+      if (!el) return;
+      if (checkoutMap) {
+        // el contenedor estuvo oculto: recalcula tamaño al reabrir el modal
+        setTimeout(() => checkoutMap.invalidateSize(), 60);
+        return;
+      }
+      checkoutMap = L.map(el, {
+        center: BOGOTA_CENTER,
+        zoom: 12,
+        zoomControl: true,
+        scrollWheelZoom: false,   // no robar el scroll del formulario
+        attributionControl: true,
+      });
+      checkoutTileLayer().addTo(checkoutMap);
+      checkoutMarker = L.marker(BOGOTA_CENTER, {
+        draggable: true,
+        icon: checkoutPinIcon(),
+        keyboard: false,
+      }).addTo(checkoutMap);
+      checkoutMarker.on('dragend', () => {
+        const { lat, lng } = checkoutMarker.getLatLng();
+        checkoutGeo = { lat: +lat.toFixed(6), lng: +lng.toFixed(6) };
+        setCheckoutMapHint('Punto ajustado manualmente en el mapa.', true);
+      });
+      setTimeout(() => checkoutMap.invalidateSize(), 60);
+      scheduleGeocode(0); // geocodifica lo que ya esté escrito
+    }
+
+    function placeCheckoutPin(lat, lng, opts) {
+      if (!checkoutMap || !checkoutMarker) return;
+      const ll = [lat, lng];
+      checkoutMarker.setLatLng(ll);
+      checkoutMap.setView(ll, (opts && opts.zoom) || Math.max(checkoutMap.getZoom(), 16), { animate: true });
+      checkoutGeo = { lat: +(+lat).toFixed(6), lng: +(+lng).toFixed(6) };
+    }
+
+    function buildGeocodeQuery() {
+      const addr = document.getElementById('checkoutAddress')?.value.trim() || '';
+      if (addr.length < 6) return '';
+      const tail = selectedShippingZone() === 'bogota' ? 'Bogotá, Colombia' : 'Colombia';
+      return /colombia/i.test(addr) ? addr : addr + ', ' + tail;
+    }
+
+    async function runGeocode() {
+      if (!checkoutMap) return;
+      const query = buildGeocodeQuery();
+      if (!query || query === lastGeocodedQuery) return;
+      lastGeocodedQuery = query;
+      const seq = ++geocodeSeq;
+      setCheckoutMapHint('Buscando la dirección en el mapa…');
+      try {
+        const url = 'https://nominatim.openstreetmap.org/search?format=jsonv2&limit=1&countrycodes=co&q=' + encodeURIComponent(query);
+        const res = await fetch(url, { headers: { Accept: 'application/json' } });
+        if (!res.ok) throw new Error('geocode http ' + res.status);
+        const data = await res.json();
+        if (seq !== geocodeSeq) return; // llegó una respuesta más nueva
+        if (Array.isArray(data) && data.length) {
+          placeCheckoutPin(parseFloat(data[0].lat), parseFloat(data[0].lon), { zoom: 16 });
+          setCheckoutMapHint('Dirección ubicada. Arrastra el pin si necesitas afinar el punto.', true);
+        } else {
+          setCheckoutMapHint('No encontramos esa dirección. Ajusta el texto o arrastra el pin manualmente.');
+        }
+      } catch (err) {
+        if (seq !== geocodeSeq) return;
+        setCheckoutMapHint('No pudimos ubicar la dirección en el mapa. Puedes arrastrar el pin manualmente.');
+      }
+    }
+
+    function scheduleGeocode(delay) {
+      clearTimeout(geocodeTimer);
+      geocodeTimer = setTimeout(runGeocode, delay == null ? 800 : delay);
+    }
+
+    function locateCheckoutUser() {
+      const btn = document.getElementById('checkoutLocateBtn');
+      if (!navigator.geolocation) {
+        setCheckoutMapHint('Tu navegador no permite usar la ubicación. Escribe la dirección manualmente.');
+        return;
+      }
+      if (!checkoutMap) initCheckoutMap();
+      if (btn) btn.disabled = true;
+      setCheckoutMapHint('Obteniendo tu ubicación…');
+      navigator.geolocation.getCurrentPosition(async (pos) => {
+        const { latitude, longitude } = pos.coords;
+        placeCheckoutPin(latitude, longitude, { zoom: 17 });
+        setCheckoutMapHint('Ubicación detectada. Confirma o arrastra el pin si hace falta.', true);
+        if (btn) btn.disabled = false;
+        try {
+          const res = await fetch('https://nominatim.openstreetmap.org/reverse?format=jsonv2&lat=' + latitude + '&lon=' + longitude, { headers: { Accept: 'application/json' } });
+          const data = await res.json();
+          const addrInput = document.getElementById('checkoutAddress');
+          if (data && data.address && addrInput && !addrInput.value.trim()) {
+            const a = data.address;
+            addrInput.value = [a.road, a.house_number].filter(Boolean).join(' ') || data.display_name || '';
+            lastGeocodedQuery = '';
+          }
+        } catch (_) { /* reverse geocoding es opcional */ }
+      }, (err) => {
+        if (btn) btn.disabled = false;
+        setCheckoutMapHint(err && err.code === 1
+          ? 'Permiso de ubicación denegado. Escribe la dirección manualmente.'
+          : 'No pudimos obtener tu ubicación. Escribe la dirección manualmente.');
+      }, { enableHighAccuracy: true, timeout: 10000, maximumAge: 60000 });
     }
 
     function humanizeStatus(status) {
@@ -7143,6 +7349,7 @@
       const email = document.getElementById('checkoutEmail').value.trim();
       const phoneNumber = document.getElementById('checkoutPhone').value.trim();
       const shippingAddress = document.getElementById('checkoutAddress').value.trim();
+      const addressDetail = document.getElementById('checkoutAddressDetail')?.value.trim() || '';
       const shippingZone = selectedShippingZone();
       const notes = document.getElementById('checkoutNotes').value.trim();
 
@@ -7151,12 +7358,14 @@
         shippingZone,
         shippingAddress: {
           addressLine1: shippingAddress,
+          addressLine2: addressDetail,
           country: 'CO',
           city: shippingZoneCity(shippingZone),
           region: shippingZoneRegion(shippingZone),
           phoneNumber,
           name: fullName,
-          zone: shippingZone
+          zone: shippingZone,
+          ...(checkoutGeo ? { geoLat: checkoutGeo.lat, geoLng: checkoutGeo.lng } : {})
         },
         cart: cart.map((item) => ({
           productId: item.productId || item.id || '',
@@ -7369,7 +7578,14 @@
           syncCheckoutProviderUI();
         });
       });
-      document.getElementById('checkoutShippingZone')?.addEventListener('change', updateDeliveryPreview);
+      document.getElementById('checkoutShippingZone')?.addEventListener('change', () => {
+        updateDeliveryPreview();
+        lastGeocodedQuery = '';
+        scheduleGeocode(150);
+      });
+      document.getElementById('checkoutAddress')?.addEventListener('input', () => scheduleGeocode());
+      document.getElementById('checkoutAddress')?.addEventListener('blur', () => runGeocode());
+      document.getElementById('checkoutLocateBtn')?.addEventListener('click', locateCheckoutUser);
       document.getElementById('checkoutForm')?.addEventListener('submit', submitCheckout);
       document.getElementById('checkoutBtn')?.addEventListener('click', goToCheckout);
       document.getElementById('trackingForm')?.addEventListener('submit', (e) => {
