@@ -17,6 +17,42 @@ const App = (() => {
     { value: 'herramientas-diy', label: 'Herramientas DIY' },
   ];
 
+  const DELIVERY_REGIONS = [
+    { key: 'bogota', label: 'Bogotá D.C.', defaultFeeCents: 1000000 },
+    { key: 'amazonas', label: 'Amazonas', defaultFeeCents: 1800000 },
+    { key: 'antioquia', label: 'Antioquia', defaultFeeCents: 1800000 },
+    { key: 'arauca', label: 'Arauca', defaultFeeCents: 1800000 },
+    { key: 'atlantico', label: 'Atlántico', defaultFeeCents: 1800000 },
+    { key: 'bolivar', label: 'Bolívar', defaultFeeCents: 1800000 },
+    { key: 'boyaca', label: 'Boyacá', defaultFeeCents: 1800000 },
+    { key: 'caldas', label: 'Caldas', defaultFeeCents: 1800000 },
+    { key: 'caqueta', label: 'Caquetá', defaultFeeCents: 1800000 },
+    { key: 'casanare', label: 'Casanare', defaultFeeCents: 1800000 },
+    { key: 'cauca', label: 'Cauca', defaultFeeCents: 1800000 },
+    { key: 'cesar', label: 'Cesar', defaultFeeCents: 1800000 },
+    { key: 'choco', label: 'Chocó', defaultFeeCents: 1800000 },
+    { key: 'cordoba', label: 'Córdoba', defaultFeeCents: 1800000 },
+    { key: 'cundinamarca', label: 'Cundinamarca', defaultFeeCents: 1800000 },
+    { key: 'guainia', label: 'Guainía', defaultFeeCents: 1800000 },
+    { key: 'guaviare', label: 'Guaviare', defaultFeeCents: 1800000 },
+    { key: 'huila', label: 'Huila', defaultFeeCents: 1800000 },
+    { key: 'la-guajira', label: 'La Guajira', defaultFeeCents: 1800000 },
+    { key: 'magdalena', label: 'Magdalena', defaultFeeCents: 1800000 },
+    { key: 'meta', label: 'Meta', defaultFeeCents: 1800000 },
+    { key: 'narino', label: 'Nariño', defaultFeeCents: 1800000 },
+    { key: 'norte-de-santander', label: 'Norte de Santander', defaultFeeCents: 1800000 },
+    { key: 'putumayo', label: 'Putumayo', defaultFeeCents: 1800000 },
+    { key: 'quindio', label: 'Quindío', defaultFeeCents: 1800000 },
+    { key: 'risaralda', label: 'Risaralda', defaultFeeCents: 1800000 },
+    { key: 'san-andres-y-providencia', label: 'San Andrés y Providencia', defaultFeeCents: 1800000 },
+    { key: 'santander', label: 'Santander', defaultFeeCents: 1800000 },
+    { key: 'sucre', label: 'Sucre', defaultFeeCents: 1800000 },
+    { key: 'tolima', label: 'Tolima', defaultFeeCents: 1800000 },
+    { key: 'valle-del-cauca', label: 'Valle del Cauca', defaultFeeCents: 1800000 },
+    { key: 'vaupes', label: 'Vaupés', defaultFeeCents: 1800000 },
+    { key: 'vichada', label: 'Vichada', defaultFeeCents: 1800000 },
+  ];
+
   function getCategoryLabel(value) {
     const match = PRODUCT_CATEGORY_OPTIONS.find((option) => option.value === value);
     return match ? match.label : (value || '—');
@@ -1263,8 +1299,31 @@ const App = (() => {
 
   function renderDesignSettingsContent(settings) {
     const currentTheme = settings.visualTheme || 'dark';
-    const shippingBogotaCop = Math.round((Number(settings.shippingBogotaCents) || 1000000) / 100);
-    const shippingNationalCop = Math.round((Number(settings.shippingNationalCents) || 1800000) / 100);
+    const rawRegionPrices = settings.shippingRegionPricesCents || {};
+    const shippingRegionPrices = DELIVERY_REGIONS.reduce((acc, region) => {
+      if (rawRegionPrices[region.key] != null) {
+        acc[region.key] = Number(rawRegionPrices[region.key]) || 0;
+      } else if (region.key === 'bogota') {
+        acc[region.key] = Number(settings.shippingBogotaCents) || region.defaultFeeCents;
+      } else {
+        acc[region.key] = Number(settings.shippingNationalCents) || region.defaultFeeCents;
+      }
+      return acc;
+    }, {});
+    const shippingRowsHtml = DELIVERY_REGIONS.map((region) => `
+      <div class="form-group">
+        <label class="form-label" for="shippingRegion-${region.key}">${region.label}</label>
+        <input
+          class="form-input shipping-region-input"
+          id="shippingRegion-${region.key}"
+          data-region-key="${region.key}"
+          type="number"
+          min="0"
+          step="500"
+          value="${Math.round((shippingRegionPrices[region.key] || 0) / 100)}"
+        />
+      </div>
+    `).join('');
     $main.innerHTML = `
       <div class="page-header">
         <div>
@@ -1312,20 +1371,27 @@ const App = (() => {
             <div class="form-section-heading" style="margin-top:24px;">
               <span class="form-section-icon">🚚</span>
               <div>
-                <h3>Entrega y pago contra entrega</h3>
-                <p>Configura los valores que se muestran y se cobran en el checkout público.</p>
+                <h3>Tarifas por departamento</h3>
+                <p>Configura el valor de entrega que se cobra en el checkout según el destino del cliente.</p>
               </div>
             </div>
 
-            <div class="form-row">
+            <div class="settings-note">
+              Bogotá queda como destino por defecto en el checkout. Los demás departamentos usan su propio precio y puedes ajustarlos cuando cambie la operación con Inter Rapidísimo.
+            </div>
+
+            <div class="form-row" style="align-items:flex-end;">
               <div class="form-group">
-                <label class="form-label" for="shippingBogotaCop">Envío Bogotá (COP)</label>
-                <input class="form-input" id="shippingBogotaCop" type="number" min="0" step="500" value="${shippingBogotaCop}" />
+                <label class="form-label" for="shippingBulkCop">Aplicar valor a todos excepto Bogotá (COP)</label>
+                <input class="form-input" id="shippingBulkCop" type="number" min="0" step="500" placeholder="Ej: 18000" />
               </div>
               <div class="form-group">
-                <label class="form-label" for="shippingNationalCop">Envío fuera de Bogotá (COP)</label>
-                <input class="form-input" id="shippingNationalCop" type="number" min="0" step="500" value="${shippingNationalCop}" />
+                <button type="button" class="btn btn-secondary" id="applyBulkShippingBtn">Aplicar a departamentos</button>
               </div>
+            </div>
+
+            <div class="form-row" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(190px,1fr));gap:14px;">
+              ${shippingRowsHtml}
             </div>
 
             <div class="modal-footer settings-footer">
@@ -1366,16 +1432,38 @@ const App = (() => {
       input.addEventListener('change', syncCards);
     });
 
+    document.getElementById('applyBulkShippingBtn')?.addEventListener('click', () => {
+      const bulkValue = parseInt(document.getElementById('shippingBulkCop')?.value || '', 10);
+      if (!Number.isFinite(bulkValue) || bulkValue < 0) {
+        showToast('Ingresa un valor válido para aplicar.', 'error');
+        return;
+      }
+      document.querySelectorAll('.shipping-region-input').forEach((input) => {
+        if (input.dataset.regionKey !== 'bogota') input.value = bulkValue;
+      });
+      showToast('Valor aplicado a todos los departamentos excepto Bogotá.');
+    });
+
     form.addEventListener('submit', async (event) => {
       event.preventDefault();
       const visualTheme = form.querySelector('input[name="visualTheme"]:checked')?.value || 'dark';
-      const shippingBogotaCents = Math.max(0, parseInt(document.getElementById('shippingBogotaCop')?.value || '0', 10) || 0) * 100;
-      const shippingNationalCents = Math.max(0, parseInt(document.getElementById('shippingNationalCop')?.value || '0', 10) || 0) * 100;
+      const shippingRegionPricesCents = {};
+      document.querySelectorAll('.shipping-region-input').forEach((input) => {
+        const key = input.dataset.regionKey;
+        shippingRegionPricesCents[key] = Math.max(0, parseInt(input.value || '0', 10) || 0) * 100;
+      });
+      const shippingBogotaCents = shippingRegionPricesCents.bogota || 0;
+      const shippingNationalCents = shippingRegionPricesCents.cundinamarca || 0;
       const button = document.getElementById('saveDesignSettingsBtn');
       button.disabled = true;
       button.textContent = 'Guardando…';
       try {
-        await Api.put('/api/admin/site-settings', { visualTheme, shippingBogotaCents, shippingNationalCents });
+        await Api.put('/api/admin/site-settings', {
+          visualTheme,
+          shippingBogotaCents,
+          shippingNationalCents,
+          shippingRegionPricesCents,
+        });
         showToast('Diseño y tarifas de envío actualizadas.');
       } catch (err) {
         showToast(err.message, 'error');

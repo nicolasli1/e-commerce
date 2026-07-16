@@ -67,10 +67,50 @@ PRODUCT_CATEGORIES = {
 }
 
 SITE_SETTINGS_ID = "__site_settings__"
+DELIVERY_REGIONS = [
+    {"key": "bogota", "label": "Bogotá D.C.", "defaultCity": "Bogotá", "eta": "Mismo día o siguiente día hábil", "defaultFeeCents": 1000000},
+    {"key": "amazonas", "label": "Amazonas", "defaultCity": "", "eta": "3 a 7 días hábiles", "defaultFeeCents": 1800000},
+    {"key": "antioquia", "label": "Antioquia", "defaultCity": "", "eta": "2 a 5 días hábiles", "defaultFeeCents": 1800000},
+    {"key": "arauca", "label": "Arauca", "defaultCity": "", "eta": "3 a 7 días hábiles", "defaultFeeCents": 1800000},
+    {"key": "atlantico", "label": "Atlántico", "defaultCity": "", "eta": "2 a 5 días hábiles", "defaultFeeCents": 1800000},
+    {"key": "bolivar", "label": "Bolívar", "defaultCity": "", "eta": "2 a 5 días hábiles", "defaultFeeCents": 1800000},
+    {"key": "boyaca", "label": "Boyacá", "defaultCity": "", "eta": "2 a 5 días hábiles", "defaultFeeCents": 1800000},
+    {"key": "caldas", "label": "Caldas", "defaultCity": "", "eta": "2 a 5 días hábiles", "defaultFeeCents": 1800000},
+    {"key": "caqueta", "label": "Caquetá", "defaultCity": "", "eta": "3 a 7 días hábiles", "defaultFeeCents": 1800000},
+    {"key": "casanare", "label": "Casanare", "defaultCity": "", "eta": "3 a 7 días hábiles", "defaultFeeCents": 1800000},
+    {"key": "cauca", "label": "Cauca", "defaultCity": "", "eta": "2 a 5 días hábiles", "defaultFeeCents": 1800000},
+    {"key": "cesar", "label": "Cesar", "defaultCity": "", "eta": "2 a 5 días hábiles", "defaultFeeCents": 1800000},
+    {"key": "choco", "label": "Chocó", "defaultCity": "", "eta": "3 a 7 días hábiles", "defaultFeeCents": 1800000},
+    {"key": "cordoba", "label": "Córdoba", "defaultCity": "", "eta": "2 a 5 días hábiles", "defaultFeeCents": 1800000},
+    {"key": "cundinamarca", "label": "Cundinamarca", "defaultCity": "", "eta": "1 a 3 días hábiles", "defaultFeeCents": 1800000},
+    {"key": "guainia", "label": "Guainía", "defaultCity": "", "eta": "4 a 8 días hábiles", "defaultFeeCents": 1800000},
+    {"key": "guaviare", "label": "Guaviare", "defaultCity": "", "eta": "4 a 8 días hábiles", "defaultFeeCents": 1800000},
+    {"key": "huila", "label": "Huila", "defaultCity": "", "eta": "2 a 5 días hábiles", "defaultFeeCents": 1800000},
+    {"key": "la-guajira", "label": "La Guajira", "defaultCity": "", "eta": "3 a 7 días hábiles", "defaultFeeCents": 1800000},
+    {"key": "magdalena", "label": "Magdalena", "defaultCity": "", "eta": "2 a 5 días hábiles", "defaultFeeCents": 1800000},
+    {"key": "meta", "label": "Meta", "defaultCity": "", "eta": "2 a 5 días hábiles", "defaultFeeCents": 1800000},
+    {"key": "narino", "label": "Nariño", "defaultCity": "", "eta": "3 a 7 días hábiles", "defaultFeeCents": 1800000},
+    {"key": "norte-de-santander", "label": "Norte de Santander", "defaultCity": "", "eta": "2 a 5 días hábiles", "defaultFeeCents": 1800000},
+    {"key": "putumayo", "label": "Putumayo", "defaultCity": "", "eta": "3 a 7 días hábiles", "defaultFeeCents": 1800000},
+    {"key": "quindio", "label": "Quindío", "defaultCity": "", "eta": "2 a 5 días hábiles", "defaultFeeCents": 1800000},
+    {"key": "risaralda", "label": "Risaralda", "defaultCity": "", "eta": "2 a 5 días hábiles", "defaultFeeCents": 1800000},
+    {"key": "san-andres-y-providencia", "label": "San Andrés y Providencia", "defaultCity": "", "eta": "4 a 8 días hábiles", "defaultFeeCents": 1800000},
+    {"key": "santander", "label": "Santander", "defaultCity": "", "eta": "2 a 5 días hábiles", "defaultFeeCents": 1800000},
+    {"key": "sucre", "label": "Sucre", "defaultCity": "", "eta": "2 a 5 días hábiles", "defaultFeeCents": 1800000},
+    {"key": "tolima", "label": "Tolima", "defaultCity": "", "eta": "2 a 5 días hábiles", "defaultFeeCents": 1800000},
+    {"key": "valle-del-cauca", "label": "Valle del Cauca", "defaultCity": "", "eta": "2 a 5 días hábiles", "defaultFeeCents": 1800000},
+    {"key": "vaupes", "label": "Vaupés", "defaultCity": "", "eta": "4 a 8 días hábiles", "defaultFeeCents": 1800000},
+    {"key": "vichada", "label": "Vichada", "defaultCity": "", "eta": "4 a 8 días hábiles", "defaultFeeCents": 1800000},
+]
+DELIVERY_REGION_BY_KEY = {region["key"]: region for region in DELIVERY_REGIONS}
+DEFAULT_SHIPPING_REGION_PRICES_CENTS = {
+    region["key"]: region["defaultFeeCents"] for region in DELIVERY_REGIONS
+}
 DEFAULT_SITE_SETTINGS = {
     "visualTheme": "dark",
     "shippingBogotaCents": 1000000,
     "shippingNationalCents": 1800000,
+    "shippingRegionPricesCents": DEFAULT_SHIPPING_REGION_PRICES_CENTS,
 }
 
 
@@ -127,10 +167,22 @@ def normalize_site_settings(body):
         theme = DEFAULT_SITE_SETTINGS["visualTheme"]
     bogota_cents = max(0, safe_int(body.get("shippingBogotaCents"), DEFAULT_SITE_SETTINGS["shippingBogotaCents"]))
     national_cents = max(0, safe_int(body.get("shippingNationalCents"), DEFAULT_SITE_SETTINGS["shippingNationalCents"]))
+    raw_region_prices = body.get("shippingRegionPricesCents") if isinstance(body.get("shippingRegionPricesCents"), dict) else {}
+    region_prices = DEFAULT_SHIPPING_REGION_PRICES_CENTS.copy()
+    for key in region_prices:
+        if key in raw_region_prices:
+            region_prices[key] = max(0, safe_int(raw_region_prices.get(key), region_prices[key]))
+    if not raw_region_prices:
+        region_prices["bogota"] = bogota_cents
+        for key in region_prices:
+            if key != "bogota":
+                region_prices[key] = national_cents
+    bogota_cents = region_prices.get("bogota", bogota_cents)
     return {
         "visualTheme": theme,
         "shippingBogotaCents": bogota_cents,
         "shippingNationalCents": national_cents,
+        "shippingRegionPricesCents": region_prices,
     }
 
 
@@ -1350,18 +1402,30 @@ def normalize_delivery_zone(value):
     normalized = slugify(value or "")
     if normalized in ("bogota", "bogota-dc", "bogota-d-c", "bogota-distrito-capital"):
         return "bogota"
-    return "national"
+    if normalized in DELIVERY_REGION_BY_KEY:
+        return normalized
+    if normalized in ("national", "nacional", "fuera-de-bogota", "colombia"):
+        return "national"
+    return "bogota"
 
 
 def delivery_label(zone):
-    return "Bogotá" if zone == "bogota" else "Fuera de Bogotá"
+    if zone in DELIVERY_REGION_BY_KEY:
+        return DELIVERY_REGION_BY_KEY[zone]["label"]
+    return "Fuera de Bogotá"
 
 
 def delivery_eta(zone):
-    return "Mismo día o siguiente día hábil" if zone == "bogota" else "2 a 5 días hábiles"
+    if zone in DELIVERY_REGION_BY_KEY:
+        return DELIVERY_REGION_BY_KEY[zone]["eta"]
+    return "2 a 5 días hábiles"
 
 
 def delivery_fee_cents(settings, zone):
+    prices = settings.get("shippingRegionPricesCents") if isinstance(settings.get("shippingRegionPricesCents"), dict) else {}
+    if zone in DELIVERY_REGION_BY_KEY:
+        default_value = DEFAULT_SHIPPING_REGION_PRICES_CENTS.get(zone, DEFAULT_SITE_SETTINGS["shippingNationalCents"])
+        return max(0, safe_int(prices.get(zone), default_value))
     key = "shippingBogotaCents" if zone == "bogota" else "shippingNationalCents"
     return max(0, safe_int(settings.get(key), DEFAULT_SITE_SETTINGS[key]))
 
@@ -2227,8 +2291,9 @@ def normalize_shipping(body):
         shipping = {"addressLine1": str(shipping or "").strip()}
     customer = body.get("customer") if isinstance(body.get("customer"), dict) else {}
     zone = normalize_delivery_zone(body.get("shippingZone") or body.get("deliveryZone") or shipping.get("zone") or "")
-    default_city = "Bogotá" if zone == "bogota" else "Nacional"
-    default_region = "Cundinamarca" if zone == "bogota" else "Colombia"
+    region_info = DELIVERY_REGION_BY_KEY.get(zone) or {}
+    default_city = region_info.get("defaultCity") or ""
+    default_region = region_info.get("label") or ("Cundinamarca" if zone == "bogota" else "Colombia")
     normalized = {
         "addressLine1": (shipping.get("addressLine1") or customer.get("shippingAddress") or "").strip(),
         "addressLine2": (shipping.get("addressLine2") or "").strip(),
@@ -2236,6 +2301,8 @@ def normalize_shipping(body):
         "city": (shipping.get("city") or customer.get("city") or default_city).strip(),
         "phoneNumber": (shipping.get("phoneNumber") or customer.get("phoneNumber") or "").strip(),
         "region": (shipping.get("region") or default_region).strip(),
+        "department": (shipping.get("department") or default_region).strip(),
+        "departmentCode": (shipping.get("departmentCode") or zone).strip(),
         "name": (shipping.get("name") or customer.get("fullName") or "").strip(),
         "zone": zone,
     }

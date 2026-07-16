@@ -2739,54 +2739,6 @@
       filter: invert(0.92) hue-rotate(180deg) brightness(0.96) contrast(0.9);
     }
     body[data-site-theme="repair"] .checkout-map { filter: none; }
-    /* Leaflet overrides so the map blends into the dark checkout */
-    .checkout-map.leaflet-container {
-      background: #0d1220;
-      font-family: inherit;
-      cursor: grab;
-    }
-    .checkout-map.leaflet-container a { color: #93c5fd; }
-    .checkout-map .leaflet-control-attribution {
-      background: rgba(6, 10, 22, 0.6);
-      color: rgba(255,255,255,0.5);
-      font-size: 0.6rem;
-      padding: 1px 6px;
-      border-radius: 6px 0 0 0;
-    }
-    .checkout-map .leaflet-control-attribution a { color: rgba(147,197,253,0.7); }
-    .checkout-map .leaflet-control-zoom {
-      border: none;
-      box-shadow: 0 6px 18px rgba(0,0,0,0.4);
-    }
-    .checkout-map .leaflet-control-zoom a {
-      background: rgba(13, 18, 32, 0.92);
-      color: #e5f4ff;
-      border-color: rgba(255,255,255,0.1);
-    }
-    .checkout-map .leaflet-control-zoom a:hover { background: rgba(30, 41, 64, 0.96); }
-    /* Draggable pin (Leaflet divIcon) */
-    .checkout-pin {
-      width: 30px;
-      height: 30px;
-      border-radius: 999px 999px 999px 6px;
-      rotate: 45deg;
-      display: grid;
-      place-items: center;
-      background: linear-gradient(145deg, #f43f5e, #8b5cf6);
-      border: 2px solid rgba(255,255,255,0.9);
-      box-shadow: 0 12px 26px rgba(244,63,94,0.4);
-      cursor: grab;
-      transition: transform 140ms cubic-bezier(0.16, 1, 0.3, 1);
-    }
-    .checkout-pin::after {
-      content: '';
-      rotate: -45deg;
-      width: 8px;
-      height: 8px;
-      border-radius: 999px;
-      background: #fff;
-    }
-    .leaflet-marker-draggable .checkout-pin:active { cursor: grabbing; transform: scale(1.12); }
     .checkout-map-chip {
       position: absolute;
       left: 12px;
@@ -2807,29 +2759,6 @@
       line-height: 1.25;
       pointer-events: none;
     }
-    .checkout-map-locate {
-      position: absolute;
-      right: 12px;
-      top: 12px;
-      z-index: 1000;
-      display: inline-flex;
-      align-items: center;
-      gap: 6px;
-      padding: 8px 12px;
-      border-radius: 999px;
-      border: 1px solid rgba(255,255,255,0.14);
-      background: rgba(6, 10, 22, 0.78);
-      backdrop-filter: blur(14px);
-      color: #e5f4ff;
-      font-family: inherit;
-      font-size: 0.72rem;
-      font-weight: 700;
-      cursor: pointer;
-      transition: background 140ms ease, border-color 140ms ease;
-    }
-    .checkout-map-locate:hover { background: rgba(30, 41, 64, 0.92); border-color: rgba(255,255,255,0.28); }
-    .checkout-map-locate:disabled { opacity: 0.6; cursor: progress; }
-    .checkout-map-locate svg { width: 14px; height: 14px; }
     .checkout-map-hint {
       margin: 8px 2px 0;
       font-size: 0.74rem;
@@ -5583,28 +5512,11 @@
       border-bottom-color: rgba(15,23,42,0.1);
       background: #eef6f8;
     }
-    body[data-site-theme="repair"] .checkout-map.leaflet-container { background: #eef6f8; }
-    body[data-site-theme="repair"] .checkout-map .leaflet-control-attribution {
-      background: rgba(255,255,255,0.78);
-      color: rgba(15,23,42,0.55);
-    }
-    body[data-site-theme="repair"] .checkout-map .leaflet-control-attribution a { color: #0f766e; }
-    body[data-site-theme="repair"] .checkout-map .leaflet-control-zoom a {
-      background: rgba(255,255,255,0.94);
-      color: #0f172a;
-      border-color: rgba(15,23,42,0.1);
-    }
     body[data-site-theme="repair"] .checkout-map-chip {
       color: #0f513f;
       background: rgba(255,255,255,0.86);
       border-color: rgba(15,23,42,0.12);
     }
-    body[data-site-theme="repair"] .checkout-map-locate {
-      color: #0f513f;
-      background: rgba(255,255,255,0.86);
-      border-color: rgba(15,23,42,0.14);
-    }
-    body[data-site-theme="repair"] .checkout-map-locate:hover { background: rgba(255,255,255,0.98); }
     body[data-site-theme="repair"] .checkout-map-hint { color: rgba(15,23,42,0.6); }
     body[data-site-theme="repair"] .checkout-map-hint.is-set { color: #0f766e; }
     body[data-site-theme="repair"] .checkout-optional { color: rgba(15,23,42,0.5); }
@@ -6352,15 +6264,16 @@
                 <input class="checkout-input" id="checkoutPhone" placeholder="3001234567" required />
               </div>
               <div class="checkout-field">
-                <label class="checkout-label" for="checkoutShippingZone">Zona de entrega</label>
-                <select class="checkout-select" id="checkoutShippingZone">
-                  <option value="bogota">Bogotá</option>
-                  <option value="national">Fuera de Bogotá</option>
-                </select>
+                <label class="checkout-label" for="checkoutShippingZone">Departamento</label>
+                <select class="checkout-select" id="checkoutShippingZone" autocomplete="address-level1"></select>
+              </div>
+              <div class="checkout-field">
+                <label class="checkout-label" for="checkoutCity">Ciudad / municipio</label>
+                <input class="checkout-input" id="checkoutCity" type="text" placeholder="Bogotá" autocomplete="address-level2" required />
               </div>
               <div class="checkout-field checkout-field-wide">
                 <label class="checkout-label" for="checkoutAddress">Dirección de envío</label>
-                <input class="checkout-input" id="checkoutAddress" type="text" placeholder="Ej: Cra 15 #93-47, Bogotá" autocomplete="street-address" required />
+                <input class="checkout-input" id="checkoutAddress" type="text" placeholder="Ej: Cra 15 #93-47" autocomplete="street-address" required />
               </div>
               <div class="checkout-field checkout-field-wide">
                 <label class="checkout-label" for="checkoutAddressDetail">Apartamento / Torre / Interior <span class="checkout-optional">(opcional)</span></label>
@@ -6385,7 +6298,7 @@
                     </div>
                   </div>
                 </div>
-                <p class="checkout-map-hint" id="checkoutMapHint">Escribe tu dirección y confirma el punto en el mapa. Puedes arrastrar el pin para ajustarlo.</p>
+                <p class="checkout-map-hint" id="checkoutMapHint">El mapa es una referencia visual. La entrega se confirma con la dirección, ciudad y departamento escritos.</p>
               </div>
               <div class="checkout-field checkout-field-wide">
                 <label class="checkout-label" for="checkoutNotes">Notas para el repartidor <span class="checkout-optional">(opcional)</span></label>
@@ -6463,10 +6376,58 @@
     const LEGACY_CART_STORAGE_KEY = 'nex' + 'core_cart';
     const CHECKOUT_REFERENCE_STORAGE_KEY = 'repuestoscel_checkout_reference';
     const LEGACY_CHECKOUT_REFERENCE_STORAGE_KEY = 'nex' + 'core_checkout_reference';
+    const DELIVERY_REGIONS = [
+      { key: 'bogota', label: 'Bogotá D.C.', defaultCity: 'Bogotá', eta: 'Mismo día o siguiente día hábil', defaultFeeCents: 1000000 },
+      { key: 'amazonas', label: 'Amazonas', defaultCity: '', eta: '3 a 7 días hábiles', defaultFeeCents: 1800000 },
+      { key: 'antioquia', label: 'Antioquia', defaultCity: '', eta: '2 a 5 días hábiles', defaultFeeCents: 1800000 },
+      { key: 'arauca', label: 'Arauca', defaultCity: '', eta: '3 a 7 días hábiles', defaultFeeCents: 1800000 },
+      { key: 'atlantico', label: 'Atlántico', defaultCity: '', eta: '2 a 5 días hábiles', defaultFeeCents: 1800000 },
+      { key: 'bolivar', label: 'Bolívar', defaultCity: '', eta: '2 a 5 días hábiles', defaultFeeCents: 1800000 },
+      { key: 'boyaca', label: 'Boyacá', defaultCity: '', eta: '2 a 5 días hábiles', defaultFeeCents: 1800000 },
+      { key: 'caldas', label: 'Caldas', defaultCity: '', eta: '2 a 5 días hábiles', defaultFeeCents: 1800000 },
+      { key: 'caqueta', label: 'Caquetá', defaultCity: '', eta: '3 a 7 días hábiles', defaultFeeCents: 1800000 },
+      { key: 'casanare', label: 'Casanare', defaultCity: '', eta: '3 a 7 días hábiles', defaultFeeCents: 1800000 },
+      { key: 'cauca', label: 'Cauca', defaultCity: '', eta: '2 a 5 días hábiles', defaultFeeCents: 1800000 },
+      { key: 'cesar', label: 'Cesar', defaultCity: '', eta: '2 a 5 días hábiles', defaultFeeCents: 1800000 },
+      { key: 'choco', label: 'Chocó', defaultCity: '', eta: '3 a 7 días hábiles', defaultFeeCents: 1800000 },
+      { key: 'cordoba', label: 'Córdoba', defaultCity: '', eta: '2 a 5 días hábiles', defaultFeeCents: 1800000 },
+      { key: 'cundinamarca', label: 'Cundinamarca', defaultCity: '', eta: '1 a 3 días hábiles', defaultFeeCents: 1800000 },
+      { key: 'guainia', label: 'Guainía', defaultCity: '', eta: '4 a 8 días hábiles', defaultFeeCents: 1800000 },
+      { key: 'guaviare', label: 'Guaviare', defaultCity: '', eta: '4 a 8 días hábiles', defaultFeeCents: 1800000 },
+      { key: 'huila', label: 'Huila', defaultCity: '', eta: '2 a 5 días hábiles', defaultFeeCents: 1800000 },
+      { key: 'la-guajira', label: 'La Guajira', defaultCity: '', eta: '3 a 7 días hábiles', defaultFeeCents: 1800000 },
+      { key: 'magdalena', label: 'Magdalena', defaultCity: '', eta: '2 a 5 días hábiles', defaultFeeCents: 1800000 },
+      { key: 'meta', label: 'Meta', defaultCity: '', eta: '2 a 5 días hábiles', defaultFeeCents: 1800000 },
+      { key: 'narino', label: 'Nariño', defaultCity: '', eta: '3 a 7 días hábiles', defaultFeeCents: 1800000 },
+      { key: 'norte-de-santander', label: 'Norte de Santander', defaultCity: '', eta: '2 a 5 días hábiles', defaultFeeCents: 1800000 },
+      { key: 'putumayo', label: 'Putumayo', defaultCity: '', eta: '3 a 7 días hábiles', defaultFeeCents: 1800000 },
+      { key: 'quindio', label: 'Quindío', defaultCity: '', eta: '2 a 5 días hábiles', defaultFeeCents: 1800000 },
+      { key: 'risaralda', label: 'Risaralda', defaultCity: '', eta: '2 a 5 días hábiles', defaultFeeCents: 1800000 },
+      { key: 'san-andres-y-providencia', label: 'San Andrés y Providencia', defaultCity: '', eta: '4 a 8 días hábiles', defaultFeeCents: 1800000 },
+      { key: 'santander', label: 'Santander', defaultCity: '', eta: '2 a 5 días hábiles', defaultFeeCents: 1800000 },
+      { key: 'sucre', label: 'Sucre', defaultCity: '', eta: '2 a 5 días hábiles', defaultFeeCents: 1800000 },
+      { key: 'tolima', label: 'Tolima', defaultCity: '', eta: '2 a 5 días hábiles', defaultFeeCents: 1800000 },
+      { key: 'valle-del-cauca', label: 'Valle del Cauca', defaultCity: '', eta: '2 a 5 días hábiles', defaultFeeCents: 1800000 },
+      { key: 'vaupes', label: 'Vaupés', defaultCity: '', eta: '4 a 8 días hábiles', defaultFeeCents: 1800000 },
+      { key: 'vichada', label: 'Vichada', defaultCity: '', eta: '4 a 8 días hábiles', defaultFeeCents: 1800000 }
+    ];
+    const DELIVERY_REGION_BY_KEY = DELIVERY_REGIONS.reduce((acc, region) => {
+      acc[region.key] = region;
+      return acc;
+    }, {});
+
+    function defaultRegionPricesCents() {
+      return DELIVERY_REGIONS.reduce((acc, region) => {
+        acc[region.key] = region.defaultFeeCents;
+        return acc;
+      }, {});
+    }
+
     const DEFAULT_SITE_SETTINGS = {
       visualTheme: 'dark',
       shippingBogotaCents: 1000000,
       shippingNationalCents: 1800000,
+      shippingRegionPricesCents: defaultRegionPricesCents(),
       googleMapsEmbedKey: ''
     };
     let siteSettings = { ...DEFAULT_SITE_SETTINGS };
@@ -6818,33 +6779,89 @@
       return formatCOP((Number(value) || 0) / 100) + ' COP';
     }
 
+    function normalizeSiteSettings(rawSettings = {}) {
+      const regionPrices = {
+        ...defaultRegionPricesCents(),
+        ...(rawSettings.shippingRegionPricesCents || {})
+      };
+      if (!rawSettings.shippingRegionPricesCents) {
+        regionPrices.bogota = Number(rawSettings.shippingBogotaCents || DEFAULT_SITE_SETTINGS.shippingBogotaCents);
+        DELIVERY_REGIONS.forEach((region) => {
+          if (region.key !== 'bogota') {
+            regionPrices[region.key] = Number(rawSettings.shippingNationalCents || DEFAULT_SITE_SETTINGS.shippingNationalCents);
+          }
+        });
+      }
+      return {
+        ...DEFAULT_SITE_SETTINGS,
+        ...rawSettings,
+        shippingRegionPricesCents: regionPrices
+      };
+    }
+
+    function deliveryRegion(zone = selectedShippingZone()) {
+      return DELIVERY_REGION_BY_KEY[zone] || DELIVERY_REGION_BY_KEY.bogota;
+    }
+
+    function renderDeliveryRegionOptions() {
+      const select = document.getElementById('checkoutShippingZone');
+      if (!select || select.dataset.rendered === 'true') return;
+      select.innerHTML = DELIVERY_REGIONS.map((region) => (
+        `<option value="${region.key}" ${region.key === 'bogota' ? 'selected' : ''}>${region.label}</option>`
+      )).join('');
+      select.dataset.rendered = 'true';
+      syncCheckoutCityWithRegion(true);
+    }
+
     function selectedShippingZone() {
-      return document.getElementById('checkoutShippingZone')?.value === 'national' ? 'national' : 'bogota';
+      const value = document.getElementById('checkoutShippingZone')?.value || 'bogota';
+      return DELIVERY_REGION_BY_KEY[value] ? value : 'bogota';
+    }
+
+    function syncCheckoutCityWithRegion(force = false) {
+      const cityInput = document.getElementById('checkoutCity');
+      if (!cityInput) return;
+      const region = deliveryRegion();
+      const wasAutoBogota = cityInput.dataset.autoCity === 'true';
+      if (force || !cityInput.value.trim() || wasAutoBogota) {
+        cityInput.value = region.defaultCity || '';
+        cityInput.placeholder = region.key === 'bogota' ? 'Bogotá' : 'Ej: Medellín, Cali, Barranquilla';
+        cityInput.dataset.autoCity = region.defaultCity ? 'true' : 'false';
+      } else {
+        cityInput.placeholder = region.key === 'bogota' ? 'Bogotá' : 'Ej: Medellín, Cali, Barranquilla';
+        cityInput.dataset.autoCity = 'false';
+      }
+    }
+
+    function checkoutCityValue(zone = selectedShippingZone()) {
+      const cityInput = document.getElementById('checkoutCity');
+      const typedCity = cityInput?.value.trim() || '';
+      return typedCity || deliveryRegion(zone).defaultCity || '';
     }
 
     function shippingFeeCents(zone = selectedShippingZone()) {
-      const key = zone === 'bogota' ? 'shippingBogotaCents' : 'shippingNationalCents';
-      return Math.max(0, Number(siteSettings[key] || DEFAULT_SITE_SETTINGS[key] || 0));
+      const prices = siteSettings.shippingRegionPricesCents || DEFAULT_SITE_SETTINGS.shippingRegionPricesCents;
+      return Math.max(0, Number(prices[zone] ?? deliveryRegion(zone).defaultFeeCents ?? 0));
     }
 
     function shippingZoneLabel(zone = selectedShippingZone()) {
-      return zone === 'bogota' ? 'Bogotá' : 'fuera de Bogotá';
+      return deliveryRegion(zone).label;
     }
 
     function shippingMapLabel(zone = selectedShippingZone()) {
-      return zone === 'bogota' ? 'Entrega en Bogotá' : 'Entrega fuera de Bogotá';
+      return `Entrega en ${shippingZoneLabel(zone)}`;
     }
 
     function shippingZoneCity(zone = selectedShippingZone()) {
-      return zone === 'bogota' ? 'Bogotá' : 'Nacional';
+      return checkoutCityValue(zone);
     }
 
     function shippingZoneRegion(zone = selectedShippingZone()) {
-      return zone === 'bogota' ? 'Cundinamarca' : 'Colombia';
+      return shippingZoneLabel(zone);
     }
 
     function shippingEta(zone = selectedShippingZone()) {
-      return zone === 'bogota' ? 'Mismo día o siguiente día hábil' : '2 a 5 días hábiles';
+      return deliveryRegion(zone).eta;
     }
 
     function updateDeliveryPreview() {
@@ -6886,9 +6903,10 @@
 
     function buildMapQuery() {
       const addr = document.getElementById('checkoutAddress')?.value.trim() || '';
-      if (addr.length < 6) return '';
-      const tail = selectedShippingZone() === 'bogota' ? 'Bogotá, Colombia' : 'Colombia';
-      return /colombia/i.test(addr) ? addr : addr + ', ' + tail;
+      const city = checkoutCityValue();
+      const region = shippingZoneLabel();
+      if (addr.length < 6 || city.length < 2) return '';
+      return [addr, city, region, 'Colombia'].filter(Boolean).join(', ');
     }
 
     function updateCheckoutMapEmbed() {
@@ -6897,14 +6915,14 @@
       const query = buildMapQuery();
       if (!query) {
         if (!iframe.getAttribute('src')) iframe.src = googleEmbedSrc('Bogotá, Colombia');
-        setCheckoutMapHint('Escribe tu dirección para verla en el mapa.');
+        setCheckoutMapHint('Completa dirección, ciudad y departamento para ver una referencia en Google Maps.');
         lastEmbedQuery = '';
         return;
       }
       if (query === lastEmbedQuery) return;
       lastEmbedQuery = query;
       iframe.src = googleEmbedSrc(query);
-      setCheckoutMapHint('Mostrando tu dirección en el mapa de Google. Verifica que el punto sea correcto.', true);
+      setCheckoutMapHint('Mapa referencial actualizado. Si el punto no coincide, conserva la dirección escrita y agrega un punto de referencia en notas.', true);
     }
 
     function scheduleMapEmbed(delay) {
@@ -7247,7 +7265,10 @@
       const shippingAddress = document.getElementById('checkoutAddress').value.trim();
       const addressDetail = document.getElementById('checkoutAddressDetail')?.value.trim() || '';
       const shippingZone = selectedShippingZone();
+      const region = deliveryRegion(shippingZone);
+      const city = checkoutCityValue(shippingZone);
       const notes = document.getElementById('checkoutNotes').value.trim();
+      const customerShippingAddress = [shippingAddress, addressDetail, city, region.label].filter(Boolean).join(', ');
 
       return {
         provider: selectedCheckoutProvider(),
@@ -7256,8 +7277,10 @@
           addressLine1: shippingAddress,
           addressLine2: addressDetail,
           country: 'CO',
-          city: shippingZoneCity(shippingZone),
-          region: shippingZoneRegion(shippingZone),
+          city,
+          region: region.label,
+          department: region.label,
+          departmentCode: shippingZone,
           phoneNumber,
           name: fullName,
           zone: shippingZone
@@ -7272,7 +7295,8 @@
           email,
           phoneNumber,
           phoneNumberPrefix: '+57',
-          shippingAddress
+          city,
+          shippingAddress: customerShippingAddress
         },
         notes,
         userId: isLoggedIn() ? getUserToken() : ''  // Will be resolved server-side
@@ -7465,11 +7489,20 @@
       document.querySelectorAll('input[name="checkoutProvider"]').forEach((input) => {
         input.addEventListener('change', syncCheckoutProviderUI);
       });
+      renderDeliveryRegionOptions();
       document.getElementById('checkoutShippingZone')?.addEventListener('change', () => {
+        syncCheckoutCityWithRegion(true);
         updateDeliveryPreview();
         lastEmbedQuery = '';
         scheduleMapEmbed(150);
       });
+      document.getElementById('checkoutCity')?.addEventListener('input', () => {
+        const cityInput = document.getElementById('checkoutCity');
+        if (cityInput) cityInput.dataset.autoCity = 'false';
+        updateDeliveryPreview();
+        scheduleMapEmbed();
+      });
+      document.getElementById('checkoutCity')?.addEventListener('blur', () => updateCheckoutMapEmbed());
       document.getElementById('checkoutAddress')?.addEventListener('input', () => scheduleMapEmbed());
       document.getElementById('checkoutAddress')?.addEventListener('blur', () => updateCheckoutMapEmbed());
       document.getElementById('checkoutForm')?.addEventListener('submit', submitCheckout);
@@ -8990,13 +9023,13 @@
         const res = await fetch('/api/site-settings?_t=' + Date.now(), { cache: 'no-store' });
         if (!res.ok) throw new Error('settings_unavailable');
         const data = await res.json();
-        siteSettings = { ...DEFAULT_SITE_SETTINGS, ...(data.settings || {}) };
+        siteSettings = normalizeSiteSettings(data.settings || {});
         updateDeliveryPreview();
         // si el mapa ya se pintó (fallback), re-renderiza con la key oficial recién cargada
         lastEmbedQuery = '';
         if (document.getElementById('checkoutMapEmbed')?.getAttribute('src')) updateCheckoutMapEmbed();
       } catch (_) {
-        siteSettings = { ...DEFAULT_SITE_SETTINGS };
+        siteSettings = normalizeSiteSettings();
       }
     }
 
