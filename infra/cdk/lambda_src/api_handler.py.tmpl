@@ -108,6 +108,7 @@ DEFAULT_SHIPPING_REGION_PRICES_CENTS = {
 }
 DEFAULT_SITE_SETTINGS = {
     "visualTheme": "dark",
+    "deliveryMapEnabled": True,
     "shippingBogotaCents": 1000000,
     "shippingNationalCents": 1800000,
     "shippingRegionPricesCents": DEFAULT_SHIPPING_REGION_PRICES_CENTS,
@@ -165,6 +166,9 @@ def normalize_site_settings(body):
     theme = (body.get("visualTheme") or DEFAULT_SITE_SETTINGS["visualTheme"]).strip()
     if theme not in ("dark", "repair"):
         theme = DEFAULT_SITE_SETTINGS["visualTheme"]
+    delivery_map_enabled = body.get("deliveryMapEnabled")
+    if not isinstance(delivery_map_enabled, bool):
+        delivery_map_enabled = DEFAULT_SITE_SETTINGS["deliveryMapEnabled"]
     bogota_cents = max(0, safe_int(body.get("shippingBogotaCents"), DEFAULT_SITE_SETTINGS["shippingBogotaCents"]))
     national_cents = max(0, safe_int(body.get("shippingNationalCents"), DEFAULT_SITE_SETTINGS["shippingNationalCents"]))
     raw_region_prices = body.get("shippingRegionPricesCents") if isinstance(body.get("shippingRegionPricesCents"), dict) else {}
@@ -180,6 +184,7 @@ def normalize_site_settings(body):
     bogota_cents = region_prices.get("bogota", bogota_cents)
     return {
         "visualTheme": theme,
+        "deliveryMapEnabled": delivery_map_enabled,
         "shippingBogotaCents": bogota_cents,
         "shippingNationalCents": national_cents,
         "shippingRegionPricesCents": region_prices,

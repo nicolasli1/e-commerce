@@ -1299,6 +1299,7 @@ const App = (() => {
 
   function renderDesignSettingsContent(settings) {
     const currentTheme = settings.visualTheme || 'dark';
+    const deliveryMapEnabled = settings.deliveryMapEnabled !== false;
     const rawRegionPrices = settings.shippingRegionPricesCents || {};
     const shippingRegionPrices = DELIVERY_REGIONS.reduce((acc, region) => {
       if (rawRegionPrices[region.key] != null) {
@@ -1380,6 +1381,15 @@ const App = (() => {
               Bogotá queda como destino por defecto en el checkout. Los demás departamentos usan su propio precio y puedes ajustarlos cuando cambie la operación con Inter Rapidísimo.
             </div>
 
+            <label class="theme-choice-card ${deliveryMapEnabled ? 'active' : ''}" style="margin:18px 0;">
+              <input type="checkbox" id="deliveryMapEnabled" ${deliveryMapEnabled ? 'checked' : ''} />
+              <span class="theme-preview theme-preview-repair">
+                <span></span><span></span><span></span>
+              </span>
+              <strong>Mostrar mapa en checkout</strong>
+              <small>Actívalo si quieres mostrar una referencia visual de Google Maps. Desactívalo si prefieres un checkout más simple y evitar direcciones ambiguas.</small>
+            </label>
+
             <div class="form-row" style="align-items:flex-end;">
               <div class="form-group">
                 <label class="form-label" for="shippingBulkCop">Aplicar valor a todos excepto Bogotá (COP)</label>
@@ -1431,6 +1441,9 @@ const App = (() => {
     form.querySelectorAll('input[name="visualTheme"]').forEach((input) => {
       input.addEventListener('change', syncCards);
     });
+    document.getElementById('deliveryMapEnabled')?.addEventListener('change', (event) => {
+      event.currentTarget.closest('.theme-choice-card')?.classList.toggle('active', event.currentTarget.checked);
+    });
 
     document.getElementById('applyBulkShippingBtn')?.addEventListener('click', () => {
       const bulkValue = parseInt(document.getElementById('shippingBulkCop')?.value || '', 10);
@@ -1447,6 +1460,7 @@ const App = (() => {
     form.addEventListener('submit', async (event) => {
       event.preventDefault();
       const visualTheme = form.querySelector('input[name="visualTheme"]:checked')?.value || 'dark';
+      const deliveryMapEnabled = document.getElementById('deliveryMapEnabled')?.checked !== false;
       const shippingRegionPricesCents = {};
       document.querySelectorAll('.shipping-region-input').forEach((input) => {
         const key = input.dataset.regionKey;
@@ -1460,6 +1474,7 @@ const App = (() => {
       try {
         await Api.put('/api/admin/site-settings', {
           visualTheme,
+          deliveryMapEnabled,
           shippingBogotaCents,
           shippingNationalCents,
           shippingRegionPricesCents,

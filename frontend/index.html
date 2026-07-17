@@ -2721,6 +2721,9 @@
       background: linear-gradient(180deg, rgba(255,255,255,0.052), rgba(255,255,255,0.022));
       box-shadow: inset 0 1px 0 rgba(255,255,255,0.04);
     }
+    .checkout-field-map.is-hidden {
+      display: none;
+    }
     .checkout-map-preview {
       position: relative;
       min-height: 210px;
@@ -6279,7 +6282,7 @@
                 <label class="checkout-label" for="checkoutAddressDetail">Apartamento / Torre / Interior <span class="checkout-optional">(opcional)</span></label>
                 <input class="checkout-input" id="checkoutAddressDetail" type="text" placeholder="Ej: Apto 301, Torre B, Interior 2" autocomplete="address-line2" />
               </div>
-              <div class="checkout-field checkout-field-wide">
+              <div class="checkout-field checkout-field-wide checkout-field-map" id="checkoutMapField">
                 <div class="checkout-delivery-card">
                   <div class="checkout-map-preview">
                     <iframe class="checkout-map" id="checkoutMapEmbed" title="Mapa de la dirección de entrega" loading="lazy" referrerpolicy="no-referrer-when-downgrade"></iframe>
@@ -6425,6 +6428,7 @@
 
     const DEFAULT_SITE_SETTINGS = {
       visualTheme: 'dark',
+      deliveryMapEnabled: true,
       shippingBogotaCents: 1000000,
       shippingNationalCents: 1800000,
       shippingRegionPricesCents: defaultRegionPricesCents(),
@@ -6795,6 +6799,7 @@
       return {
         ...DEFAULT_SITE_SETTINGS,
         ...rawSettings,
+        deliveryMapEnabled: rawSettings.deliveryMapEnabled !== false,
         shippingRegionPricesCents: regionPrices
       };
     }
@@ -6874,6 +6879,7 @@
       if (etaEl) etaEl.textContent = shippingEta(zone);
       if (mapEl) mapEl.textContent = shippingMapLabel(zone);
       renderCheckoutSummary();
+      syncCheckoutMapVisibility();
     }
 
     // ----- Mapa de entrega (Google Maps Embed) -----
@@ -6881,6 +6887,23 @@
     // no en el repo). Si no hay key, cae a un embed sin key para no dejar el mapa en blanco.
     let mapEmbedTimer = null;
     let lastEmbedQuery = '';
+
+    function isDeliveryMapEnabled() {
+      return siteSettings.deliveryMapEnabled !== false;
+    }
+
+    function syncCheckoutMapVisibility() {
+      const field = document.getElementById('checkoutMapField');
+      if (!field) return;
+      const enabled = isDeliveryMapEnabled();
+      field.classList.toggle('is-hidden', !enabled);
+      if (!enabled) {
+        clearTimeout(mapEmbedTimer);
+        const iframe = document.getElementById('checkoutMapEmbed');
+        if (iframe) iframe.removeAttribute('src');
+        lastEmbedQuery = '';
+      }
+    }
 
     function setCheckoutMapHint(text, isSet) {
       const hint = document.getElementById('checkoutMapHint');
@@ -6910,6 +6933,10 @@
     }
 
     function updateCheckoutMapEmbed() {
+      if (!isDeliveryMapEnabled()) {
+        syncCheckoutMapVisibility();
+        return;
+      }
       const iframe = document.getElementById('checkoutMapEmbed');
       if (!iframe) return;
       const query = buildMapQuery();
@@ -9027,9 +9054,11 @@
         updateDeliveryPreview();
         // si el mapa ya se pintó (fallback), re-renderiza con la key oficial recién cargada
         lastEmbedQuery = '';
-        if (document.getElementById('checkoutMapEmbed')?.getAttribute('src')) updateCheckoutMapEmbed();
+        syncCheckoutMapVisibility();
+        if (isDeliveryMapEnabled() && document.getElementById('checkoutMapEmbed')?.getAttribute('src')) updateCheckoutMapEmbed();
       } catch (_) {
         siteSettings = normalizeSiteSettings();
+        syncCheckoutMapVisibility();
       }
     }
 
