@@ -8154,6 +8154,43 @@
       `;
     }
 
+    function normalizeImageEntry(img) {
+      if (!img) return null;
+      if (typeof img === 'string') return { lg: img, md: img, sm: img };
+      if (typeof img === 'object') {
+        const lg = img.lg || img.md || img.sm || '';
+        const md = img.md || lg;
+        const sm = img.sm || md;
+        return lg || md || sm ? { lg, md, sm } : null;
+      }
+      return null;
+    }
+
+    function productImagesWithVariantFallback(product) {
+      const images = [];
+      if (Array.isArray(product?.images)) {
+        product.images.forEach((img) => {
+          const normalized = normalizeImageEntry(img);
+          if (normalized) images.push(normalized);
+        });
+      }
+      if (images.length === 0 && product?.imageUrl) {
+        const normalized = normalizeImageEntry(product.imageUrl);
+        if (normalized) images.push(normalized);
+      }
+      if (images.length === 0 && Array.isArray(product?.variants)) {
+        product.variants.some((variant) => {
+          if (!Array.isArray(variant?.images)) return false;
+          variant.images.forEach((img) => {
+            const normalized = normalizeImageEntry(img);
+            if (normalized) images.push(normalized);
+          });
+          return images.length > 0;
+        });
+      }
+      return images;
+    }
+
     function effectiveProductStock(product) {
       const variants = Array.isArray(product?.variants) ? product.variants : [];
       if (variants.length > 0) {
@@ -8342,24 +8379,7 @@
       const modal = document.getElementById('productDetailModal');
       if (!modal) return;
 
-      // Get images array — support both old `imageUrl` and new `images` array
-      let images = [];
-      if (product.images && Array.isArray(product.images) && product.images.length > 0) {
-        images = product.images.map(img => {
-          if (typeof img === 'string') return { lg: img, md: img, sm: img };
-          return { lg: img.lg || img, md: img.md || img.lg || img, sm: img.sm || img.md || img.lg || img };
-        });
-      } else if (product.imageUrl) {
-        if (typeof product.imageUrl === 'object' && product.imageUrl !== null) {
-          images = [product.imageUrl];
-        } else if (typeof product.imageUrl === 'string') {
-          images = [{ lg: product.imageUrl, md: product.imageUrl, sm: product.imageUrl }];
-        }
-      }
-      // Fallback if no images
-      if (images.length === 0) {
-        images = [];
-      }
+      const images = productImagesWithVariantFallback(product);
 
       const priceStr = '$' + Number(product.price).toLocaleString('es-CO', {minimumFractionDigits: 0});
       const escapedName = (product.name || '').replace(/'/g, "\\'");
@@ -8759,20 +8779,7 @@
         } else {
           priceStr = formatCOPNumber(p.price);
         }
-        // Collect all images for this product (support both `images[]` and `imageUrl`)
-        let allImages = [];
-        if (p.images && Array.isArray(p.images) && p.images.length > 0) {
-          p.images.forEach(img => {
-            if (typeof img === 'string') allImages.push({ lg: img, md: img, sm: img });
-            else allImages.push({ lg: img.lg || '', md: img.md || img.lg || '', sm: img.sm || img.md || img.lg || '' });
-          });
-        } else if (p.imageUrl) {
-          if (typeof p.imageUrl === 'object' && p.imageUrl !== null) {
-            allImages.push({ lg: p.imageUrl.lg || '', md: p.imageUrl.md || p.imageUrl.lg || '', sm: p.imageUrl.sm || p.imageUrl.md || p.imageUrl.lg || '' });
-          } else if (typeof p.imageUrl === 'string') {
-            allImages.push({ lg: p.imageUrl, md: p.imageUrl, sm: p.imageUrl });
-          }
-        }
+        const allImages = productImagesWithVariantFallback(p);
 
         // If no real images, use a polished technical fallback by category.
         let imgHtml = categoryVisualHtml(p, 'card');
@@ -8832,7 +8839,7 @@
           productCondition: p.productCondition || p.condition || '',
           related: Array.isArray(p.related) ? p.related : [],
           stock: effectiveProductStock(p),
-          images: p.images || (p.imageUrl ? [p.imageUrl] : []),
+          images: allImages,
           imageUrl: p.imageUrl || '',
           variants: Array.isArray(p.variants) ? p.variants : [],
           deviceFamilies: Array.isArray(p.deviceFamilies) ? p.deviceFamilies : []
@@ -8902,7 +8909,8 @@
       function showSlide(idx) {
         heroCarouselIdx = ((idx % items.length) + items.length) % items.length;
         const p = items[heroCarouselIdx];
-        const img = p.images?.[0]?.sm || p.images?.[0]?.md || '';
+        const heroImages = productImagesWithVariantFallback(p);
+        const img = heroImages[0]?.sm || heroImages[0]?.md || heroImages[0]?.lg || '';
         const catEmoji = {'pantallas':'🖥️','baterias':'🔋','flex-y-conectores':'🔌','camaras':'📷','tapas':'🛡️','tapas-y-carcasa':'🛡️','accesorios':'🎧','herramientas':'🔧','herramientas-diy':'🔧'}[p.category] || '📱';
         const price = p.variants?.length > 0
           ? (() => { const ps = p.variants.map(v=>Number(v.price)).filter(n=>n>0); return ps.length ? 'Desde $'+Math.min(...ps).toLocaleString('es-CO') : '$'+Number(p.price).toLocaleString('es-CO'); })()

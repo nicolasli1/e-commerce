@@ -854,6 +854,32 @@ def images_to_url(images, fallback_url=''):
             }
     return fallback_url
 
+
+def images_from_variants(variants):
+    if not isinstance(variants, list):
+        return []
+    for variant in variants:
+        if not isinstance(variant, dict):
+            continue
+        images = variant.get("images") or []
+        if not isinstance(images, list):
+            continue
+        parsed = []
+        for img in images:
+            if isinstance(img, dict) and img.get("lg"):
+                parsed.append({"lg": img["lg"], "md": img.get("md", ""), "sm": img.get("sm", "")})
+        if parsed:
+            return parsed
+    return []
+
+
+def product_images_with_variant_fallback(product, variants=None):
+    images = product.get("images", []) if isinstance(product, dict) else []
+    if isinstance(images, list) and images:
+        return images
+    return images_from_variants(variants if variants is not None else product.get("variants", []))
+
+
 def _parse_variants(variants_raw):
     """Validate and normalise a list of variant maps from the request body."""
     if not isinstance(variants_raw, list):
@@ -951,14 +977,15 @@ def list_public_products():
         variants = p.get("variants", [])
         variant_defaults = _derive_product_fields_from_variants(variants)
         has_variants = isinstance(variants, list) and len(variants) > 0
+        product_images = product_images_with_variant_fallback(p, variants)
         safe.append({
             "productId": p["productId"],
             "name": p.get("name", ""),
             "description": p.get("description", ""),
             "price": p.get("price") or variant_defaults["price"] or 0,
             "category": p.get("category", "general"),
-            "images": p.get("images", []),
-            "imageUrl": images_to_url(p.get("images", []), p.get("imageUrl", "")),
+            "images": product_images,
+            "imageUrl": images_to_url(product_images, p.get("imageUrl", "")),
             "stock": variant_defaults["stock"] if has_variants else int(p.get("stock", 0)),
             "quality": p.get("quality", "") or variant_defaults["quality"],
             "compatibility": p.get("compatibility", []),
@@ -994,6 +1021,10 @@ def create_product(body):
         images_parsed.append({"lg": image_url, "md": image_url, "sm": image_url})
     elif not image_url and images_parsed:
         image_url = images_parsed[0].get("lg", "")
+    if not images_parsed:
+        images_parsed = images_from_variants(variants)
+        if images_parsed:
+            image_url = images_parsed[0].get("lg", "")
     item = {
         "productId": str(uuid.uuid4()),
         "name": body["name"].strip(),
@@ -1072,6 +1103,13 @@ def update_product(product_id, body):
             updates["stock"] = variant_defaults["stock"]
         if "quality" not in body and variant_defaults["quality"]:
             updates["quality"] = variant_defaults["quality"]
+        existing_images = updates.get("images", existing.get("images", []))
+        if not existing_images:
+            variant_images = images_from_variants(variants)
+            if variant_images:
+                updates["images"] = variant_images
+                if not updates.get("imageUrl"):
+                    updates["imageUrl"] = variant_images[0].get("lg", existing.get("imageUrl", ""))
     updates["updatedAt"] = now_iso()
     update_expr = "SET " + ", ".join(f"#{k}=:v{k}" for k in updates)
     attr_names = {f"#{k}": k for k in updates}
