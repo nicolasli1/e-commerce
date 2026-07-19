@@ -5674,6 +5674,346 @@
     body[data-site-theme="repair"] .footer-col h4 {
       color: #55606e;
     }
+
+    /* ==============================
+       Product gallery inspection system
+    ============================== */
+    #productDetailModal {
+      padding: clamp(6px, 1.4vw, 18px);
+    }
+    #productDetailModal .modal {
+      width: min(calc(100vw - 18px), 1460px);
+      max-width: 1460px;
+      max-height: min(94dvh, 940px);
+      padding: clamp(10px, 1.2vw, 18px);
+      border-radius: clamp(22px, 2vw, 34px);
+      overflow: hidden auto;
+    }
+    #productDetailModal .detail-shell {
+      grid-template-columns: minmax(0, 1fr);
+      gap: clamp(12px, 1.4vw, 20px);
+    }
+    @media (min-width: 960px) {
+      #productDetailModal .detail-shell {
+        grid-template-columns: minmax(560px, 1fr) minmax(360px, 440px);
+        align-items: stretch;
+      }
+    }
+    @media (min-width: 1280px) {
+      #productDetailModal .detail-shell {
+        grid-template-columns: minmax(720px, 1fr) minmax(390px, 470px);
+      }
+    }
+    #productDetailModal .detail-gallery {
+      display: flex;
+      flex-direction: column;
+      min-height: 0;
+      border-radius: clamp(20px, 1.8vw, 30px);
+      background:
+        radial-gradient(circle at 52% 40%, rgba(255,255,255,0.10), transparent 34%),
+        linear-gradient(180deg, rgba(255,255,255,0.045), rgba(255,255,255,0.018)),
+        #090b12;
+    }
+    .gallery-layout {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 12px;
+      min-height: 0;
+      padding: clamp(10px, 1.2vw, 16px);
+    }
+    @media (min-width: 900px) {
+      .gallery-layout {
+        grid-template-columns: 96px minmax(0, 1fr);
+        align-items: stretch;
+        min-height: min(70dvh, 760px);
+      }
+    }
+    .gallery-main-shell {
+      display: flex;
+      flex-direction: column;
+      min-width: 0;
+      min-height: 0;
+      border-radius: clamp(18px, 1.5vw, 26px);
+      overflow: hidden;
+      background:
+        radial-gradient(circle at 50% 42%, rgba(167,139,250,0.13), transparent 38%),
+        linear-gradient(180deg, rgba(255,255,255,0.035), rgba(0,0,0,0.06));
+      border: 1px solid rgba(255,255,255,0.07);
+    }
+    #productDetailModal .detail-gallery .gallery-main {
+      flex: 0 0 auto;
+      height: clamp(380px, 64dvh, 720px);
+      min-height: 360px;
+      border-radius: 0;
+      background: transparent;
+      isolation: isolate;
+    }
+    #productDetailModal .detail-gallery .gallery-main img {
+      padding: clamp(8px, 1.4vw, 18px);
+      filter: drop-shadow(0 30px 42px rgba(0,0,0,0.46));
+      transition: opacity 180ms cubic-bezier(0.16, 1, 0.3, 1), transform 220ms cubic-bezier(0.16, 1, 0.3, 1);
+    }
+    .gallery-hint {
+      position: absolute;
+      left: 14px;
+      top: 14px;
+      z-index: 7;
+      display: inline-flex;
+      align-items: center;
+      gap: 7px;
+      padding: 8px 11px;
+      border-radius: 999px;
+      background: rgba(8, 10, 18, 0.66);
+      border: 1px solid rgba(255,255,255,0.09);
+      color: #d8d8ff;
+      font-size: 0.72rem;
+      font-weight: 800;
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+      pointer-events: none;
+    }
+    .gallery-toolbar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      padding: 10px;
+      border-top: 1px solid rgba(255,255,255,0.07);
+      background: rgba(6, 8, 14, 0.62);
+      backdrop-filter: blur(16px);
+      -webkit-backdrop-filter: blur(16px);
+    }
+    #productDetailModal .gallery-zoom-controls {
+      position: static;
+      transform: none;
+      width: min(100%, 430px);
+      grid-template-columns: 36px minmax(120px, 1fr) 36px 64px;
+      background: rgba(255,255,255,0.055);
+      border-color: rgba(255,255,255,0.10);
+      box-shadow: none;
+    }
+    .gallery-fullscreen-btn {
+      min-height: 42px;
+      padding: 0 14px;
+      border-radius: 999px;
+      border: 1px solid rgba(255,255,255,0.10);
+      background: rgba(255,255,255,0.055);
+      color: #f5f5f7;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      cursor: pointer;
+      font-size: 0.78rem;
+      font-weight: 850;
+      white-space: nowrap;
+      transition: background 180ms cubic-bezier(0.16, 1, 0.3, 1), border-color 180ms cubic-bezier(0.16, 1, 0.3, 1), transform 180ms cubic-bezier(0.16, 1, 0.3, 1);
+    }
+    .gallery-fullscreen-btn:hover {
+      transform: translateY(-1px);
+      background: rgba(167,139,250,0.16);
+      border-color: rgba(167,139,250,0.32);
+    }
+    #productDetailModal .detail-gallery .gallery-thumbs {
+      order: 2;
+      display: flex;
+      gap: 10px;
+      padding: 0;
+      overflow-x: auto;
+      background: transparent;
+      scrollbar-width: thin;
+      scrollbar-color: rgba(167,139,250,0.75) transparent;
+    }
+    .gallery-thumb-btn {
+      flex: 0 0 auto;
+      width: 74px;
+      height: 74px;
+      border-radius: 18px;
+      border: 1px solid rgba(255,255,255,0.10);
+      background:
+        radial-gradient(circle at 50% 42%, rgba(255,255,255,0.08), transparent 50%),
+        rgba(255,255,255,0.045);
+      padding: 5px;
+      cursor: pointer;
+      box-shadow: inset 0 1px 0 rgba(255,255,255,0.05);
+      transition: border-color 180ms cubic-bezier(0.16, 1, 0.3, 1), background 180ms cubic-bezier(0.16, 1, 0.3, 1), transform 180ms cubic-bezier(0.16, 1, 0.3, 1);
+    }
+    .gallery-thumb-btn img,
+    #productDetailModal .detail-gallery .gallery-thumbs .gallery-thumb-btn img {
+      --fit-scale: 1;
+      --fit-x: 0px;
+      --fit-y: 0px;
+      width: 100%;
+      height: 100%;
+      border: 0;
+      border-radius: 13px;
+      object-fit: contain;
+      padding: 0;
+      background: transparent;
+      pointer-events: none;
+      transform: translate(var(--fit-x), var(--fit-y)) scale(var(--fit-scale));
+      transform-origin: center center;
+    }
+    .gallery-thumb-btn.active,
+    .gallery-thumb-btn[aria-current="true"] {
+      border-color: #a78bfa;
+      background:
+        radial-gradient(circle at 50% 42%, rgba(167,139,250,0.20), transparent 55%),
+        rgba(167,139,250,0.11);
+      transform: translateY(-1px);
+      box-shadow: 0 0 0 3px rgba(167,139,250,0.18), inset 0 1px 0 rgba(255,255,255,0.08);
+    }
+    .gallery-thumb-btn:hover {
+      border-color: rgba(167,139,250,0.48);
+    }
+    @media (min-width: 900px) {
+      #productDetailModal .detail-gallery .gallery-thumbs {
+        order: 0;
+        flex-direction: column;
+        overflow-x: hidden;
+        overflow-y: auto;
+        max-height: min(70dvh, 760px);
+        padding: 2px;
+      }
+      .gallery-thumb-btn {
+        width: 88px;
+        height: 88px;
+        border-radius: 20px;
+      }
+    }
+    #productDetailModal .detail-gallery .gallery-nav-btn {
+      width: 42px;
+      height: 42px;
+      background: rgba(8,10,18,0.64);
+      border-color: rgba(255,255,255,0.12);
+      box-shadow: 0 14px 34px rgba(0,0,0,0.26);
+    }
+    #productDetailModal .detail-gallery .gallery-nav-btn.prev { left: 14px; }
+    #productDetailModal .detail-gallery .gallery-nav-btn.next { right: 14px; }
+    #productDetailModal .detail-gallery .gallery-counter {
+      right: 14px;
+      top: 14px;
+      bottom: auto;
+      font-size: 0.74rem;
+      padding: 6px 10px;
+      background: rgba(8,10,18,0.66);
+      border-color: rgba(255,255,255,0.10);
+    }
+    #productDetailModal .product-detail-close-btn {
+      top: clamp(12px, 1.4vw, 18px);
+      right: clamp(12px, 1.4vw, 18px);
+      width: 42px;
+      height: 42px;
+      font-size: 1rem;
+    }
+    #productDetailModal.is-gallery-fullscreen {
+      padding: 6px;
+    }
+    #productDetailModal.is-gallery-fullscreen .modal {
+      width: calc(100vw - 12px);
+      max-width: none;
+      max-height: calc(100dvh - 12px);
+      border-radius: 22px;
+    }
+    #productDetailModal.is-gallery-fullscreen .detail-shell {
+      grid-template-columns: 1fr;
+    }
+    #productDetailModal.is-gallery-fullscreen .detail-info {
+      display: none;
+    }
+    #productDetailModal.is-gallery-fullscreen .gallery-layout {
+      min-height: calc(100dvh - 56px);
+    }
+    #productDetailModal.is-gallery-fullscreen .detail-gallery .gallery-main {
+      height: calc(100dvh - 156px);
+      min-height: 0;
+    }
+    #productDetailModal.is-gallery-fullscreen .gallery-fullscreen-btn .gallery-fullscreen-label {
+      display: none;
+    }
+    body[data-site-theme="repair"] #productDetailModal .detail-gallery {
+      background:
+        radial-gradient(circle at 52% 38%, rgba(255,255,255,0.98), transparent 35%),
+        linear-gradient(150deg, rgba(14,124,114,0.055), transparent 42%),
+        linear-gradient(180deg, #f8fafc, #edf3f5) !important;
+      border-color: rgba(15,23,42,0.12);
+    }
+    body[data-site-theme="repair"] .gallery-main-shell {
+      background:
+        radial-gradient(circle at 50% 42%, rgba(14,124,114,0.12), transparent 40%),
+        linear-gradient(180deg, rgba(255,255,255,0.92), rgba(248,250,252,0.72));
+      border-color: rgba(15,23,42,0.12);
+    }
+    body[data-site-theme="repair"] .gallery-toolbar {
+      background: rgba(255,255,255,0.82);
+      border-top-color: rgba(15,23,42,0.10);
+    }
+    body[data-site-theme="repair"] #productDetailModal .gallery-zoom-controls,
+    body[data-site-theme="repair"] .gallery-fullscreen-btn,
+    body[data-site-theme="repair"] .gallery-thumb-btn {
+      background: rgba(255,255,255,0.86);
+      border-color: rgba(15,23,42,0.14);
+      color: #17202a;
+    }
+    body[data-site-theme="repair"] .gallery-hint,
+    body[data-site-theme="repair"] #productDetailModal .detail-gallery .gallery-counter,
+    body[data-site-theme="repair"] #productDetailModal .detail-gallery .gallery-nav-btn,
+    body[data-site-theme="repair"] #productDetailModal .product-detail-close-btn {
+      background: rgba(255,255,255,0.84);
+      border-color: rgba(15,23,42,0.14);
+      color: #17202a;
+      box-shadow: 0 14px 34px rgba(31,45,55,0.14);
+    }
+    body[data-site-theme="repair"] .gallery-thumb-btn.active,
+    body[data-site-theme="repair"] .gallery-thumb-btn[aria-current="true"] {
+      border-color: rgba(14,124,114,0.58);
+      background: rgba(14,124,114,0.09);
+      box-shadow: 0 0 0 3px rgba(14,124,114,0.12), inset 0 1px 0 rgba(255,255,255,0.9);
+    }
+    @media (max-width: 720px) {
+      #productDetailModal {
+        padding: 0;
+        align-items: flex-end;
+      }
+      #productDetailModal .modal {
+        width: 100%;
+        max-height: 96dvh;
+        padding: 10px;
+        border-radius: 24px 24px 0 0;
+      }
+      #productDetailModal .detail-gallery .gallery-main {
+        height: clamp(330px, 54dvh, 560px);
+        min-height: 300px;
+      }
+      .gallery-layout {
+        gap: 10px;
+        padding: 10px;
+      }
+      .gallery-toolbar {
+        flex-direction: column;
+        align-items: stretch;
+      }
+      #productDetailModal .gallery-zoom-controls {
+        width: 100%;
+        grid-template-columns: 34px minmax(86px, 1fr) 34px 58px;
+      }
+      .gallery-fullscreen-btn {
+        width: 100%;
+      }
+      .gallery-hint {
+        display: none;
+      }
+      #productDetailModal .detail-gallery .gallery-nav-btn {
+        display: none;
+      }
+      .gallery-thumb-btn {
+        width: 76px;
+        height: 76px;
+      }
+      #productDetailModal.is-gallery-fullscreen .detail-gallery .gallery-main {
+        height: calc(100dvh - 190px);
+      }
+    }
   </style>
 </head>
 <body data-site-theme="dark">
@@ -7538,6 +7878,26 @@
         e.preventDefault();
         lookupOrderByReference(document.getElementById('trackingReferenceInput')?.value || '');
       });
+      document.addEventListener('keydown', (event) => {
+        const detailModal = document.getElementById('productDetailModal');
+        if (!detailModal?.classList.contains('open')) return;
+        if (event.key === 'Escape') {
+          event.preventDefault();
+          if (detailModal.classList.contains('is-gallery-fullscreen')) {
+            setDetailFullscreen(false);
+          } else {
+            closeProductDetail();
+          }
+        }
+        if (event.key === 'ArrowRight') {
+          event.preventDefault();
+          nextGalleryImage();
+        }
+        if (event.key === 'ArrowLeft') {
+          event.preventDefault();
+          prevGalleryImage();
+        }
+      });
       updateCartCount();
       syncCheckoutProviderUI();
       updateDeliveryPreview();
@@ -7979,13 +8339,55 @@
         if (!ctx) return;
         ctx.drawImage(img, 0, 0, w, h);
         const pixels = ctx.getImageData(0, 0, w, h).data;
-        let minX = w, minY = h, maxX = -1, maxY = -1, opaque = 0;
+        const sampleCorner = () => {
+          const points = [
+            [0, 0], [Math.max(0, w - 1), 0],
+            [0, Math.max(0, h - 1)], [Math.max(0, w - 1), Math.max(0, h - 1)]
+          ];
+          const patch = Math.max(2, Math.min(10, Math.round(Math.min(w, h) * 0.035)));
+          let r = 0, g = 0, b = 0, a = 0, count = 0;
+          points.forEach(([baseX, baseY]) => {
+            const startX = baseX === 0 ? 0 : Math.max(0, w - patch);
+            const startY = baseY === 0 ? 0 : Math.max(0, h - patch);
+            for (let py = startY; py < Math.min(h, startY + patch); py++) {
+              for (let px = startX; px < Math.min(w, startX + patch); px++) {
+                const idx = (py * w + px) * 4;
+                r += pixels[idx];
+                g += pixels[idx + 1];
+                b += pixels[idx + 2];
+                a += pixels[idx + 3];
+                count++;
+              }
+            }
+          });
+          return {
+            r: r / Math.max(1, count),
+            g: g / Math.max(1, count),
+            b: b / Math.max(1, count),
+            a: a / Math.max(1, count),
+          };
+        };
+        const background = sampleCorner();
+        const colorThreshold = img.closest('#productDetailModal') ? 48 : 32;
+        const thresholdSq = colorThreshold * colorThreshold;
+        let minX = w, minY = h, maxX = -1, maxY = -1, foreground = 0;
 
         for (let y = 0; y < h; y++) {
           for (let x = 0; x < w; x++) {
-            const alpha = pixels[(y * w + x) * 4 + 3];
+            const idx = (y * w + x) * 4;
+            const red = pixels[idx];
+            const green = pixels[idx + 1];
+            const blue = pixels[idx + 2];
+            const alpha = pixels[idx + 3];
             if (alpha > 18) {
-              opaque++;
+              const colorDelta =
+                (red - background.r) * (red - background.r) +
+                (green - background.g) * (green - background.g) +
+                (blue - background.b) * (blue - background.b);
+              const alphaDelta = Math.abs(alpha - background.a);
+              const isForeground = alpha < 245 || alphaDelta > 24 || colorDelta > thresholdSq;
+              if (!isForeground) continue;
+              foreground++;
               if (x < minX) minX = x;
               if (y < minY) minY = y;
               if (x > maxX) maxX = x;
@@ -7994,7 +8396,7 @@
           }
         }
 
-        if (!opaque || maxX < minX || maxY < minY) return;
+        if (!foreground || maxX < minX || maxY < minY) return;
         const bboxW = maxX - minX + 1;
         const bboxH = maxY - minY + 1;
         const fillRatio = Math.max(bboxW / w, bboxH / h);
@@ -8020,18 +8422,21 @@
         img.dataset.fitX = fitX.toFixed(1);
         img.dataset.fitY = fitY.toFixed(1);
         img.dataset.autoFitDone = '1';
-        if (img.classList.contains('active')) applyDetailZoom();
+        if (img.classList.contains('active')) {
+          requestAnimationFrame(() => applyDetailZoom());
+        }
       } catch (err) {
         img.dataset.autoFitDone = '1';
       }
     }
 
     function autoFitProductImages(root = document) {
-      root.querySelectorAll('.product-img, #productDetailModal .gallery-main img').forEach((img) => {
+      root.querySelectorAll('.product-img, #productDetailModal .gallery-main img, #productDetailModal .gallery-thumb-btn img').forEach((img) => {
         const isDetail = img.closest('#productDetailModal');
+        const isThumb = img.closest('.gallery-thumb-btn');
         autoFitProductImage(img, {
-          desiredFill: isDetail ? 0.9 : 0.84,
-          maxScale: isDetail ? 5 : 4.2,
+          desiredFill: isThumb ? 0.78 : (isDetail ? 0.9 : 0.84),
+          maxScale: isThumb ? 4.8 : (isDetail ? 5 : 4.2),
         });
       });
     }
@@ -8382,7 +8787,7 @@
       const images = productImagesWithVariantFallback(product);
 
       const priceStr = '$' + Number(product.price).toLocaleString('es-CO', {minimumFractionDigits: 0});
-      const escapedName = (product.name || '').replace(/'/g, "\\'");
+      const escapedName = htmlSafe(product.name || '');
       const description = productDescriptionText(product);
       const categoryLabel = getCategoryLabel(product.category);
       const hasRealImages = images.some((img) => img.lg || img.md || img.sm);
@@ -8393,39 +8798,51 @@
         const imgCount = images.length;
         if (!hasRealImages) {
           galleryEl.innerHTML = `
-            <button class="product-detail-close-btn" onclick="closeProductDetail()">✕</button>
-            <div class="gallery-main">
-              <div class="gallery-placeholder">${categoryVisualHtml(product, 'detail')}</div>
+            <button class="product-detail-close-btn" type="button" onclick="closeProductDetail()" aria-label="Cerrar detalle">✕</button>
+            <div class="gallery-layout">
+              <div class="gallery-thumbs" aria-label="Miniaturas del producto"></div>
+              <div class="gallery-main-shell">
+                <div class="gallery-main" role="img" aria-label="Producto sin imagen">
+                  <div class="gallery-placeholder">${categoryVisualHtml(product, 'detail')}</div>
+                </div>
+              </div>
             </div>
-            <div class="gallery-thumbs"></div>
           `;
         } else {
           let mainImgs = images.map((img, idx) =>
-            `<img src="${img.lg || img.md || ''}" alt="${escapedName}" class="${idx === 0 ? 'active' : ''}" data-gallery-idx="${idx}" />`
+            `<img src="${img.lg || img.md || ''}" alt="${escapedName} - foto ${idx + 1}" class="${idx === 0 ? 'active' : ''}" data-gallery-idx="${idx}" loading="${idx === 0 ? 'eager' : 'lazy'}" decoding="async" ${idx === 0 ? 'fetchpriority="high"' : ''} />`
           ).join('');
           let thumbs = images.map((img, idx) =>
-            `<img src="${img.sm || img.md || img.lg || ''}" alt="" class="${idx === 0 ? 'active' : ''}" data-gallery-idx="${idx}" onclick="setGalleryImage(${idx})" loading="lazy" />`
+            `<button class="gallery-thumb-btn ${idx === 0 ? 'active' : ''}" type="button" data-gallery-idx="${idx}" onclick="setGalleryImage(${idx})" aria-label="Ver foto ${idx + 1} de ${imgCount}" aria-current="${idx === 0 ? 'true' : 'false'}"><img src="${img.sm || img.md || img.lg || ''}" alt="" loading="lazy" decoding="async" /></button>`
           ).join('');
           const navArrows = imgCount > 1
-            ? `<button class="gallery-nav-btn prev" onclick="prevGalleryImage()">‹</button><button class="gallery-nav-btn next" onclick="nextGalleryImage()">›</button>`
+            ? `<button class="gallery-nav-btn prev" type="button" onclick="prevGalleryImage()" aria-label="Foto anterior">‹</button><button class="gallery-nav-btn next" type="button" onclick="nextGalleryImage()" aria-label="Foto siguiente">›</button>`
             : '';
           const counter = imgCount > 1
             ? `<div class="gallery-counter"><span id="galleryCurrentIdx">1</span> / ${imgCount}</div>`
             : '';
           galleryEl.innerHTML = `
-            <button class="product-detail-close-btn" onclick="closeProductDetail()">✕</button>
-            <div class="gallery-main">
-              ${mainImgs}
-              ${navArrows}
-              ${counter}
-              <div class="gallery-zoom-controls" onclick="event.stopPropagation()" onpointerdown="event.stopPropagation()">
-                <button class="gallery-zoom-btn" type="button" onclick="nudgeDetailZoom(-0.5)" aria-label="Alejar">−</button>
-                <input class="gallery-zoom-range" id="detailZoomRange" type="range" min="1" max="5" step="0.05" value="1" oninput="setDetailZoom(this.value)" aria-label="Zoom de imagen" />
-                <button class="gallery-zoom-btn" type="button" onclick="nudgeDetailZoom(0.5)" aria-label="Acercar">+</button>
-                <button class="gallery-zoom-reset" id="detailZoomReset" type="button" onclick="resetDetailZoom()" aria-label="Restablecer zoom">100%</button>
+            <button class="product-detail-close-btn" type="button" onclick="closeProductDetail()" aria-label="Cerrar detalle">✕</button>
+            <div class="gallery-layout">
+              <div class="gallery-thumbs" aria-label="Miniaturas del producto">${thumbs}</div>
+              <div class="gallery-main-shell">
+                <div class="gallery-main" aria-live="polite">
+                  ${mainImgs}
+                  ${navArrows}
+                  ${counter}
+                  <div class="gallery-hint">Inspecciona conectores y detalles</div>
+                </div>
+                <div class="gallery-toolbar">
+                  <div class="gallery-zoom-controls" onclick="event.stopPropagation()" onpointerdown="event.stopPropagation()">
+                    <button class="gallery-zoom-btn" type="button" onclick="nudgeDetailZoom(-0.5)" aria-label="Alejar">−</button>
+                    <input class="gallery-zoom-range" id="detailZoomRange" type="range" min="1" max="6" step="0.05" value="1" oninput="setDetailZoom(this.value)" aria-label="Zoom de imagen" />
+                    <button class="gallery-zoom-btn" type="button" onclick="nudgeDetailZoom(0.5)" aria-label="Acercar">+</button>
+                    <button class="gallery-zoom-reset" id="detailZoomReset" type="button" onclick="resetDetailZoom()" aria-label="Restablecer zoom">100%</button>
+                  </div>
+                  <button class="gallery-fullscreen-btn" type="button" onclick="toggleDetailFullscreen()" aria-label="Ver imagen en grande">⛶ <span class="gallery-fullscreen-label">Ver grande</span></button>
+                </div>
               </div>
             </div>
-            <div class="gallery-thumbs">${thumbs}</div>
           `;
           bindDetailPanHandlers();
           resetDetailZoom();
@@ -8486,14 +8903,13 @@
       modal.classList.add('open');
       document.body.classList.add('modal-open');
 
-      // Start auto-rotation
-      startGalleryRotation();
+      stopGalleryRotation();
     }
 
     function closeProductDetail() {
       stopGalleryRotation();
       const modal = document.getElementById('productDetailModal');
-      if (modal) modal.classList.remove('open');
+      if (modal) modal.classList.remove('open', 'is-gallery-fullscreen');
       document.body.classList.remove('modal-open');
       detailCurrentProduct = null;
       detailPanStart = null;
@@ -8510,13 +8926,16 @@
       gallery.querySelectorAll('.gallery-thumbs img').forEach(img => {
         img.classList.toggle('active', parseInt(img.dataset.galleryIdx) === idx);
       });
+      gallery.querySelectorAll('.gallery-thumb-btn').forEach(btn => {
+        const isActive = parseInt(btn.dataset.galleryIdx) === idx;
+        btn.classList.toggle('active', isActive);
+        btn.setAttribute('aria-current', isActive ? 'true' : 'false');
+      });
       // Update counter display
       const counterSpan = document.getElementById('galleryCurrentIdx');
       if (counterSpan) counterSpan.textContent = idx + 1;
       resetDetailZoom();
-      // Reset auto-rotation timer
       stopGalleryRotation();
-      startGalleryRotation();
     }
 
     function clampDetailPan() {
@@ -8552,7 +8971,7 @@
     }
 
     function setDetailZoom(value) {
-      detailZoom = Math.max(1, Math.min(5, Number(value) || 1));
+      detailZoom = Math.max(1, Math.min(6, Number(value) || 1));
       if (detailZoom <= 1.01) {
         detailZoom = 1;
         detailPanX = 0;
@@ -8580,11 +8999,39 @@
       applyDetailZoom();
     }
 
+    function setDetailFullscreen(enabled) {
+      const modal = document.getElementById('productDetailModal');
+      if (!modal) return;
+      modal.classList.toggle('is-gallery-fullscreen', Boolean(enabled));
+      modal.setAttribute('aria-label', enabled ? 'Galería de producto en pantalla completa' : 'Detalle de producto');
+      resetDetailZoom();
+    }
+
+    function toggleDetailFullscreen() {
+      const modal = document.getElementById('productDetailModal');
+      if (!modal) return;
+      setDetailFullscreen(!modal.classList.contains('is-gallery-fullscreen'));
+      stopGalleryRotation();
+    }
+
     function bindDetailPanHandlers() {
       const main = document.querySelector('#productDetailModal .gallery-main');
       if (!main) return;
+      if (main.dataset.galleryInteractionBound === '1') return;
+      main.dataset.galleryInteractionBound = '1';
+      let swipeStart = null;
       main.addEventListener('pointerdown', (event) => {
-        if (detailZoom <= 1 || event.target.closest('button, input')) return;
+        if (event.target.closest('button, input')) return;
+        if (detailZoom <= 1) {
+          swipeStart = {
+            pointerId: event.pointerId,
+            x: event.clientX,
+            y: event.clientY,
+            time: Date.now(),
+          };
+          main.setPointerCapture(event.pointerId);
+          return;
+        }
         detailPanStart = {
           pointerId: event.pointerId,
           x: event.clientX,
@@ -8598,12 +9045,28 @@
         stopGalleryRotation();
       });
       main.addEventListener('pointermove', (event) => {
+        if (swipeStart && event.pointerId === swipeStart.pointerId && detailZoom <= 1) {
+          const dx = event.clientX - swipeStart.x;
+          const dy = event.clientY - swipeStart.y;
+          if (Math.abs(dx) > Math.abs(dy) && Math.abs(dx) > 12) event.preventDefault();
+          return;
+        }
         if (!detailPanStart || event.pointerId !== detailPanStart.pointerId) return;
         detailPanX = detailPanStart.panX + event.clientX - detailPanStart.x;
         detailPanY = detailPanStart.panY + event.clientY - detailPanStart.y;
         applyDetailZoom();
       });
       const endPan = (event) => {
+        if (swipeStart && event.pointerId === swipeStart.pointerId) {
+          const dx = event.clientX - swipeStart.x;
+          const dy = event.clientY - swipeStart.y;
+          const elapsed = Date.now() - swipeStart.time;
+          swipeStart = null;
+          if (Math.abs(dx) > 54 && Math.abs(dx) > Math.abs(dy) * 1.35 && elapsed < 900) {
+            if (dx < 0) nextGalleryImage();
+            else prevGalleryImage();
+          }
+        }
         if (detailPanStart && event.pointerId === detailPanStart.pointerId) {
           detailPanStart = null;
           main.classList.remove('dragging');
@@ -8633,11 +9096,6 @@
 
     function startGalleryRotation() {
       stopGalleryRotation();
-      const gallery = document.querySelector('#productDetailModal .gallery-main');
-      if (!gallery) return;
-      const imgs = gallery.querySelectorAll('img');
-      if (imgs.length <= 1) return;
-      detailGalleryInterval = setInterval(nextGalleryImage, 3000);
     }
 
     function stopGalleryRotation() {
