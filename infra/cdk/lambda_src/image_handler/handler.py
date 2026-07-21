@@ -2,15 +2,11 @@
 
 Pipeline:
   1. Validate file type (JPEG/PNG/WebP) and size (max 30MB)
-  2. Strip EXIF metadata for security
-  3. Smart background removal (dominant edge color detection)
-  4. Auto-crop and center on product (using alpha mask)
-  5. Color correction (auto white balance, contrast)
-  6. Generate responsive product sizes for cards, detail and inspection zoom
-     - Professional multi-layer drop shadow with diagonal offset
-     - Adaptive WebP compression per size
-     - Semi-transparent watermark
-  7. Upload to S3 in parallel as WebP
+  2. Apply EXIF orientation before stripping metadata
+  3. Strip public metadata for privacy
+  4. Generate responsive WebP sizes for cards, detail and inspection zoom
+     while preserving the real photo and aspect ratio
+  5. Upload to S3 in parallel as WebP
 
 Environment variables:
   IMAGES_BUCKET: S3 bucket name for product images
@@ -362,16 +358,26 @@ def strip_exif(img: Image.Image) -> Image.Image:
     Even though WebP output strips EXIF naturally, this is an explicit
     defense-in-depth step at the earliest point in the pipeline.
     """
-    data = io.BytesIO()
-    # PNG format discards JPEG EXIF data
-    img.save(data, format="PNG")
-    data.seek(0)
-    clean = Image.open(data)
-    # Preserve original mode (RGBA stays RGBA)
-    if clean.mode != img.mode:
-        clean = clean.convert(img.mode)
+    img.load()
+    clean = img.copy()
+    clean.info.clear()
     print("strip_exif: removed all metadata")
     return clean
+
+
+def apply_exif_orientation(img: Image.Image) -> Image.Image:
+    """Apply camera orientation metadata before any metadata is removed.
+
+    iPhone photos are often stored with landscape pixel data plus an EXIF
+    orientation flag. If we strip metadata first, the public WebP appears
+    rotated 90 degrees. ImageOps.exif_transpose bakes that orientation into
+    the pixels safely.
+    """
+    before = img.size
+    oriented = ImageOps.exif_transpose(img)
+    if oriented.size != before:
+        print(f"apply_exif_orientation: transposed {before} -> {oriented.size}")
+    return oriented
 
 
 # ──────────────────────────────────────────────
@@ -529,10 +535,24 @@ def color_correction(img: Image.Image) -> Image.Image:
 #  Improvement 4 & 6: Parallel sizing + adaptive compression
 # ──────────────────────────────────────────────
 
+def fit_photo_to_bounds(img: Image.Image, dimensions: tuple) -> Image.Image:
+    """Resize the real product photo to fit inside dimensions.
+
+    This deliberately does not remove backgrounds, crop, add shadows, or add
+    watermarks. For technical replacement parts, the customer needs to inspect
+    the real photo and connectors without synthetic editing artifacts.
+    """
+    if img.mode in ("RGBA", "LA"):
+        processed = img.convert("RGBA")
+    else:
+        processed = img.convert("RGB")
+    processed.thumbnail(dimensions, Image.LANCZOS)
+    return processed
+
+
 def process_size(img: Image.Image, size_name: str, dimensions: tuple) -> bytes:
-    """Process a single image size: shadow + watermark + adaptive WebP compression."""
-    # Transparent canvas with product shadow, designed for the dark storefront.
-    processed = transparent_product_canvas(img, dimensions)
+    """Process a single image size: orientation-safe WebP resize."""
+    processed = fit_photo_to_bounds(img, dimensions)
 
     # Adaptive compression
     quality = COMPRESSION_QUALITY.get(size_name, 80)
@@ -542,8 +562,8 @@ def process_size(img: Image.Image, size_name: str, dimensions: tuple) -> bytes:
     bytes_out = buf.getvalue()
 
     print(
-        f"process_size: {size_name} ({dimensions[0]}×{dimensions[1]}) "
-        f"quality={quality} bytes={len(bytes_out)}"
+        f"process_size: {size_name} max=({dimensions[0]}×{dimensions[1]}) "
+        f"actual=({processed.width}×{processed.height}) quality={quality} bytes={len(bytes_out)}"
     )
     return bytes_out
 
@@ -631,43 +651,21 @@ def _upload_processed_sizes(product_id: str, sizes: dict[str, bytes]) -> dict:
 
 
 def process_image(image_data: bytes) -> dict[str, bytes]:
-    """Process image through the full pipeline.
+    """Process image while preserving the real product photo.
 
-    Steps:
-      1. Strip EXIF
-      2. Smart background removal (RGBA with transparency)
-      3. Auto-crop to product
-      4. Color correction
-      5. Generate all 3 sizes in parallel (shadow + watermark + compression)
+    We intentionally avoid background-removal fallback, auto-crop, watermark,
+    synthetic shadows and aggressive color edits. Those looked polished for
+    isolated packshots, but they are risky for repair parts where the buyer
+    needs to inspect connectors, flexes, labels and real condition.
     """
-    removebg_image_data = remove_background_with_removebg(image_data)
-    if removebg_image_data:
-        image_data = removebg_image_data
-
     img = Image.open(io.BytesIO(image_data))
+    img = apply_exif_orientation(img)
 
-    # Step 0 — Strip EXIF (security, defense-in-depth)
+    # Step 1 — Strip EXIF (security, defense-in-depth)
     # ──────────────────────────────────────────────
     img = strip_exif(img)
 
-    # Step 1 — Smart background removal → RGBA with transparent bg.
-    # If remove.bg already returned a transparent PNG, keep its alpha mask.
-    # ──────────────────────────────────────────────
-    if image_has_transparency(img.convert("RGBA")):
-        img = img.convert("RGBA")
-        print("process_image: using existing transparent alpha mask")
-    else:
-        img = smart_background_removal(img)
-
-    # Step 2 — Auto-crop using alpha channel
-    # ──────────────────────────────────────────────
-    img = auto_crop_center(img)
-
-    # Step 3 — Color correction (preserves alpha)
-    # ──────────────────────────────────────────────
-    img = color_correction(img)
-
-    # Step 4 — Generate all sizes in parallel
+    # Step 2 — Generate all sizes in parallel
     # ──────────────────────────────────────────────
     size_bytes: dict[str, bytes] = {}
     with concurrent.futures.ThreadPoolExecutor(max_workers=2) as executor:
