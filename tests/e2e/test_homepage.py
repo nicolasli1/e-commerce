@@ -101,5 +101,5 @@ class TestAuthUI:
     def test_rastrear_button_exists(self, page, base_url):
         """El CTA de rastreo debe estar en el navbar."""
         page.goto(base_url, wait_until="networkidle")
-        rastrear = page.locator("text=Rastrear, text=Rastrea").all()
-        assert len(rastrear) >= 1, "No se encontró botón/link de rastreo en navbar"
+        rastrear_links = page.locator('a[href="#rastrear-pedido"]').all()
+        assert len(rastrear_links) >= 1, "No se encontró botón/link de rastreo en navbar"
