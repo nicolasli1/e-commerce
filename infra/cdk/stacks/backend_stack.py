@@ -232,6 +232,15 @@ class BackendStack(Stack):
             bucket_name=f"{project_name}-{environment}-{self.account}-{self.region}-images",
             encryption=s3.BucketEncryption.S3_MANAGED,
             block_public_access=s3.BlockPublicAccess.BLOCK_ALL,
+            cors=[
+                s3.CorsRule(
+                    allowed_methods=[s3.HttpMethods.PUT],
+                    allowed_origins=allowed_origins or ["https://repuestoscel.com", "https://www.repuestoscel.com"],
+                    allowed_headers=["*"],
+                    exposed_headers=["ETag"],
+                    max_age=3000,
+                )
+            ],
             versioned=True,
             removal_policy=RemovalPolicy.RETAIN,
         )
@@ -257,8 +266,8 @@ class BackendStack(Stack):
                 str(pathlib.Path(__file__).parent.parent / "lambda_src" / "image_handler")
             ),
             layers=[pillow_layer],
-            timeout=Duration.seconds(45),
-            memory_size=1024,
+            timeout=Duration.seconds(90),
+            memory_size=2048,
             environment={
                 "IMAGES_BUCKET": images_bucket.bucket_name,
                 "ADMIN_SESSION_SECRET_PARAM": f"/{project_name}/{environment}/admin-session-secret",
@@ -279,13 +288,13 @@ class BackendStack(Stack):
             )
         )
 
-        # Add bucket policy to allow CloudFront OAC to read images
+        # Add bucket policy to allow CloudFront OAC to read only public product variants.
         images_bucket.add_to_resource_policy(
             iam.PolicyStatement(
                 effect=iam.Effect.ALLOW,
                 principals=[iam.ServicePrincipal("cloudfront.amazonaws.com")],
                 actions=["s3:GetObject"],
-                resources=[images_bucket.arn_for_objects("*")],
+                resources=[images_bucket.arn_for_objects("images/products/*")],
             )
         )
 
@@ -400,6 +409,22 @@ class BackendStack(Stack):
                 handler=image_handler,
             ),
         )
+        http_api.add_routes(
+            path="/api/admin/products/image/upload-url",
+            methods=[apigwv2.HttpMethod.POST],
+            integration=integrations.HttpLambdaIntegration(
+                "ImageUploadUrlIntegration",
+                handler=image_handler,
+            ),
+        )
+        http_api.add_routes(
+            path="/api/admin/products/image/process",
+            methods=[apigwv2.HttpMethod.POST],
+            integration=integrations.HttpLambdaIntegration(
+                "ImageProcessIntegration",
+                handler=image_handler,
+            ),
+        )
 
         # ── Admin/Backoffice routes ──
         http_api.add_routes(
@@ -472,17 +497,6 @@ class BackendStack(Stack):
             methods=[apigwv2.HttpMethod.GET],
             integration=lambda_integration,
         )
-
-        # Add bucket policy to allow CloudFront OAC to read images
-        images_bucket.add_to_resource_policy(
-            iam.PolicyStatement(
-                effect=iam.Effect.ALLOW,
-                principals=[iam.ServicePrincipal("cloudfront.amazonaws.com")],
-                actions=["s3:GetObject"],
-                resources=[images_bucket.arn_for_objects("*")],
-            )
-        )
-
         # Store for cross-stack reference
         self._api_endpoint = http_api.api_endpoint
 

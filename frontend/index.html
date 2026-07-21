@@ -8561,12 +8561,13 @@
 
     function normalizeImageEntry(img) {
       if (!img) return null;
-      if (typeof img === 'string') return { lg: img, md: img, sm: img };
+      if (typeof img === 'string') return { xl: img, lg: img, md: img, sm: img };
       if (typeof img === 'object') {
-        const lg = img.lg || img.md || img.sm || '';
+        const xl = img.xl || img.lg || img.md || img.sm || '';
+        const lg = img.lg || xl;
         const md = img.md || lg;
         const sm = img.sm || md;
-        return lg || md || sm ? { lg, md, sm } : null;
+        return xl || lg || md || sm ? { xl, lg, md, sm } : null;
       }
       return null;
     }
@@ -8773,7 +8774,7 @@
       if (selectedVariant?.images?.length > 0) {
         const vImg = selectedVariant.images[0];
         const mainEl = document.querySelector('.detail-gallery .gallery-main img.active, .detail-gallery .gallery-main img:first-of-type');
-        if (mainEl) mainEl.src = vImg.lg || vImg.md || mainEl.src;
+        if (mainEl) mainEl.src = vImg.xl || vImg.lg || vImg.md || mainEl.src;
       }
     }
 
@@ -8790,7 +8791,7 @@
       const escapedName = htmlSafe(product.name || '');
       const description = productDescriptionText(product);
       const categoryLabel = getCategoryLabel(product.category);
-      const hasRealImages = images.some((img) => img.lg || img.md || img.sm);
+      const hasRealImages = images.some((img) => img.xl || img.lg || img.md || img.sm);
 
       // Build gallery panel
       const galleryEl = modal.querySelector('.detail-gallery');
@@ -8810,7 +8811,7 @@
           `;
         } else {
           let mainImgs = images.map((img, idx) =>
-            `<img src="${img.lg || img.md || ''}" alt="${escapedName} - foto ${idx + 1}" class="${idx === 0 ? 'active' : ''}" data-gallery-idx="${idx}" loading="${idx === 0 ? 'eager' : 'lazy'}" decoding="async" ${idx === 0 ? 'fetchpriority="high"' : ''} />`
+            `<img src="${img.xl || img.lg || img.md || ''}" alt="${escapedName} - foto ${idx + 1}" class="${idx === 0 ? 'active' : ''}" data-gallery-idx="${idx}" loading="${idx === 0 ? 'eager' : 'lazy'}" decoding="async" ${idx === 0 ? 'fetchpriority="high"' : ''} />`
           ).join('');
           let thumbs = images.map((img, idx) =>
             `<button class="gallery-thumb-btn ${idx === 0 ? 'active' : ''}" type="button" data-gallery-idx="${idx}" onclick="setGalleryImage(${idx})" aria-label="Ver foto ${idx + 1} de ${imgCount}" aria-current="${idx === 0 ? 'true' : 'false'}"><img src="${img.sm || img.md || img.lg || ''}" alt="" loading="lazy" decoding="async" /></button>`

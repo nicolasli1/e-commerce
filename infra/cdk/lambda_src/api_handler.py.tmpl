@@ -843,16 +843,41 @@ def update_site_settings(body):
 
 def images_to_url(images, fallback_url=''):
     """Convert images array to frontend-friendly format.
-    Returns an object {lg, md, sm} if images exist, or the fallback URL string."""
+    Returns an object {xl, lg, md, sm} if images exist, or the fallback URL string."""
     if images and isinstance(images, list) and len(images) > 0:
         img = images[0]
         if isinstance(img, dict):
             return {
-                "lg": img.get("lg", fallback_url),
+                "xl": img.get("xl", img.get("lg", fallback_url)),
+                "lg": img.get("lg", img.get("xl", fallback_url)),
                 "md": img.get("md", fallback_url),
                 "sm": img.get("sm", fallback_url),
             }
     return fallback_url
+
+
+def parse_image_entry(img):
+    if not isinstance(img, dict):
+        return None
+    xl = img.get("xl") or img.get("lg") or ""
+    lg = img.get("lg") or xl
+    md = img.get("md") or lg
+    sm = img.get("sm") or md
+    if not (xl or lg or md or sm):
+        return None
+    parsed = {"xl": xl, "lg": lg, "md": md, "sm": sm}
+    return parsed
+
+
+def parse_images(images_raw):
+    parsed = []
+    if not isinstance(images_raw, list):
+        return parsed
+    for img in images_raw:
+        item = parse_image_entry(img)
+        if item:
+            parsed.append(item)
+    return parsed
 
 
 def images_from_variants(variants):
@@ -864,10 +889,7 @@ def images_from_variants(variants):
         images = variant.get("images") or []
         if not isinstance(images, list):
             continue
-        parsed = []
-        for img in images:
-            if isinstance(img, dict) and img.get("lg"):
-                parsed.append({"lg": img["lg"], "md": img.get("md", ""), "sm": img.get("sm", "")})
+        parsed = parse_images(images)
         if parsed:
             return parsed
     return []
@@ -899,12 +921,7 @@ def _parse_variants(variants_raw):
             stock = int(raw_stock) if raw_stock not in (None, "") else None
         except Exception:
             stock = None
-        # Parse variant images
-        images_raw = v.get("images") or []
-        images_parsed = []
-        for img in images_raw:
-            if isinstance(img, dict) and img.get("lg"):
-                images_parsed.append({"lg": img["lg"], "md": img.get("md", ""), "sm": img.get("sm", "")})
+        images_parsed = parse_images(v.get("images") or [])
         parsed.append({
             "variantId": variant_id,
             "deviceBrand": (v.get("deviceBrand") or "").strip(),
@@ -1011,14 +1028,10 @@ def create_product(body):
     raw_stock = body.get("stock")
     stock = int(raw_stock) if raw_stock not in (None, "") else variant_defaults["stock"]
     quality = (body.get("quality") or variant_defaults["quality"] or "").strip()
-    images_raw = body.get("images") or []
-    images_parsed = []
-    for img in images_raw:
-        if isinstance(img, dict) and img.get("lg"):
-            images_parsed.append({"lg": img["lg"], "md": img.get("md", ""), "sm": img.get("sm", "")})
+    images_parsed = parse_images(body.get("images") or [])
     image_url = (body.get("imageUrl") or "").strip()
     if image_url and not images_parsed:
-        images_parsed.append({"lg": image_url, "md": image_url, "sm": image_url})
+        images_parsed.append({"xl": image_url, "lg": image_url, "md": image_url, "sm": image_url})
     elif not image_url and images_parsed:
         image_url = images_parsed[0].get("lg", "")
     if not images_parsed:
@@ -1070,18 +1083,17 @@ def update_product(product_id, body):
             if str(model).strip()
         ]
     if "images" in body:
-        images_raw = body["images"]
-        images_parsed = []
-        for img in images_raw:
-            if isinstance(img, dict) and img.get("lg"):
-                images_parsed.append({"lg": img["lg"], "md": img.get("md", ""), "sm": img.get("sm", "")})
+        images_parsed = parse_images(body["images"])
         updates["images"] = images_parsed
         if images_parsed and "imageUrl" not in body:
             updates["imageUrl"] = images_parsed[0].get("lg", existing.get("imageUrl", ""))
     elif "imageUrl" in body:
         existing_images = existing.get("images", [])
         if existing_images:
+            existing_images[0]["xl"] = body["imageUrl"]
             existing_images[0]["lg"] = body["imageUrl"]
+            existing_images[0]["md"] = body["imageUrl"]
+            existing_images[0]["sm"] = body["imageUrl"]
             updates["images"] = existing_images
     if "category" in body:
         updates["category"] = normalize_category(body.get("category"))

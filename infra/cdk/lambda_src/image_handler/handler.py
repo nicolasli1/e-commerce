@@ -1,12 +1,12 @@
 """Image processing Lambda for RepuestosCel product images.
 
 Pipeline:
-  1. Validate file type (JPEG/PNG/WebP) and size (max 5MB)
+  1. Validate file type (JPEG/PNG/WebP) and size (max 30MB)
   2. Strip EXIF metadata for security
   3. Smart background removal (dominant edge color detection)
   4. Auto-crop and center on product (using alpha mask)
   5. Color correction (auto white balance, contrast)
-  6. Generate 3 sizes in parallel: lg 800×800, md 400×400, sm 150×150
+  6. Generate responsive product sizes for cards, detail and inspection zoom
      - Professional multi-layer drop shadow with diagonal offset
      - Adaptive WebP compression per size
      - Semi-transparent watermark
@@ -40,25 +40,31 @@ REMOVEBG_API_KEY_PARAM = os.environ.get("REMOVEBG_API_KEY_PARAM", "")
 REMOVEBG_API_KEY_REGION = os.environ.get("REMOVEBG_API_KEY_REGION") or os.environ.get("AWS_REGION", "us-east-1")
 
 ALLOWED_TYPES = {"image/jpeg", "image/png", "image/webp"}
-MAX_SIZE_BYTES = 5 * 1024 * 1024  # 5 MB
+MAX_SIZE_BYTES = 30 * 1024 * 1024  # 30 MB direct-to-S3 upload budget
 
 OUTPUT_SIZES = {
-    "lg": (2000, 2000),  # detalle / zoom de producto — 2000px da headroom para zoom 3x sin pixelación
-    "md": (700, 700),    # catálogo / carrusel
-    "sm": (180, 180),    # carrito / miniatura
+    "xl": (4000, 4000),  # lupa / inspección técnica en desktop
+    "lg": (2400, 2400),  # detalle / fullscreen
+    "md": (1200, 1200),  # catálogo / carrusel
+    "sm": (320, 320),    # carrito / miniatura
 }
 
 # Adaptive compression quality per size (higher res = more quality budget)
 COMPRESSION_QUALITY = {
-    "lg": 92,  # máxima calidad para zoom de detalle
-    "md": 84,
-    "sm": 76,
+    "xl": 94,
+    "lg": 92,
+    "md": 86,
+    "sm": 78,
 }
 
 # Color distance threshold for background detection
 BG_COLOR_THRESHOLD = 60
 
 _removebg_api_key_cache = None
+
+SAFE_PRODUCT_ID_PATTERN = r"^[a-zA-Z0-9_\-]{1,128}$"
+SAFE_ORIGINAL_KEY_PATTERN = r"^private/originals/[a-zA-Z0-9_\-]{1,128}/[a-zA-Z0-9_\-]{8,80}\.(jpg|jpeg|png|webp)$"
+PRESIGN_MAX_AGE_SECONDS = 300
 
 
 def response(status_code, body, extra_headers=None):
@@ -139,7 +145,7 @@ def remove_background_with_removebg(image_data: bytes) -> bytes | None:
         (
             "size",
             None,
-            b"auto",
+            b"50MP",
             None,
         ),
         (
@@ -151,7 +157,7 @@ def remove_background_with_removebg(image_data: bytes) -> bytes | None:
         (
             "format",
             None,
-            b"png",
+            b"webp",
             None,
         ),
         (
@@ -183,7 +189,7 @@ def remove_background_with_removebg(image_data: bytes) -> bytes | None:
         headers={
             "X-Api-Key": api_key,
             "Content-Type": f"multipart/form-data; boundary={boundary}",
-            "Accept": "image/png",
+            "Accept": "image/webp,image/png",
         },
     )
 
@@ -556,6 +562,74 @@ def upload_size(s3_client, bucket: str, product_id: str, size_name: str, image_b
     return (size_name, f"/{key}")
 
 
+def upload_original(s3_client, bucket: str, product_id: str, upload_id: str, extension: str, image_bytes: bytes, content_type: str) -> str:
+    """Persist the source image so future pipelines can reprocess it."""
+    key = f"private/originals/{product_id}/{upload_id}.{extension}"
+    s3_client.put_object(
+        Bucket=bucket,
+        Key=key,
+        Body=image_bytes,
+        ContentType=content_type,
+        CacheControl="private, max-age=31536000",
+        Metadata={
+            "product-id": product_id,
+            "upload-id": upload_id,
+            "source": "legacy-base64-fallback",
+        },
+    )
+    print(f"upload_original: uploaded {key}")
+    return key
+
+
+def _file_extension_from_content_type(content_type: str) -> str | None:
+    normalized = (content_type or "").split(";")[0].strip().lower()
+    if normalized == "image/jpeg":
+        return "jpg"
+    if normalized == "image/png":
+        return "png"
+    if normalized == "image/webp":
+        return "webp"
+    return None
+
+
+def _content_type_from_extension(extension: str) -> str:
+    ext = (extension or "").lower().lstrip(".")
+    if ext in ("jpg", "jpeg"):
+        return "image/jpeg"
+    if ext == "png":
+        return "image/png"
+    if ext == "webp":
+        return "image/webp"
+    return "application/octet-stream"
+
+
+def _sanitize_product_id(product_id: str) -> bool:
+    import re as _re
+    return bool(_re.match(SAFE_PRODUCT_ID_PATTERN, product_id or ""))
+
+
+def _sanitize_original_key(key: str) -> bool:
+    import re as _re
+    return bool(_re.match(SAFE_ORIGINAL_KEY_PATTERN, key or ""))
+
+
+def _upload_processed_sizes(product_id: str, sizes: dict[str, bytes]) -> dict:
+    uploaded_urls = {}
+    # Large 4000px canvases are memory-heavy. Keep limited concurrency for Lambda stability.
+    with concurrent.futures.ThreadPoolExecutor(max_workers=2) as executor:
+        future_to_size = {
+            executor.submit(
+                upload_size, s3, IMAGES_BUCKET, product_id, name, data
+            ): name
+            for name, data in sizes.items()
+        }
+
+        for future in concurrent.futures.as_completed(future_to_size):
+            name, url = future.result()
+            uploaded_urls[name] = url
+    return uploaded_urls
+
+
 def process_image(image_data: bytes) -> dict[str, bytes]:
     """Process image through the full pipeline.
 
@@ -596,7 +670,7 @@ def process_image(image_data: bytes) -> dict[str, bytes]:
     # Step 4 — Generate all sizes in parallel
     # ──────────────────────────────────────────────
     size_bytes: dict[str, bytes] = {}
-    with concurrent.futures.ThreadPoolExecutor(max_workers=4) as executor:
+    with concurrent.futures.ThreadPoolExecutor(max_workers=2) as executor:
         future_to_size = {
             executor.submit(process_size, img, name, dim): name
             for name, dim in OUTPUT_SIZES.items()
@@ -668,8 +742,12 @@ def handler(event, context):
         method = "GET"
         path = ""
 
-    # Only handle POST /api/admin/products/image
-    if method != "POST" or path != "/api/admin/products/image":
+    allowed_paths = {
+        "/api/admin/products/image",
+        "/api/admin/products/image/upload-url",
+        "/api/admin/products/image/process",
+    }
+    if method != "POST" or path not in allowed_paths:
         return response(404, {"error": "not_found"})
 
     # --- Auth check ---
@@ -686,15 +764,92 @@ def handler(event, context):
         return response(400, {"error": "invalid_json"})
 
     product_id = (body.get("productId") or "").strip()
-    image_b64 = (body.get("image") or "").strip()
-
-    if not product_id or not image_b64:
-        return response(400, {"error": "productId_and_image_required"})
-
-    # Prevent S3 path traversal — only allow alphanumeric, hyphens and underscores
-    import re as _re
-    if not _re.match(r'^[a-zA-Z0-9_\-]{1,128}$', product_id):
+    if not product_id:
+        return response(400, {"error": "product_id_required"})
+    if not _sanitize_product_id(product_id):
         return response(400, {"error": "invalid_product_id"})
+
+    if path == "/api/admin/products/image/upload-url":
+        content_type = (body.get("contentType") or "").split(";")[0].strip().lower()
+        extension = _file_extension_from_content_type(content_type)
+        if not extension:
+            return response(400, {"error": "unsupported_content_type"})
+        try:
+            size_bytes = int(body.get("size") or 0)
+        except Exception:
+            size_bytes = 0
+        if size_bytes <= 0 or size_bytes > MAX_SIZE_BYTES:
+            return response(400, {"error": f"Image too large. Max {MAX_SIZE_BYTES // (1024*1024)}MB"})
+
+        upload_id = uuid.uuid4().hex
+        object_key = f"private/originals/{product_id}/{upload_id}.{extension}"
+        upload_metadata = {
+            "product-id": product_id,
+            "upload-id": upload_id,
+            "uploaded-by": user,
+        }
+        upload_url = s3.generate_presigned_url(
+            ClientMethod="put_object",
+            Params={
+                "Bucket": IMAGES_BUCKET,
+                "Key": object_key,
+                "ContentType": content_type,
+                "Metadata": upload_metadata,
+            },
+            ExpiresIn=PRESIGN_MAX_AGE_SECONDS,
+            HttpMethod="PUT",
+        )
+        upload_headers = {"Content-Type": content_type}
+        upload_headers.update({f"x-amz-meta-{k}": v for k, v in upload_metadata.items()})
+        return response(200, {
+            "ok": True,
+            "uploadUrl": upload_url,
+            "uploadHeaders": upload_headers,
+            "objectKey": object_key,
+            "uploadId": upload_id,
+            "maxSizeBytes": MAX_SIZE_BYTES,
+            "expiresIn": PRESIGN_MAX_AGE_SECONDS,
+        })
+
+    if path == "/api/admin/products/image/process":
+        object_key = (body.get("objectKey") or "").strip()
+        if not _sanitize_original_key(object_key):
+            return response(400, {"error": "invalid_original_key"})
+
+        try:
+            head = s3.head_object(Bucket=IMAGES_BUCKET, Key=object_key)
+            content_length = int(head.get("ContentLength") or 0)
+            content_type = (head.get("ContentType") or _content_type_from_extension(object_key.rsplit(".", 1)[-1])).split(";")[0].lower()
+            if content_length <= 0 or content_length > MAX_SIZE_BYTES:
+                return response(400, {"error": f"Image too large. Max {MAX_SIZE_BYTES // (1024*1024)}MB"})
+            if content_type not in ALLOWED_TYPES:
+                return response(400, {"error": "unsupported_content_type"})
+            obj = s3.get_object(Bucket=IMAGES_BUCKET, Key=object_key)
+            image_data = obj["Body"].read()
+        except Exception as e:
+            return response(400, {"error": f"original_image_unavailable: {str(e)}"})
+
+        valid, fmt_or_error = validate_image(image_data)
+        if not valid:
+            return response(400, {"error": fmt_or_error})
+
+        try:
+            sizes = process_image(image_data)
+            uploaded_urls = _upload_processed_sizes(product_id, sizes)
+        except Exception as e:
+            return response(500, {"error": f"image_processing_failed: {str(e)}"})
+
+        return response(200, {
+            "ok": True,
+            "productId": product_id,
+            "originalKey": object_key,
+            "urls": uploaded_urls,
+            "versions": list(OUTPUT_SIZES.keys()),
+        })
+
+    image_b64 = (body.get("image") or "").strip()
+    if not image_b64:
+        return response(400, {"error": "productId_and_image_required"})
 
     # Decode base64 image
     try:
@@ -713,26 +868,27 @@ def handler(event, context):
     except Exception as e:
         return response(500, {"error": f"image_processing_failed: {str(e)}"})
 
-    # Upload to S3 in parallel
-    uploaded_urls = {}
     try:
-        with concurrent.futures.ThreadPoolExecutor(max_workers=4) as executor:
-            future_to_size = {
-                executor.submit(
-                    upload_size, s3, IMAGES_BUCKET, product_id, name, data
-                ): name
-                for name, data in sizes.items()
-            }
-
-            for future in concurrent.futures.as_completed(future_to_size):
-                name, url = future.result()
-                uploaded_urls[name] = url
+        upload_id = uuid.uuid4().hex
+        fmt = (fmt_or_error or "").lower()
+        extension = "jpg" if fmt in ("jpeg", "jpg") else fmt
+        original_key = upload_original(
+            s3,
+            IMAGES_BUCKET,
+            product_id,
+            upload_id,
+            extension,
+            image_data,
+            _content_type_from_extension(extension),
+        )
+        uploaded_urls = _upload_processed_sizes(product_id, sizes)
     except Exception as e:
         return response(500, {"error": f"s3_upload_failed: {str(e)}"})
 
     return response(200, {
         "ok": True,
         "productId": product_id,
+        "originalKey": original_key,
         "urls": uploaded_urls,
         "versions": list(OUTPUT_SIZES.keys()),
     })

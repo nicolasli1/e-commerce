@@ -890,12 +890,21 @@ const App = (() => {
           if (!file || variantRows[idx]._uploadingImage) return;
           variantRows[idx]._uploadingImage = true;
           try {
-            const base64 = await fileToBase64(file);
-            const cleanB64 = base64.split(',')[1] || base64;
+            const inspection = await inspectImageFile(file);
+            if (!inspection.ok) {
+              throw new Error(inspection.reason || 'Imagen inválida');
+            }
+            if (inspection.warning) showToast(inspection.warning, 'error');
             const tempId = 'temp_variant_' + Date.now();
-            const result = await Api.uploadImage(tempId, cleanB64);
+            const result = await Api.uploadImage(tempId, file);
             if (result.ok && result.urls) {
-              variantRows[idx].images = [{ lg: result.urls.lg, md: result.urls.md, sm: result.urls.sm }];
+              variantRows[idx].images = [{
+                xl: result.urls.xl || result.urls.lg,
+                lg: result.urls.lg,
+                md: result.urls.md,
+                sm: result.urls.sm,
+                originalKey: result.originalKey || '',
+              }];
               renderVariantRows();
               showToast('Imagen de variante subida');
             }
@@ -1047,6 +1056,40 @@ const App = (() => {
       });
     }
 
+    function inspectImageFile(file) {
+      return new Promise((resolve) => {
+        if (!file || !file.type || !file.type.startsWith('image/')) {
+          resolve({ ok: false, reason: 'Selecciona un archivo de imagen válido.' });
+          return;
+        }
+        if (file.size > 30 * 1024 * 1024) {
+          resolve({ ok: false, reason: 'La imagen supera 30 MB. Usa una foto más liviana o exporta en HEIC/JPG.' });
+          return;
+        }
+        const url = URL.createObjectURL(file);
+        const img = new Image();
+        img.onload = () => {
+          URL.revokeObjectURL(url);
+          const longSide = Math.max(img.naturalWidth, img.naturalHeight);
+          const shortSide = Math.min(img.naturalWidth, img.naturalHeight);
+          resolve({
+            ok: true,
+            width: img.naturalWidth,
+            height: img.naturalHeight,
+            premium: longSide >= 2400 && shortSide >= 1600,
+            warning: longSide < 1800 || shortSide < 1200
+              ? 'La foto es pequeña para zoom premium. Si puedes, toma otra con más luz y sin zoom digital.'
+              : '',
+          });
+        };
+        img.onerror = () => {
+          URL.revokeObjectURL(url);
+          resolve({ ok: false, reason: 'No se pudo leer la imagen. Intenta con JPG, PNG o WebP.' });
+        };
+        img.src = url;
+      });
+    }
+
     // Image upload via file picker
     document.getElementById('pImageUploadBtn').addEventListener('click', () => {
       document.getElementById('pImageInput').click();
@@ -1064,15 +1107,19 @@ const App = (() => {
       btn.disabled = true;
 
       try {
-        const base64 = await fileToBase64(file);
-        // Strip data:image/...;base64, prefix
-        const cleanB64 = base64.split(',')[1] || base64;
-        const result = await Api.uploadImage(tempId, cleanB64);
+        const inspection = await inspectImageFile(file);
+        if (!inspection.ok) {
+          throw new Error(inspection.reason || 'Imagen inválida');
+        }
+        if (inspection.warning) showToast(inspection.warning, 'error');
+        const result = await Api.uploadImage(tempId, file);
         if (result.ok && result.urls) {
           uploadedImages.push({
+            xl: result.urls.xl || result.urls.lg,
             lg: result.urls.lg,
             md: result.urls.md,
             sm: result.urls.sm,
+            originalKey: result.originalKey || '',
           });
           renderImagePreviews();
           showToast('Imagen subida correctamente');
@@ -1086,15 +1133,6 @@ const App = (() => {
         e.target.value = ''; // reset file input
       }
     });
-
-    function fileToBase64(file) {
-      return new Promise((resolve, reject) => {
-        const reader = new FileReader();
-        reader.onload = () => resolve(reader.result);
-        reader.onerror = reject;
-        reader.readAsDataURL(file);
-      });
-    }
 
     function openModal(product = null) {
       editingId = product ? product.productId : null;
