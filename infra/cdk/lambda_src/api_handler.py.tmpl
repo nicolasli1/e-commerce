@@ -1008,6 +1008,7 @@ def list_public_products():
             "compatibility": p.get("compatibility", []),
             "shippingTime": p.get("shippingTime", ""),
             "warranty": p.get("warranty", ""),
+            "heroFeatured": bool(p.get("heroFeatured", False)),
             "variants": variants,
             "deviceFamilies": p.get("deviceFamilies", []) or _extract_device_families(variants),
         })
