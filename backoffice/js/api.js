@@ -91,6 +91,18 @@ const Api = (() => {
     });
   }
 
+  function inferImageContentType(file) {
+    const rawType = String(file?.type || '').split(';')[0].trim().toLowerCase();
+    if (rawType === 'image/jpg') return 'image/jpeg';
+    if (['image/jpeg', 'image/png', 'image/webp'].includes(rawType)) return rawType;
+
+    const name = String(file?.name || '').toLowerCase();
+    if (/\.(jpe?g)$/.test(name)) return 'image/jpeg';
+    if (/\.png$/.test(name)) return 'image/png';
+    if (/\.webp$/.test(name)) return 'image/webp';
+    return rawType;
+  }
+
   async function legacyBase64ImageUpload(productId, fileOrBase64) {
     let base64Image = fileOrBase64;
     if (typeof File !== 'undefined' && fileOrBase64 instanceof File) {
@@ -144,9 +156,13 @@ const Api = (() => {
       }
 
       try {
+        const contentType = inferImageContentType(fileOrBase64);
+        if (!['image/jpeg', 'image/png', 'image/webp'].includes(contentType)) {
+          throw new Error('Formato no soportado. Usa JPG, PNG o WebP.');
+        }
         const presign = await request('POST', '/api/admin/products/image/upload-url', {
           productId,
-          contentType: fileOrBase64.type,
+          contentType,
           size: fileOrBase64.size,
           name: fileOrBase64.name,
         });
@@ -154,7 +170,7 @@ const Api = (() => {
           throw new Error('upload_url_unavailable');
         }
 
-        const uploadHeaders = presign.uploadHeaders || { 'Content-Type': fileOrBase64.type };
+        const uploadHeaders = presign.uploadHeaders || { 'Content-Type': contentType };
         const putRes = await fetch(presign.uploadUrl, {
           method: 'PUT',
           headers: uploadHeaders,
@@ -169,6 +185,9 @@ const Api = (() => {
           objectKey: presign.objectKey,
         });
       } catch (err) {
+        if (String(err?.message || '').includes('Formato no soportado')) {
+          throw err;
+        }
         // During rolling deploys, keep the old small-image path as a safety net.
         if (fileOrBase64.size <= 5 * 1024 * 1024) {
           return legacyBase64ImageUpload(productId, fileOrBase64);

@@ -690,7 +690,7 @@ const App = (() => {
                 <div class="form-group">
                   <label class="form-label">Imágenes</label>
                   <div class="image-upload-area">
-                    <input type="file" accept="image/*" id="pImageInput" style="display:none" />
+                    <input type="file" accept="image/jpeg,image/png,image/webp,.jpg,.jpeg,.png,.webp" id="pImageInput" style="display:none" />
                     <button type="button" class="btn btn-secondary btn-sm" id="pImageUploadBtn">📷 Agregar imagen</button>
                   </div>
                   <div class="product-images" id="pImagesPreview"></div>
@@ -853,7 +853,7 @@ const App = (() => {
             <option value="GX"${row.quality === 'GX' ? ' selected' : ''}>GX</option>
           </select>
           <button type="button" class="btn btn-secondary btn-sm variant-img-btn" data-idx="${idx}" title="Imagen">${imgPreview || '📷'}</button>
-          <input type="file" accept="image/*" class="variant-img-input" style="display:none;" data-idx="${idx}" />
+          <input type="file" accept="image/jpeg,image/png,image/webp,.jpg,.jpeg,.png,.webp" class="variant-img-input" style="display:none;" data-idx="${idx}" />
           <button type="button" class="btn btn-danger btn-sm variant-remove-btn" data-idx="${idx}" style="padding:6px 8px;" title="Eliminar">✕</button>
         `;
         container.appendChild(div);
@@ -1056,38 +1056,83 @@ const App = (() => {
       });
     }
 
-    function inspectImageFile(file) {
-      return new Promise((resolve) => {
-        if (!file || !file.type || !file.type.startsWith('image/')) {
-          resolve({ ok: false, reason: 'Selecciona un archivo de imagen válido.' });
-          return;
-        }
-        if (file.size > 30 * 1024 * 1024) {
-          resolve({ ok: false, reason: 'La imagen supera 30 MB. Usa una foto más liviana o exporta en HEIC/JPG.' });
-          return;
-        }
+    function inferSelectedImageType(file) {
+      const rawType = String(file?.type || '').split(';')[0].trim().toLowerCase();
+      if (rawType === 'image/jpg') return 'image/jpeg';
+      if (rawType) return rawType;
+      const name = String(file?.name || '').toLowerCase();
+      if (/\.(jpe?g)$/.test(name)) return 'image/jpeg';
+      if (/\.png$/.test(name)) return 'image/png';
+      if (/\.webp$/.test(name)) return 'image/webp';
+      if (/\.(heic|heif)$/.test(name)) return 'image/heic';
+      return '';
+    }
+
+    function readImageDimensions(file) {
+      function loadFromSource(src, cleanup) {
+        return new Promise((resolve, reject) => {
+          const img = new Image();
+          img.onload = () => {
+            cleanup?.();
+            resolve({ width: img.naturalWidth, height: img.naturalHeight });
+          };
+          img.onerror = () => {
+            cleanup?.();
+            reject(new Error('decode_failed'));
+          };
+          img.src = src;
+        });
+      }
+
+      return new Promise((resolve, reject) => {
         const url = URL.createObjectURL(file);
-        const img = new Image();
-        img.onload = () => {
-          URL.revokeObjectURL(url);
-          const longSide = Math.max(img.naturalWidth, img.naturalHeight);
-          const shortSide = Math.min(img.naturalWidth, img.naturalHeight);
-          resolve({
-            ok: true,
-            width: img.naturalWidth,
-            height: img.naturalHeight,
-            premium: longSide >= 2400 && shortSide >= 1600,
-            warning: longSide < 1800 || shortSide < 1200
-              ? 'La foto es pequeña para zoom premium. Si puedes, toma otra con más luz y sin zoom digital.'
-              : '',
+        loadFromSource(url, () => URL.revokeObjectURL(url))
+          .then(resolve)
+          .catch(() => {
+            const reader = new FileReader();
+            reader.onload = () => {
+              loadFromSource(String(reader.result || '')).then(resolve).catch(reject);
+            };
+            reader.onerror = reject;
+            reader.readAsDataURL(file);
           });
-        };
-        img.onerror = () => {
-          URL.revokeObjectURL(url);
-          resolve({ ok: false, reason: 'No se pudo leer la imagen. Intenta con JPG, PNG o WebP.' });
-        };
-        img.src = url;
       });
+    }
+
+    async function inspectImageFile(file) {
+      if (!file) {
+        return { ok: false, reason: 'Selecciona una imagen.' };
+      }
+      const imageType = inferSelectedImageType(file);
+      if (!['image/jpeg', 'image/png', 'image/webp'].includes(imageType)) {
+        const isHeic = imageType === 'image/heic' || imageType === 'image/heif';
+        return {
+          ok: false,
+          reason: isHeic
+            ? 'El iPhone entregó una foto HEIC/HEIF. Toma la foto desde este botón otra vez o cambia Cámara > Formatos > Más compatible para generar JPG.'
+            : 'Formato no soportado. Usa JPG, PNG o WebP.',
+        };
+      }
+      if (file.size > 30 * 1024 * 1024) {
+        return { ok: false, reason: 'La imagen supera 30 MB. Usa una foto más liviana en JPG, PNG o WebP.' };
+      }
+
+      try {
+        const dimensions = await readImageDimensions(file);
+        const longSide = Math.max(dimensions.width, dimensions.height);
+        const shortSide = Math.min(dimensions.width, dimensions.height);
+        return {
+          ok: true,
+          width: dimensions.width,
+          height: dimensions.height,
+          premium: longSide >= 2400 && shortSide >= 1600,
+          warning: longSide < 1800 || shortSide < 1200
+            ? 'La foto es pequeña para zoom premium. Si puedes, toma otra con más luz y sin zoom digital.'
+            : '',
+        };
+      } catch (_) {
+        return { ok: false, reason: 'No se pudo leer la imagen. Usa JPG, PNG o WebP; en iPhone evita HEIC/Live Photo.' };
+      }
     }
 
     // Image upload via file picker
