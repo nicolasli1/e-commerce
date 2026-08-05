@@ -5976,32 +5976,43 @@
     @media (max-width: 720px) {
       #productDetailModal {
         padding: 0;
-        align-items: flex-end;
+        align-items: stretch;
       }
       #productDetailModal .modal {
         width: 100%;
-        max-height: 96dvh;
-        padding: 10px;
-        border-radius: 24px 24px 0 0;
+        height: 100dvh;
+        max-height: 100dvh;
+        padding: max(8px, env(safe-area-inset-top, 8px)) 10px 0;
+        border-radius: 0;
+        scroll-padding-bottom: calc(88px + env(safe-area-inset-bottom, 0px));
+        overscroll-behavior: contain;
       }
       #productDetailModal .detail-gallery .gallery-main {
-        height: clamp(330px, 54dvh, 560px);
-        min-height: 300px;
+        height: clamp(260px, 38dvh, 340px);
+        min-height: 240px;
       }
       .gallery-layout {
-        gap: 10px;
-        padding: 10px;
+        gap: 8px;
+        padding: 8px;
       }
       .gallery-toolbar {
-        flex-direction: column;
-        align-items: stretch;
+        display: grid;
+        grid-template-columns: minmax(0, 1fr) 44px;
+        align-items: center;
+        gap: 8px;
+        padding: 8px;
       }
       #productDetailModal .gallery-zoom-controls {
         width: 100%;
-        grid-template-columns: 34px minmax(86px, 1fr) 34px 58px;
+        grid-template-columns: 34px minmax(72px, 1fr) 34px 56px;
       }
       .gallery-fullscreen-btn {
-        width: 100%;
+        width: 44px;
+        min-height: 44px;
+        padding: 0;
+      }
+      .gallery-fullscreen-btn .gallery-fullscreen-label {
+        display: none;
       }
       .gallery-hint {
         display: none;
@@ -6010,11 +6021,111 @@
         display: none;
       }
       .gallery-thumb-btn {
-        width: 76px;
-        height: 76px;
+        width: 68px;
+        height: 68px;
+        border-radius: 16px;
+      }
+      #productDetailModal .detail-info {
+        padding: 18px 16px 0;
+        overflow: visible;
+      }
+      #productDetailModal .detail-info .detail-actions {
+        position: sticky;
+        bottom: 0;
+        z-index: 20;
+        display: flex;
+        flex-direction: column;
+        align-items: stretch;
+        gap: 8px;
+        margin: 18px -16px 0;
+        padding: 10px 16px calc(10px + env(safe-area-inset-bottom, 0px));
+        border-top: 1px solid rgba(255,255,255,0.10);
+        background: rgba(10, 11, 18, 0.96);
+        box-shadow: 0 -14px 34px rgba(0,0,0,0.24);
+        backdrop-filter: blur(18px);
+        -webkit-backdrop-filter: blur(18px);
+      }
+      #productDetailModal .detail-selected-variant {
+        width: 100%;
+        margin: 0;
+        overflow: hidden;
+        color: #a7f3d0;
+        font-size: 0.72rem;
+        line-height: 1.3;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+      }
+      #productDetailModal .detail-info .detail-actions .btn {
+        width: 100%;
+        min-height: 52px;
+        padding: 13px 18px;
+        font-size: 0.92rem;
+        white-space: nowrap;
+      }
+      body[data-site-theme="repair"] #productDetailModal .detail-info .detail-actions {
+        border-top-color: rgba(15,23,42,0.12);
+        background: rgba(255,255,255,0.97);
+        box-shadow: 0 -14px 34px rgba(31,45,55,0.12);
+      }
+      body[data-site-theme="repair"] #productDetailModal .detail-selected-variant {
+        color: #0f766e;
+      }
+      #productDetailModal .product-detail-close-btn {
+        top: max(12px, env(safe-area-inset-top, 12px));
       }
       #productDetailModal.is-gallery-fullscreen .detail-gallery .gallery-main {
         height: calc(100dvh - 190px);
+      }
+    }
+
+    /* Mobile commerce surfaces use the full viewport and keep actions readable. */
+    @media (min-width: 721px) {
+      #checkoutModal {
+        align-items: center;
+        overflow: hidden;
+        padding: 24px;
+      }
+      #checkoutModal .checkout-modal {
+        max-height: min(92dvh, 940px);
+        margin: 0 auto;
+        overflow-y: auto;
+        overscroll-behavior: contain;
+      }
+    }
+    @media (max-width: 720px) {
+      #cartParticleCanvas {
+        display: none;
+      }
+      #cartModal {
+        padding-bottom: max(10px, env(safe-area-inset-bottom, 10px));
+      }
+      .cart-modal-inner {
+        height: min(84dvh, 720px);
+        padding: 18px;
+      }
+      #checkoutModal {
+        align-items: stretch;
+        padding: 0;
+      }
+      #checkoutModal .checkout-modal {
+        width: 100%;
+        height: 100dvh;
+        min-height: 0;
+        max-height: 100dvh;
+        margin: 0;
+        padding: max(18px, env(safe-area-inset-top, 18px)) 16px calc(24px + env(safe-area-inset-bottom, 0px));
+        border: 0;
+        border-radius: 0;
+        box-shadow: none;
+        overflow-y: auto;
+        overscroll-behavior: contain;
+      }
+      #checkoutModal .modal-header {
+        align-items: flex-start;
+      }
+      #checkoutModal .checkout-panel,
+      #checkoutModal .checkout-summary-card {
+        border-radius: 20px;
       }
     }
   </style>
@@ -6514,7 +6625,7 @@
           <h2 class="modal-title">Tu Carrito</h2>
           <span class="cart-count-pill" id="cartCountPill"></span>
         </div>
-        <button class="modal-close" id="cartCloseBtn">✕</button>
+        <button class="modal-close" id="cartCloseBtn" type="button" aria-label="Cerrar carrito">✕</button>
       </div>
       <div id="cartContent">
         <div id="cartItems"></div>
@@ -6547,7 +6658,7 @@
           <span class="checkout-kicker">Checkout</span>
           <h2 class="modal-title">Finaliza tu pedido</h2>
         </div>
-        <button class="modal-close" id="checkoutCloseBtn">✕</button>
+        <button class="modal-close" id="checkoutCloseBtn" type="button" aria-label="Cerrar checkout">✕</button>
       </div>
 
       <div class="checkout-shell">
