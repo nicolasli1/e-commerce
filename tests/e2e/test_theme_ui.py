@@ -114,27 +114,32 @@ def test_storefront_resolves_system_light_and_dark(
         context.close()
 
 
-def test_storefront_user_choice_beats_remote_site_default(browser, local_site_url):
+def test_storefront_defaults_to_system_and_persists_user_choice(
+    browser, local_site_url
+):
     context = _context(browser, color_scheme="light")
     try:
         page = _open_storefront(context, local_site_url)
         page.wait_for_function(
-            "document.documentElement.dataset.themeSource === 'site-default'"
+            "document.documentElement.dataset.visualTheme === 'dark'"
         )
-        assert page.locator("html").get_attribute("data-theme") == "dark"
+        assert page.locator("html").get_attribute("data-theme-mode") == "system"
+        assert page.locator("html").get_attribute("data-theme-source") == "system"
+        assert page.locator("html").get_attribute("data-theme") == "light"
+        assert page.locator("#themeModeSelect").input_value() == "system"
 
-        page.locator("#themeModeSelect").select_option("light")
+        page.locator("#themeModeSelect").select_option("dark")
         assert page.locator("html").get_attribute("data-theme-source") == "user"
         page.reload(wait_until="domcontentloaded")
         page.wait_for_selector("#themeModeSelect")
-        assert page.locator("html").get_attribute("data-theme") == "light"
+        assert page.locator("html").get_attribute("data-theme") == "dark"
         assert page.locator("html").get_attribute("data-theme-source") == "user"
-        assert page.evaluate("localStorage.getItem('repuestoscel_theme_mode')") == "light"
+        assert page.evaluate("localStorage.getItem('repuestoscel_theme_mode')") == "dark"
     finally:
         context.close()
 
 
-def test_storefront_legacy_repair_site_default_resolves_to_light(
+def test_storefront_remote_visual_theme_does_not_override_system_default(
     browser, local_site_url
 ):
     context = _context(browser, color_scheme="dark")
@@ -149,9 +154,11 @@ def test_storefront_legacy_repair_site_default_resolves_to_light(
     try:
         page = _open_storefront(context, local_site_url)
         page.wait_for_function(
-            "document.documentElement.dataset.themeSource === 'site-default'"
+            "document.documentElement.dataset.visualTheme === 'repair'"
         )
-        assert page.locator("html").get_attribute("data-theme") == "light"
+        assert page.locator("html").get_attribute("data-theme-mode") == "system"
+        assert page.locator("html").get_attribute("data-theme-source") == "system"
+        assert page.locator("html").get_attribute("data-theme") == "dark"
         assert page.locator("html").get_attribute("data-visual-theme") == "repair"
     finally:
         context.close()
@@ -187,8 +194,10 @@ def test_storefront_discards_invalid_theme_storage(browser, local_site_url):
     try:
         page = _open_storefront(context, local_site_url)
         page.wait_for_function(
-            "document.documentElement.dataset.themeSource === 'site-default'"
+            "document.documentElement.dataset.visualTheme === 'dark'"
         )
+        assert page.locator("html").get_attribute("data-theme-mode") == "system"
+        assert page.locator("html").get_attribute("data-theme-source") == "system"
         assert page.locator("html").get_attribute("data-theme") == "dark"
         assert page.evaluate("localStorage.getItem('repuestoscel_theme_mode')") is None
     finally:

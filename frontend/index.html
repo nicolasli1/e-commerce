@@ -9927,13 +9927,6 @@
         document.documentElement.dataset.visualTheme = String(siteSettings.visualTheme || 'unset');
       }
       if (hasExplicitThemePreference) return;
-      if (remoteSiteSettingsLoaded) {
-        const configuredMode = normalizeThemeMode(siteSettings.visualTheme, null);
-        if (configuredMode) {
-          applyThemeMode(configuredMode, { source: 'site-default' });
-          return;
-        }
-      }
       applyThemeMode('system', { source: 'system' });
     }
 
