@@ -95,6 +95,8 @@ const App = (() => {
   function closeSidebar() {
     $sidebar.classList.remove('open');
     $overlay.classList.remove('open');
+    $sidebarToggle?.setAttribute('aria-expanded', 'false');
+    $overlay?.setAttribute('aria-hidden', 'true');
   }
 
   /* =========================================================
@@ -112,6 +114,8 @@ const App = (() => {
 
   function handleRoute() {
     const hash = window.location.hash || '#/login';
+    document.documentElement.dataset.adminShell = hash === '#/login' ? 'auth' : 'app';
+    document.body.classList.toggle('auth-screen', hash === '#/login');
     closeSidebar();
 
     // Protected routes
@@ -162,8 +166,18 @@ const App = (() => {
             </div>
             <button type="submit" class="btn btn-gradient login-btn">Iniciar sesión</button>
           </form>
+          <div class="login-theme-control">
+            <label for="loginThemeMode">Tema</label>
+            <select id="loginThemeMode" class="theme-control-select" data-admin-theme-select aria-label="Tema del panel">
+              <option value="system">Sistema</option>
+              <option value="light">Claro</option>
+              <option value="dark">Oscuro</option>
+            </select>
+          </div>
         </div>
       </div>`;
+
+    window.AdminTheme?.syncControls();
 
     document.getElementById('loginForm').addEventListener('submit', async (e) => {
       e.preventDefault();
@@ -760,7 +774,7 @@ const App = (() => {
         const tr = $el('tr', { dataset: { productId: p.productId, category: p.category || '' } });
         if (isDeleted) tr.classList.add('deleted');
         const variantChip = (p.variants && p.variants.length > 0)
-          ? ` <span class="badge" style="background:var(--info,#3b82f6);color:#fff;font-size:0.7rem;padding:2px 6px;border-radius:10px;">${p.variants.length} var.</span>`
+          ? ` <span class="badge variant-count-badge">${p.variants.length} var.</span>`
           : '';
         tr.innerHTML = `
           <td><strong>${esc(p.name)}</strong>${variantChip}</td>
@@ -838,7 +852,6 @@ const App = (() => {
           : '';
         const div = document.createElement('div');
         div.className = 'variant-row';
-        div.style.cssText = 'display:grid;grid-template-columns:1fr 1fr 1fr 90px 70px auto auto auto;gap:6px;align-items:center;padding:8px;background:var(--surface);border:1px solid var(--border);border-radius:6px;margin-bottom:6px;';
         div.innerHTML = `
           <input class="form-input variant-brand" style="padding:6px 8px;" placeholder="Apple" value="${esc(row.deviceBrand)}" data-idx="${idx}" data-field="deviceBrand" />
           <input class="form-input variant-family" style="padding:6px 8px;" placeholder="iPhone 12" value="${esc(row.deviceFamily)}" data-idx="${idx}" data-field="deviceFamily" />
@@ -2011,7 +2024,7 @@ Si tienes dudas de compatibilidad, responde este correo y te ayudamos a elegir e
     orders.forEach((order) => {
       const tr = $el('tr', { dataset: { reference: order.reference || '' } });
       tr.innerHTML = `
-        <td><span style="display:inline-flex;align-items:center;padding:6px 10px;border-radius:9999px;background:rgba(99,102,241,0.14);border:1px solid rgba(99,102,241,0.28);color:#c4b5fd;font-size:0.75rem;font-weight:700;">${esc(order.reference || '—')}</span><br><span style="color:var(--text-secondary);font-size:0.75rem;">${esc(order.provider || '—')}</span></td>
+        <td><span class="order-reference">${esc(order.reference || '—')}</span><br><span class="table-secondary table-secondary-sm">${esc(order.provider || '—')}</span></td>
         <td>${esc(order.customer?.fullName || '—')}<br><span style="color:var(--text-secondary);font-size:0.75rem;">${esc(order.customer?.email || '—')}</span></td>
         <td><span class="badge ${paymentBadge(order.status)}">${esc(statusLabel(order.status) || '—')}</span></td>
         <td><span class="badge ${fulfillmentBadge(order.fulfillmentStatus)}">${esc(order.fulfillmentStatus || '—')}</span></td>
@@ -2059,11 +2072,11 @@ Si tienes dudas de compatibilidad, responde este correo y te ayudamos a elegir e
         </table>
       </div>
 
-      <div class="modal-overlay" id="orderModal">
+      <div class="modal-overlay" id="orderModal" role="dialog" aria-modal="true" aria-labelledby="orderModalTitle">
         <div class="modal">
           <div class="modal-header">
-            <h2 class="modal-title">Gestionar pedido</h2>
-            <button class="modal-close" id="orderModalCloseBtn">✕</button>
+            <h2 class="modal-title" id="orderModalTitle">Gestionar pedido</h2>
+            <button class="modal-close" id="orderModalCloseBtn" aria-label="Cerrar modal">✕</button>
           </div>
           <div id="orderModalContent"></div>
         </div>
@@ -2110,24 +2123,24 @@ Si tienes dudas de compatibilidad, responde este correo y te ayudamos a elegir e
       const addressHtml = addrLine1 ? `
         <div class="form-group">
           <label class="form-label">📍 Dirección de envío</label>
-          <div style="padding:12px 14px;border-radius:10px;background:rgba(99,102,241,0.07);border:1px solid rgba(99,102,241,0.18);color:var(--text-primary);font-size:0.875rem;line-height:1.5;">
-            <div style="font-weight:600;">${esc(addrLine1)}</div>
-            ${addrLine2 ? `<div style="color:var(--text-secondary);">🏢 ${esc(addrLine2)}</div>` : ''}
-            ${addrCityRegion ? `<div style="color:var(--text-secondary);">${esc(addrCityRegion)}</div>` : ''}
-            ${order.customer?.phoneNumber ? `<div style="color:var(--text-secondary);">📞 ${esc(order.customer.phoneNumber)}</div>` : ''}
-            ${mapsUrl ? `<a href="${esc(mapsUrl)}" target="_blank" rel="noopener" style="display:inline-flex;align-items:center;gap:6px;margin-top:10px;padding:7px 13px;border-radius:8px;background:rgba(99,102,241,0.16);border:1px solid rgba(99,102,241,0.32);color:#c4b5fd;font-weight:600;text-decoration:none;font-size:0.8rem;">🗺️ Ver en Google Maps ↗</a>` : ''}
+          <div class="order-address">
+            <div class="order-address-primary">${esc(addrLine1)}</div>
+            ${addrLine2 ? `<div class="table-secondary">🏢 ${esc(addrLine2)}</div>` : ''}
+            ${addrCityRegion ? `<div class="table-secondary">${esc(addrCityRegion)}</div>` : ''}
+            ${order.customer?.phoneNumber ? `<div class="table-secondary">📞 ${esc(order.customer.phoneNumber)}</div>` : ''}
+            ${mapsUrl ? `<a href="${esc(mapsUrl)}" target="_blank" rel="noopener" class="order-map-link">🗺️ Ver en Google Maps ↗</a>` : ''}
           </div>
         </div>
         ${orderNotes ? `
         <div class="form-group">
           <label class="form-label">📝 Notas del cliente</label>
-          <div style="padding:10px 14px;border-radius:10px;background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.08);color:var(--text-secondary);font-size:0.85rem;line-height:1.5;">${esc(orderNotes)}</div>
+          <div class="order-notes">${esc(orderNotes)}</div>
         </div>` : ''}` : '';
 
       modalContent.innerHTML = `
         <div class="form-group">
           <label class="form-label">Referencia</label>
-          <div style="display:inline-flex;align-items:center;gap:8px;padding:8px 12px;border-radius:9999px;background:rgba(99,102,241,0.14);border:1px solid rgba(99,102,241,0.28);color:#c4b5fd;font-weight:700;">${esc(order.reference || '—')}</div>
+          <div class="order-reference order-reference-lg">${esc(order.reference || '—')}</div>
         </div>
         <div class="form-row">
           <div class="form-group">
@@ -2273,8 +2286,10 @@ Si tienes dudas de compatibilidad, responde este correo y te ayudamos a elegir e
 
     // Sidebar toggle
     $sidebarToggle.addEventListener('click', () => {
-      $sidebar.classList.toggle('open');
-      $overlay.classList.toggle('open');
+      const isOpen = $sidebar.classList.toggle('open');
+      $overlay.classList.toggle('open', isOpen);
+      $sidebarToggle.setAttribute('aria-expanded', String(isOpen));
+      $overlay.setAttribute('aria-hidden', String(!isOpen));
     });
     $overlay.addEventListener('click', closeSidebar);
 

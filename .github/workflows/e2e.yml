@@ -25,6 +25,36 @@ env:
   E2E_HEADLESS: 'true'
 
 jobs:
+  local-theme-regression:
+    name: Local theme regressions
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+          cache: 'pip'
+          cache-dependency-path: tests/requirements-e2e.txt
+      - name: Install browser test dependencies
+        run: |
+          pip install -r tests/requirements-e2e.txt
+          python -m playwright install chromium --with-deps
+      - name: Run blocking local UI regressions
+        run: |
+          python -m pytest \
+            tests/e2e/test_theme_ui.py \
+            tests/e2e/test_cart_ui.py \
+            -v --tb=short --durations=10 \
+            --junitxml=report/local-theme-results.xml
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: local-theme-results
+          path: |
+            report/
+            tests/e2e/screenshots/
+
   smoke:
     name: Smoke Tests
     runs-on: ubuntu-latest

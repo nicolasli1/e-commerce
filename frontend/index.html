@@ -3,6 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="theme-color" id="themeColorMeta" content="#080810" />
   <title>RepuestosCel — Repuestos para Celulares</title>
   <meta name="description" content="RepuestosCel: repuestos para celulares en Colombia. Encuentra pantallas, baterías, flex, cámaras y herramientas para reparar tu celular con confianza. Envíos 24-48h." />
   <meta name="keywords" content="repuestos celulares colombia, reparar celular, pantallas iPhone, baterías Samsung, kit reparación, flex carga, RepuestosCel" />
@@ -21,6 +22,78 @@
   <meta name="twitter:card" content="summary_large_image" />
   <meta name="twitter:title" content="RepuestosCel — Repuestos para Celulares" />
   <meta name="twitter:description" content="Encuentra el repuesto correcto para reparar tu celular. Pantallas, baterías, flex, kits DIY y envío en Colombia." />
+  <!-- Resolve the color scheme before CSS paints to avoid a light/dark flash. -->
+  <script>
+    (function () {
+      var THEME_KEY = 'repuestoscel_theme_mode';
+      var LEGACY_KEYS = ['nex' + 'core_theme_mode', 'nex' + 'core_site_theme', 'repuestoscel_site_theme'];
+      var root = document.documentElement;
+
+      function storageRead(key) {
+        try { return window.localStorage.getItem(key); } catch (_) { return null; }
+      }
+      function storageWrite(key, value) {
+        try { window.localStorage.setItem(key, value); return true; } catch (_) { return false; }
+      }
+      function storageRemove(key) {
+        try { window.localStorage.removeItem(key); } catch (_) {}
+      }
+      function normalize(mode) {
+        if (mode === 'repair') return 'light';
+        return /^(system|light|dark)$/.test(mode || '') ? mode : null;
+      }
+      function resolve(mode) {
+        return mode === 'system'
+          ? (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light')
+          : mode;
+      }
+      function paint(mode, source) {
+        var resolved = resolve(mode);
+        root.dataset.themeMode = mode;
+        root.dataset.theme = resolved;
+        root.dataset.themeSource = source;
+        root.style.colorScheme = resolved;
+        var meta = document.getElementById('themeColorMeta');
+        if (meta) meta.content = resolved === 'dark' ? '#080810' : '#f6f9fa';
+      }
+
+      var storedKey = THEME_KEY;
+      var rawMode = storageRead(THEME_KEY);
+      var storedMode = normalize(rawMode);
+      if (storedMode === null) {
+        for (var i = 0; i < LEGACY_KEYS.length; i += 1) {
+          var legacyMode = storageRead(LEGACY_KEYS[i]);
+          var normalizedLegacyMode = normalize(legacyMode);
+          if (normalizedLegacyMode !== null) {
+            rawMode = legacyMode;
+            storedMode = normalizedLegacyMode;
+            storedKey = LEGACY_KEYS[i];
+            break;
+          }
+        }
+      }
+      var hasUserPreference = storedMode !== null;
+      var initialMode = storedMode || 'system';
+
+      // Persist the normalized value first; only then remove legacy keys.
+      if (hasUserPreference && storageWrite(THEME_KEY, initialMode)) {
+        LEGACY_KEYS.forEach(storageRemove);
+      } else if (rawMode !== null && !storedMode) {
+        storageRemove(storedKey);
+      }
+
+      paint(initialMode, hasUserPreference ? 'user' : 'system');
+      window.__repuestosThemeBootstrap = {
+        key: THEME_KEY,
+        legacyKeys: LEGACY_KEYS,
+        mode: initialMode,
+        hasUserPreference: hasUserPreference,
+        read: storageRead,
+        write: storageWrite,
+        remove: storageRemove
+      };
+    })();
+  </script>
   <!-- Schema.org JSON-LD -->
   <script type="application/ld+json">
   {
@@ -92,7 +165,15 @@
        RESET / BASE
     ============================== */
     *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
-    html { scroll-behavior: smooth; }
+    html {
+      scroll-behavior: smooth;
+      color-scheme: dark;
+      background: #080810;
+    }
+    html[data-theme="light"] {
+      color-scheme: light;
+      background: #f6f9fa;
+    }
     body {
       font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
       background: #080810;
@@ -117,6 +198,23 @@
     a { color: inherit; text-decoration: none; }
     img { max-width: 100%; display: block; }
     ul { list-style: none; }
+    button, input, select, textarea { font: inherit; }
+
+    :where(a, button, input, select, textarea, [tabindex]):focus-visible {
+      outline: 3px solid #a78bfa;
+      outline-offset: 3px;
+    }
+    html[data-theme="light"] :where(a, button, input, select, textarea, [tabindex]):focus-visible {
+      outline-color: #0f766e;
+    }
+    :where(input, textarea, select):-webkit-autofill,
+    :where(input, textarea, select):-webkit-autofill:hover,
+    :where(input, textarea, select):-webkit-autofill:focus {
+      -webkit-text-fill-color: var(--text);
+      caret-color: var(--text);
+      box-shadow: 0 0 0 1000px var(--bg-soft) inset;
+      transition: background-color 9999s ease-out 0s;
+    }
 
     /* ==============================
        UTILITIES
@@ -308,6 +406,7 @@
     .reveal-delay-4 { transition-delay: 0.24s; }
 
     @media (prefers-reduced-motion: reduce) {
+      html { scroll-behavior: auto !important; }
       .reveal {
         transition: opacity 0.2s ease;
         transform: none;
@@ -449,6 +548,7 @@
       font-size: 0.8rem;
       font-weight: 750;
       transition: transform 160ms var(--ease-out), background 160ms var(--ease-out), border-color 160ms var(--ease-out), color 160ms var(--ease-out);
+      position: relative;
     }
     .theme-toggle:active { transform: scale(0.97); }
     .theme-toggle-icon {
@@ -457,6 +557,22 @@
     }
     .theme-toggle-text {
       display: none;
+    }
+    .theme-toggle-select {
+      position: absolute;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+      opacity: 0;
+      cursor: pointer;
+      appearance: none;
+    }
+    .theme-toggle:focus-within {
+      outline: 3px solid #a78bfa;
+      outline-offset: 3px;
+    }
+    html[data-theme="light"] .theme-toggle:focus-within {
+      outline-color: #0f766e;
     }
     @media (hover: hover) and (pointer: fine) {
       .theme-toggle:hover {
@@ -2741,7 +2857,7 @@
       /* Truco para que el embed (claro por defecto) combine con el checkout oscuro */
       filter: invert(0.92) hue-rotate(180deg) brightness(0.96) contrast(0.9);
     }
-    body[data-site-theme="repair"] .checkout-map { filter: none; }
+    html[data-theme="light"] body .checkout-map { filter: none; }
     .checkout-map-chip {
       position: absolute;
       left: 12px;
@@ -4927,10 +5043,10 @@
     }
 
     /* ==============================
-       REPAIR CATALOG THEME
-       iFixit-inspired technical storefront
+       LIGHT COLOR SCHEME
+       Technical storefront treatment, independent from the saved visual preset
     ============================== */
-    body[data-site-theme="repair"] {
+    html[data-theme="light"] body {
       --bg: #f5f7f8;
       --bg-soft: #e9eef1;
       --surface: #ffffff;
@@ -4945,8 +5061,6 @@
       --violet-2: #245fbd;
       --blue: #2563eb;
       --green: #0f9f6e;
-      --repair-line: rgba(19, 36, 48, 0.07);
-      --repair-paper: #fbfcfb;
       --shadow-soft: 0 18px 46px rgba(31, 45, 55, 0.12);
       --shadow-card: 0 22px 52px rgba(31, 45, 55, 0.16);
       background:
@@ -4954,7 +5068,7 @@
       color: #151c24;
     }
 
-    body[data-site-theme="repair"]::before {
+    html[data-theme="light"] body::before {
       background:
         linear-gradient(115deg, transparent 0 11%, rgba(14,124,114,0.09) 11.1% 11.35%, transparent 11.5% 100%),
         linear-gradient(115deg, transparent 0 72%, rgba(36,95,189,0.08) 72.1% 72.32%, transparent 72.5% 100%),
@@ -4964,7 +5078,7 @@
       opacity: 1;
     }
 
-    body[data-site-theme="repair"]::after {
+    html[data-theme="light"] body::after {
       content: '';
       position: fixed;
       inset: 0;
@@ -4978,196 +5092,196 @@
       opacity: 0.82;
     }
 
-    body[data-site-theme="repair"] .navbar {
+    html[data-theme="light"] body .navbar {
       background: rgba(251, 252, 251, 0.9);
       border-bottom: 1px solid rgba(15, 23, 42, 0.1);
       box-shadow: 0 10px 34px rgba(31, 45, 55, 0.08);
     }
-    body[data-site-theme="repair"] .navbar.scrolled {
+    html[data-theme="light"] body .navbar.scrolled {
       background: rgba(251, 252, 251, 0.96);
       box-shadow: 0 16px 44px rgba(31, 45, 55, 0.11);
     }
-    body[data-site-theme="repair"] .logo,
-    body[data-site-theme="repair"] .nav-links a,
-    body[data-site-theme="repair"] .hero h1,
-    body[data-site-theme="repair"] .section-title,
-    body[data-site-theme="repair"] .category-card h3,
-    body[data-site-theme="repair"] .product-body h3,
-    body[data-site-theme="repair"] .detail-info h2 {
+    html[data-theme="light"] body .logo,
+    html[data-theme="light"] body .nav-links a,
+    html[data-theme="light"] body .hero h1,
+    html[data-theme="light"] body .section-title,
+    html[data-theme="light"] body .category-card h3,
+    html[data-theme="light"] body .product-body h3,
+    html[data-theme="light"] body .detail-info h2 {
       color: #17202a;
     }
-    body[data-site-theme="repair"] .logo-icon {
+    html[data-theme="light"] body .logo-icon {
       background: linear-gradient(145deg, #0f766e, #2563eb);
       box-shadow: 0 12px 28px rgba(15, 118, 110, 0.18);
     }
-    body[data-site-theme="repair"] .nav-links,
-    body[data-site-theme="repair"] .search-toggle,
-    body[data-site-theme="repair"] .cart-trigger,
-    body[data-site-theme="repair"] .theme-toggle,
-    body[data-site-theme="repair"] .btn-secondary {
+    html[data-theme="light"] body .nav-links,
+    html[data-theme="light"] body .search-toggle,
+    html[data-theme="light"] body .cart-trigger,
+    html[data-theme="light"] body .theme-toggle,
+    html[data-theme="light"] body .btn-secondary {
       background: rgba(255,255,255,0.9);
       border-color: rgba(15,23,42,0.14);
       color: #17202a;
     }
-    body[data-site-theme="repair"] .hamburger,
-    body[data-site-theme="repair"] .search-toggle {
+    html[data-theme="light"] body .hamburger,
+    html[data-theme="light"] body .search-toggle {
       color: #17202a;
     }
-    body[data-site-theme="repair"] .btn-primary {
+    html[data-theme="light"] body .btn-primary {
       background: #17202a;
       color: #fff;
     }
-    body[data-site-theme="repair"] .btn-gradient {
+    html[data-theme="light"] body .btn-gradient {
       background: linear-gradient(135deg, #0f766e, #2563eb);
       box-shadow: 0 14px 34px rgba(15, 118, 110, 0.2);
     }
-    body[data-site-theme="repair"] .hero {
+    html[data-theme="light"] body .hero {
       padding-top: clamp(92px, 11vw, 128px);
     }
-    body[data-site-theme="repair"] .hero-glow,
-    body[data-site-theme="repair"] .hero-glow-2 {
+    html[data-theme="light"] body .hero-glow,
+    html[data-theme="light"] body .hero-glow-2 {
       display: none;
     }
-    body[data-site-theme="repair"] .hero-badge {
+    html[data-theme="light"] body .hero-badge {
       color: #0f513f;
       background: rgba(15, 118, 110, 0.1);
       border-color: rgba(15, 118, 110, 0.22);
       box-shadow: none;
     }
-    body[data-site-theme="repair"] .hero h1 {
+    html[data-theme="light"] body .hero h1 {
       letter-spacing: -0.045em;
     }
-    body[data-site-theme="repair"] .hero h1 .gradient-text {
+    html[data-theme="light"] body .hero h1 .gradient-text {
       background: linear-gradient(115deg, #0f766e, #2563eb);
       -webkit-background-clip: text;
       background-clip: text;
     }
-    body[data-site-theme="repair"] .hero p,
-    body[data-site-theme="repair"] .section-subtitle,
-    body[data-site-theme="repair"] .products-filter-info,
-    body[data-site-theme="repair"] .category-card p,
-    body[data-site-theme="repair"] .product-body p {
+    html[data-theme="light"] body .hero p,
+    html[data-theme="light"] body .section-subtitle,
+    html[data-theme="light"] body .products-filter-info,
+    html[data-theme="light"] body .category-card p,
+    html[data-theme="light"] body .product-body p {
       color: #56616f;
     }
-    body[data-site-theme="repair"] .hero-trust-strip span,
-    body[data-site-theme="repair"] .finder-parts span,
-    body[data-site-theme="repair"] .filter-chip,
-    body[data-site-theme="repair"] .product-meta-chip,
-    body[data-site-theme="repair"] .compat-chip {
+    html[data-theme="light"] body .hero-trust-strip span,
+    html[data-theme="light"] body .finder-parts span,
+    html[data-theme="light"] body .filter-chip,
+    html[data-theme="light"] body .product-meta-chip,
+    html[data-theme="light"] body .compat-chip {
       background: rgba(255,255,255,0.96);
       border-color: rgba(15,23,42,0.12);
       color: #334155;
       box-shadow: 0 8px 18px rgba(31,45,55,0.05);
     }
-    body[data-site-theme="repair"] .hero-finder,
-    body[data-site-theme="repair"] .category-card,
-    body[data-site-theme="repair"] .product-card,
-    body[data-site-theme="repair"] .detail-panel,
-    body[data-site-theme="repair"] .detail-info,
-    body[data-site-theme="repair"] .checkout-panel,
-    body[data-site-theme="repair"] .pricing-card,
-    body[data-site-theme="repair"] .testimonial-card,
-    body[data-site-theme="repair"] .tracking-shell,
-    body[data-site-theme="repair"] .no-search-results {
+    html[data-theme="light"] body .hero-finder,
+    html[data-theme="light"] body .category-card,
+    html[data-theme="light"] body .product-card,
+    html[data-theme="light"] body .detail-panel,
+    html[data-theme="light"] body .detail-info,
+    html[data-theme="light"] body .checkout-panel,
+    html[data-theme="light"] body .pricing-card,
+    html[data-theme="light"] body .testimonial-card,
+    html[data-theme="light"] body .tracking-shell,
+    html[data-theme="light"] body .no-search-results {
       background: #ffffff;
       border-color: rgba(15,23,42,0.14);
       box-shadow: var(--shadow-soft);
     }
-    body[data-site-theme="repair"] .hero-finder,
-    body[data-site-theme="repair"] .category-card,
-    body[data-site-theme="repair"] .product-card {
+    html[data-theme="light"] body .hero-finder,
+    html[data-theme="light"] body .category-card,
+    html[data-theme="light"] body .product-card {
       box-shadow:
         0 1px 0 rgba(255,255,255,0.9) inset,
         0 18px 44px rgba(31,45,55,0.12),
         0 0 0 1px rgba(255,255,255,0.7);
     }
-    body[data-site-theme="repair"] .hero-finder::before {
+    html[data-theme="light"] body .hero-finder::before {
       background-image:
         linear-gradient(125deg, transparent 0 44%, rgba(14,124,114,0.055) 44.15% 44.45%, transparent 44.6% 100%),
         linear-gradient(35deg, transparent 0 63%, rgba(36,95,189,0.045) 63.1% 63.35%, transparent 63.55% 100%);
       background-size: 100% 100%;
       opacity: 1;
     }
-    body[data-site-theme="repair"] .finder-eyebrow,
-    body[data-site-theme="repair"] .hero-carousel-price,
-    body[data-site-theme="repair"] .category-count,
-    body[data-site-theme="repair"] .quality-pill,
-    body[data-site-theme="repair"] .gallery-zoom-reset {
+    html[data-theme="light"] body .finder-eyebrow,
+    html[data-theme="light"] body .hero-carousel-price,
+    html[data-theme="light"] body .category-count,
+    html[data-theme="light"] body .quality-pill,
+    html[data-theme="light"] body .gallery-zoom-reset {
       color: #0f766e;
     }
-    body[data-site-theme="repair"] .finder-header strong,
-    body[data-site-theme="repair"] .hero-carousel-name,
-    body[data-site-theme="repair"] .product-price,
-    body[data-site-theme="repair"] .detail-price {
+    html[data-theme="light"] body .finder-header strong,
+    html[data-theme="light"] body .hero-carousel-name,
+    html[data-theme="light"] body .product-price,
+    html[data-theme="light"] body .detail-price {
       color: #17202a;
       background: none;
       -webkit-text-fill-color: currentColor;
     }
-    body[data-site-theme="repair"] .finder-search,
-    body[data-site-theme="repair"] .hero-search-shell,
-    body[data-site-theme="repair"] .hero-carousel,
-    body[data-site-theme="repair"] .search-bar-inner {
+    html[data-theme="light"] body .finder-search,
+    html[data-theme="light"] body .hero-search-shell,
+    html[data-theme="light"] body .hero-carousel,
+    html[data-theme="light"] body .search-bar-inner {
       background: #ffffff;
       border-color: rgba(15,23,42,0.14);
       color: #475569;
       box-shadow: 0 12px 28px rgba(31,45,55,0.08);
     }
-    body[data-site-theme="repair"] .hero-search-icon {
+    html[data-theme="light"] body .hero-search-icon {
       background: #eef2ff;
       color: #0f172a;
     }
-    body[data-site-theme="repair"] .hero-search-shell input {
+    html[data-theme="light"] body .hero-search-shell input {
       color: #17202a;
     }
-    body[data-site-theme="repair"] .hero-search-shell input::placeholder {
+    html[data-theme="light"] body .hero-search-shell input::placeholder {
       color: #697586;
     }
-    body[data-site-theme="repair"] .hero-search-shell button {
+    html[data-theme="light"] body .hero-search-shell button {
       background: linear-gradient(135deg, #0f766e, #2563eb);
       color: #ffffff;
       box-shadow: 0 16px 32px rgba(37,99,235,0.16);
     }
-    body[data-site-theme="repair"] .hero-search-picks button {
+    html[data-theme="light"] body .hero-search-picks button {
       background: rgba(255,255,255,0.94);
       border-color: rgba(15,23,42,0.12);
       color: #334155;
       box-shadow: 0 8px 18px rgba(31,45,55,0.05);
     }
-    body[data-site-theme="repair"] .no-search-actions button {
+    html[data-theme="light"] body .no-search-actions button {
       background: #ffffff;
       border-color: rgba(15,23,42,0.14);
       color: #334155;
       box-shadow: 0 8px 18px rgba(31,45,55,0.05);
     }
-    body[data-site-theme="repair"] .no-search-results strong {
+    html[data-theme="light"] body .no-search-results strong {
       color: #17202a;
     }
-    body[data-site-theme="repair"] .no-search-results p {
+    html[data-theme="light"] body .no-search-results p {
       color: #64748b;
     }
-    body[data-site-theme="repair"] .no-search-hint {
+    html[data-theme="light"] body .no-search-hint {
       color: #0f766e;
       background: rgba(15,118,110,0.08);
       border-color: rgba(15,118,110,0.16);
     }
-    body[data-site-theme="repair"] .categories,
-    body[data-site-theme="repair"] .products,
-    body[data-site-theme="repair"] .testimonials,
-    body[data-site-theme="repair"] .pricing {
+    html[data-theme="light"] body .categories,
+    html[data-theme="light"] body .products,
+    html[data-theme="light"] body .testimonials,
+    html[data-theme="light"] body .pricing {
       background: transparent;
       border-block-color: rgba(15,23,42,0.1);
     }
-    body[data-site-theme="repair"] .products,
-    body[data-site-theme="repair"] .pricing {
+    html[data-theme="light"] body .products,
+    html[data-theme="light"] body .pricing {
       background:
         linear-gradient(135deg, rgba(255,255,255,0.42), transparent 32%),
         linear-gradient(180deg, rgba(238, 244, 246, 0.9), rgba(248, 250, 250, 0.96));
       border-block: 1px solid rgba(15,23,42,0.1);
     }
-    body[data-site-theme="repair"] .pricing-grid {
+    html[data-theme="light"] body .pricing-grid {
       align-items: stretch;
     }
-    body[data-site-theme="repair"] .pricing-card {
+    html[data-theme="light"] body .pricing-card {
       display: flex;
       flex-direction: column;
       min-height: 640px;
@@ -5177,7 +5291,7 @@
         0 22px 54px rgba(31,45,55,0.14),
         0 0 0 1px rgba(255,255,255,0.82);
     }
-    body[data-site-theme="repair"] .pricing-card.featured {
+    html[data-theme="light"] body .pricing-card.featured {
       background:
         linear-gradient(180deg, rgba(242,246,255,0.98), #ffffff 58%);
       border-color: rgba(37,99,235,0.24);
@@ -5186,101 +5300,101 @@
         0 28px 68px rgba(37,99,235,0.16),
         0 0 0 1px rgba(37,99,235,0.08);
     }
-    body[data-site-theme="repair"] .pricing-card h3,
-    body[data-site-theme="repair"] .pricing-amount {
+    html[data-theme="light"] body .pricing-card h3,
+    html[data-theme="light"] body .pricing-amount {
       color: #111827;
     }
-    body[data-site-theme="repair"] .pricing-card p,
-    body[data-site-theme="repair"] .pricing-period {
+    html[data-theme="light"] body .pricing-card p,
+    html[data-theme="light"] body .pricing-period {
       color: #56616f;
     }
-    body[data-site-theme="repair"] .pricing-amount span {
+    html[data-theme="light"] body .pricing-amount span {
       color: #64717d;
     }
-    body[data-site-theme="repair"] .pricing-features {
+    html[data-theme="light"] body .pricing-features {
       flex: 1;
     }
-    body[data-site-theme="repair"] .pricing-features li {
+    html[data-theme="light"] body .pricing-features li {
       color: #3c4854;
       font-weight: 560;
     }
-    body[data-site-theme="repair"] .pricing-features li::before {
+    html[data-theme="light"] body .pricing-features li::before {
       color: #0f9f6e;
       text-shadow: none;
     }
-    body[data-site-theme="repair"] .pricing-card.featured .pricing-popular {
+    html[data-theme="light"] body .pricing-card.featured .pricing-popular {
       color: #ffffff;
       background: linear-gradient(135deg, #0e7c72, #245fbd);
       box-shadow: 0 14px 30px rgba(37,99,235,0.18);
     }
-    body[data-site-theme="repair"] .pricing-card .btn {
+    html[data-theme="light"] body .pricing-card .btn {
       margin-top: auto;
     }
-    body[data-site-theme="repair"] .testimonial-card {
+    html[data-theme="light"] body .testimonial-card {
       color: #151c24;
       box-shadow:
         0 1px 0 rgba(255,255,255,0.95) inset,
         0 20px 46px rgba(31,45,55,0.12),
         0 0 0 1px rgba(255,255,255,0.78);
     }
-    body[data-site-theme="repair"] .testimonial-stars {
+    html[data-theme="light"] body .testimonial-stars {
       color: #0e7c72;
       letter-spacing: 1.5px;
     }
-    body[data-site-theme="repair"] .testimonial-card blockquote {
+    html[data-theme="light"] body .testimonial-card blockquote {
       color: #2f3b46;
       font-weight: 520;
     }
-    body[data-site-theme="repair"] .testimonial-author h4,
-    body[data-site-theme="repair"] .cta h2,
-    body[data-site-theme="repair"] .tracking-shell .section-title,
-    body[data-site-theme="repair"] .tracking-result-title {
+    html[data-theme="light"] body .testimonial-author h4,
+    html[data-theme="light"] body .cta h2,
+    html[data-theme="light"] body .tracking-shell .section-title,
+    html[data-theme="light"] body .tracking-result-title {
       color: #111827;
     }
-    body[data-site-theme="repair"] .testimonial-author p,
-    body[data-site-theme="repair"] .cta p,
-    body[data-site-theme="repair"] .tracking-empty,
-    body[data-site-theme="repair"] .tracking-shell .section-subtitle,
-    body[data-site-theme="repair"] .tracking-result-copy {
+    html[data-theme="light"] body .testimonial-author p,
+    html[data-theme="light"] body .cta p,
+    html[data-theme="light"] body .tracking-empty,
+    html[data-theme="light"] body .tracking-shell .section-subtitle,
+    html[data-theme="light"] body .tracking-result-copy {
       color: #51606d;
     }
-    body[data-site-theme="repair"] .testimonial-avatar {
+    html[data-theme="light"] body .testimonial-avatar {
       background: linear-gradient(135deg, #0e7c72, #245fbd);
       color: #ffffff;
     }
-    body[data-site-theme="repair"] .cta-form input::placeholder,
-    body[data-site-theme="repair"] .cta-form textarea::placeholder,
-    body[data-site-theme="repair"] .tracking-form input::placeholder {
+    html[data-theme="light"] body .cta-form input::placeholder,
+    html[data-theme="light"] body .cta-form textarea::placeholder,
+    html[data-theme="light"] body .tracking-form input::placeholder {
       color: #7b8792;
     }
-    body[data-site-theme="repair"] .mobile-nav-links a,
-    body[data-site-theme="repair"] .mobile-nav-user a {
+    html[data-theme="light"] body .mobile-nav-links a,
+    html[data-theme="light"] body .mobile-nav-user a {
       color: #17202a !important;
       background: #ffffff !important;
       border-color: rgba(15,23,42,0.12) !important;
     }
-    body[data-site-theme="repair"] .tracking-result,
-    body[data-site-theme="repair"] .tracking-box {
+    html[data-theme="light"] body .tracking-result,
+    html[data-theme="light"] body .tracking-box {
       background: #f7fafb;
       border-color: rgba(15,23,42,0.12);
       color: #151c24;
     }
-    body[data-site-theme="repair"] .tracking-box strong {
+    html[data-theme="light"] body .tracking-box strong {
       color: #0e7c72;
     }
-    body[data-site-theme="repair"] .category-icon {
+    html[data-theme="light"] body .category-icon {
       background: #eef6f4 !important;
       color: #0f766e !important;
       border: 1px solid rgba(15,118,110,0.14);
     }
-    body[data-site-theme="repair"] .product-card {
+    html[data-theme="light"] body .product-card {
       border-radius: 18px;
       min-height: 500px;
       overflow: hidden;
     }
     @media (hover: hover) and (pointer: fine) {
-      body[data-site-theme="repair"] .category-card:hover,
-      body[data-site-theme="repair"] .product-card:hover {
+      html[data-theme="light"] body .category-card:hover,
+      html[data-theme="light"] body .product-card:hover {
         border-color: rgba(14,124,114,0.28);
         box-shadow:
           0 1px 0 rgba(255,255,255,0.95) inset,
@@ -5288,8 +5402,8 @@
           0 0 0 1px rgba(14,124,114,0.08);
       }
     }
-    body[data-site-theme="repair"] .product-image,
-    body[data-site-theme="repair"] .detail-gallery {
+    html[data-theme="light"] body .product-image,
+    html[data-theme="light"] body .detail-gallery {
       background:
         radial-gradient(circle at 50% 38%, rgba(255,255,255,0.95), transparent 38%),
         linear-gradient(130deg, transparent 0 36%, rgba(14,124,114,0.055) 36.1% 36.4%, transparent 36.6% 100%),
@@ -5298,383 +5412,383 @@
       background-size: auto, 100% 100%, 100% 100%, auto !important;
       border-bottom-color: rgba(15,23,42,0.12);
     }
-    body[data-site-theme="repair"] .product-image::after {
+    html[data-theme="light"] body .product-image::after {
       background: linear-gradient(180deg, transparent 56%, rgba(255,255,255,0.9));
     }
     .product-card .product-image::after {
       display: none;
     }
-    body[data-site-theme="repair"] .product-body {
+    html[data-theme="light"] body .product-body {
       background: #ffffff;
     }
-    body[data-site-theme="repair"] .product-visual-fallback {
+    html[data-theme="light"] body .product-visual-fallback {
       background: #ffffff;
       border-color: rgba(15,23,42,0.14);
       box-shadow: 0 18px 34px rgba(31,45,55,0.1);
     }
-    body[data-site-theme="repair"] .product-visual-ring {
+    html[data-theme="light"] body .product-visual-ring {
       background: rgba(15,118,110,0.08);
       border-color: rgba(15,118,110,0.18);
       box-shadow: none;
     }
-    body[data-site-theme="repair"] .product-visual-icon,
-    body[data-site-theme="repair"] .product-visual-copy strong {
+    html[data-theme="light"] body .product-visual-icon,
+    html[data-theme="light"] body .product-visual-copy strong {
       color: #17202a;
       text-shadow: none;
     }
-    body[data-site-theme="repair"] .product-badge {
+    html[data-theme="light"] body .product-badge {
       background: rgba(235, 248, 244, 0.96);
       border-color: rgba(15,118,110,0.24);
       color: #0f513f;
       box-shadow: 0 10px 20px rgba(31,45,55,0.08);
     }
-    body[data-site-theme="repair"] .detail-stat,
-    body[data-site-theme="repair"] .variant-pill,
-    body[data-site-theme="repair"] .detail-tool-list span,
-    body[data-site-theme="repair"] .detail-related-list span,
-    body[data-site-theme="repair"] .checkout-result-card,
-    body[data-site-theme="repair"] .cart-item {
+    html[data-theme="light"] body .detail-stat,
+    html[data-theme="light"] body .variant-pill,
+    html[data-theme="light"] body .detail-tool-list span,
+    html[data-theme="light"] body .detail-related-list span,
+    html[data-theme="light"] body .checkout-result-card,
+    html[data-theme="light"] body .cart-item {
       background: #ffffff;
       border-color: rgba(15,23,42,0.12);
       color: #17202a;
     }
-    body[data-site-theme="repair"] .modal,
-    body[data-site-theme="repair"] .cart-modal,
-    body[data-site-theme="repair"] .mobile-nav-panel,
-    body[data-site-theme="repair"] .search-bar-wrap {
+    html[data-theme="light"] body .modal,
+    html[data-theme="light"] body .cart-modal,
+    html[data-theme="light"] body .mobile-nav-panel,
+    html[data-theme="light"] body .search-bar-wrap {
       background: #fbfcfd;
       color: #17202a;
       border-color: rgba(15,23,42,0.12);
     }
-    body[data-site-theme="repair"] #checkoutModal,
-    body[data-site-theme="repair"] #cartModal {
+    html[data-theme="light"] body #checkoutModal,
+    html[data-theme="light"] body #cartModal {
       background: rgba(15,23,42,0.84);
       backdrop-filter: blur(24px) saturate(0.92);
       -webkit-backdrop-filter: blur(24px) saturate(0.92);
     }
-    body[data-site-theme="repair"] .checkout-modal,
-    body[data-site-theme="repair"] .cart-modal {
+    html[data-theme="light"] body .checkout-modal,
+    html[data-theme="light"] body .cart-modal {
       box-shadow: 0 34px 90px rgba(15,23,42,0.28);
     }
-    body[data-site-theme="repair"] .modal-close {
+    html[data-theme="light"] body .modal-close {
       background: rgba(255,255,255,0.9);
       border-color: rgba(15,23,42,0.12);
       color: #17202a;
       box-shadow: 0 12px 28px rgba(15,23,42,0.1);
     }
-    body[data-site-theme="repair"] .modal-close:hover {
+    html[data-theme="light"] body .modal-close:hover {
       background: #ffffff;
       border-color: rgba(37,99,235,0.24);
       color: #0f172a;
     }
-    body[data-site-theme="repair"] .floating-cart {
+    html[data-theme="light"] body .floating-cart {
       background: #ffffff;
       border-color: rgba(15,23,42,0.12);
       color: #17202a;
       box-shadow: 0 -14px 34px rgba(31,45,55,0.13);
     }
-    body[data-site-theme="repair"] .search-bar-wrap input,
-    body[data-site-theme="repair"] .checkout-input,
-    body[data-site-theme="repair"] .checkout-select,
-    body[data-site-theme="repair"] .checkout-textarea,
-    body[data-site-theme="repair"] .tracking-form input,
-    body[data-site-theme="repair"] .cta-form input,
-    body[data-site-theme="repair"] .cta-form textarea {
+    html[data-theme="light"] body .search-bar-wrap input,
+    html[data-theme="light"] body .checkout-input,
+    html[data-theme="light"] body .checkout-select,
+    html[data-theme="light"] body .checkout-textarea,
+    html[data-theme="light"] body .tracking-form input,
+    html[data-theme="light"] body .cta-form input,
+    html[data-theme="light"] body .cta-form textarea {
       background: #ffffff;
       border-color: rgba(15,23,42,0.12);
       color: #17202a;
     }
     /* ── Repair theme: fix low-contrast secondary text ── */
     /* Cart */
-    body[data-site-theme="repair"] .cart-item-price,
-    body[data-site-theme="repair"] .cart-total-label,
-    body[data-site-theme="repair"] .cart-secure-note {
+    html[data-theme="light"] body .cart-item-price,
+    html[data-theme="light"] body .cart-total-label,
+    html[data-theme="light"] body .cart-secure-note {
       color: #6b7280;
     }
-    body[data-site-theme="repair"] .cart-header {
+    html[data-theme="light"] body .cart-header {
       border-bottom-color: rgba(15,23,42,0.1);
     }
-    body[data-site-theme="repair"] .cart-count-pill,
-    body[data-site-theme="repair"] .cart-item-variant {
+    html[data-theme="light"] body .cart-count-pill,
+    html[data-theme="light"] body .cart-item-variant {
       background: #eef2ff;
       border-color: #d8dcff;
       color: #4f46e5;
     }
-    body[data-site-theme="repair"] .cart-qty {
+    html[data-theme="light"] body .cart-qty {
       background: #f6f8fb;
       border-color: rgba(15,23,42,0.13);
       box-shadow: inset 0 1px 0 rgba(255,255,255,0.9);
     }
-    body[data-site-theme="repair"] .cart-qty-btn {
+    html[data-theme="light"] body .cart-qty-btn {
       color: #111827;
       background: #ffffff;
       border: 1px solid rgba(15,23,42,0.1);
       box-shadow: 0 5px 14px rgba(31,45,55,0.08);
     }
-    body[data-site-theme="repair"] .cart-qty-btn:hover {
+    html[data-theme="light"] body .cart-qty-btn:hover {
       background: #e9f1f7;
       border-color: rgba(20,118,130,0.24);
     }
-    body[data-site-theme="repair"] .cart-qty-count,
-    body[data-site-theme="repair"] .cart-item-subtotal,
-    body[data-site-theme="repair"] .cart-total-amount {
+    html[data-theme="light"] body .cart-qty-count,
+    html[data-theme="light"] body .cart-item-subtotal,
+    html[data-theme="light"] body .cart-total-amount {
       color: #111827;
     }
-    body[data-site-theme="repair"] .cart-remove {
+    html[data-theme="light"] body .cart-remove {
       color: #7f1d1d;
       background: #fff1f2;
       border: 1px solid #fecdd3;
     }
-    body[data-site-theme="repair"] .cart-remove:hover {
+    html[data-theme="light"] body .cart-remove:hover {
       color: #ffffff;
       background: #dc2626;
       border-color: #dc2626;
     }
     @media (max-width: 768px) {
-      body[data-site-theme="repair"] .cart-remove {
+      html[data-theme="light"] body .cart-remove {
         color: #9f1239;
         background: transparent;
         border: 0;
         box-shadow: none;
       }
-      body[data-site-theme="repair"] .cart-remove:hover {
+      html[data-theme="light"] body .cart-remove:hover {
         color: #be123c;
         background: transparent;
       }
     }
-    body[data-site-theme="repair"] .cart-total-card {
+    html[data-theme="light"] body .cart-total-card {
       background: linear-gradient(180deg, #ffffff, #f7fafc);
       border-color: rgba(15,23,42,0.12);
       box-shadow: 0 18px 38px rgba(31,45,55,0.09);
     }
-    body[data-site-theme="repair"] .cart-footer {
+    html[data-theme="light"] body .cart-footer {
       border-top-color: rgba(15,23,42,0.1);
     }
-    body[data-site-theme="repair"] .cart-empty-text {
+    html[data-theme="light"] body .cart-empty-text {
       color: #111827;
     }
-    body[data-site-theme="repair"] .cart-empty-sub {
+    html[data-theme="light"] body .cart-empty-sub {
       color: #667085;
     }
     /* Checkout */
-    body[data-site-theme="repair"] .checkout-lead,
-    body[data-site-theme="repair"] .checkout-meta-card span,
-    body[data-site-theme="repair"] .checkout-summary-meta,
-    body[data-site-theme="repair"] .checkout-inline-note {
+    html[data-theme="light"] body .checkout-lead,
+    html[data-theme="light"] body .checkout-meta-card span,
+    html[data-theme="light"] body .checkout-summary-meta,
+    html[data-theme="light"] body .checkout-inline-note {
       color: #4b5563;
     }
-    body[data-site-theme="repair"] .checkout-label,
-    body[data-site-theme="repair"] .checkout-checkbox,
-    body[data-site-theme="repair"] .checkout-summary-note {
+    html[data-theme="light"] body .checkout-label,
+    html[data-theme="light"] body .checkout-checkbox,
+    html[data-theme="light"] body .checkout-summary-note {
       color: #374151;
     }
-    body[data-site-theme="repair"] .checkout-kicker {
+    html[data-theme="light"] body .checkout-kicker {
       background: rgba(37, 99, 235, 0.1);
       color: #1d4ed8;
       border: 1px solid rgba(37, 99, 235, 0.16);
     }
-    body[data-site-theme="repair"] .checkout-trust {
+    html[data-theme="light"] body .checkout-trust {
       background: rgba(15, 118, 110, 0.09);
       border-color: rgba(15, 118, 110, 0.2);
       color: #0f766e;
     }
-    body[data-site-theme="repair"] .checkout-meta-card {
+    html[data-theme="light"] body .checkout-meta-card {
       background: #f8fafc;
       border-color: rgba(15,23,42,0.1);
       color: #17202a;
     }
-    body[data-site-theme="repair"] .checkout-provider {
+    html[data-theme="light"] body .checkout-provider {
       background: #ffffff;
       border-color: rgba(15,23,42,0.14);
       box-shadow: 0 10px 24px rgba(31,45,55,0.07);
     }
-    body[data-site-theme="repair"] .checkout-provider-card {
+    html[data-theme="light"] body .checkout-provider-card {
       color: #17202a;
     }
-    body[data-site-theme="repair"] .checkout-provider input:checked + .checkout-provider-card {
+    html[data-theme="light"] body .checkout-provider input:checked + .checkout-provider-card {
       background: linear-gradient(180deg, rgba(238,242,255,0.98), rgba(240,253,250,0.86));
       box-shadow: inset 0 0 0 2px rgba(99,102,241,0.34);
     }
-    body[data-site-theme="repair"] .checkout-provider-title {
+    html[data-theme="light"] body .checkout-provider-title {
       color: #111827;
     }
-    body[data-site-theme="repair"] .checkout-provider-tag {
+    html[data-theme="light"] body .checkout-provider-tag {
       color: #4f46e5;
       font-weight: 800;
     }
-    body[data-site-theme="repair"] .checkout-provider-tag-nequi {
+    html[data-theme="light"] body .checkout-provider-tag-nequi {
       color: #047857;
     }
-    body[data-site-theme="repair"] .checkout-provider-copy,
-    body[data-site-theme="repair"] .checkout-provider-foot {
+    html[data-theme="light"] body .checkout-provider-copy,
+    html[data-theme="light"] body .checkout-provider-foot {
       color: #526172;
     }
-    body[data-site-theme="repair"] .checkout-delivery-card {
+    html[data-theme="light"] body .checkout-delivery-card {
       background: #ffffff;
       border-color: rgba(15,23,42,0.12);
       box-shadow: 0 16px 38px rgba(31,45,55,0.08);
     }
-    body[data-site-theme="repair"] .checkout-map-preview {
+    html[data-theme="light"] body .checkout-map-preview {
       border-bottom-color: rgba(15,23,42,0.1);
       background: #eef6f8;
     }
-    body[data-site-theme="repair"] .checkout-map-chip {
+    html[data-theme="light"] body .checkout-map-chip {
       color: #0f513f;
       background: rgba(255,255,255,0.86);
       border-color: rgba(15,23,42,0.12);
     }
-    body[data-site-theme="repair"] .checkout-map-hint { color: rgba(15,23,42,0.6); }
-    body[data-site-theme="repair"] .checkout-map-hint.is-set { color: #0f766e; }
-    body[data-site-theme="repair"] .checkout-optional { color: rgba(15,23,42,0.5); }
-    body[data-site-theme="repair"] .checkout-delivery-option {
+    html[data-theme="light"] body .checkout-map-hint { color: rgba(15,23,42,0.72); }
+    html[data-theme="light"] body .checkout-map-hint.is-set { color: #0f766e; }
+    html[data-theme="light"] body .checkout-optional { color: rgba(15,23,42,0.70); }
+    html[data-theme="light"] body .checkout-delivery-option {
       background: #f8fafc;
       border-color: rgba(15,23,42,0.1);
     }
-    body[data-site-theme="repair"] .checkout-delivery-option strong,
-    body[data-site-theme="repair"] .checkout-delivery-stat strong {
+    html[data-theme="light"] body .checkout-delivery-option strong,
+    html[data-theme="light"] body .checkout-delivery-stat strong {
       color: #111827;
     }
-    body[data-site-theme="repair"] .checkout-delivery-option em,
-    body[data-site-theme="repair"] .checkout-delivery-stat small {
+    html[data-theme="light"] body .checkout-delivery-option em,
+    html[data-theme="light"] body .checkout-delivery-stat small {
       color: #526172;
     }
-    body[data-site-theme="repair"] .checkout-delivery-option b {
+    html[data-theme="light"] body .checkout-delivery-option b {
       color: #0f766e;
     }
-    body[data-site-theme="repair"] .checkout-delivery-option input:checked + span {
+    html[data-theme="light"] body .checkout-delivery-option input:checked + span {
       background: linear-gradient(180deg, rgba(236,253,245,0.98), rgba(239,246,255,0.9));
       box-shadow: inset 0 0 0 2px rgba(15,118,110,0.24);
     }
-    body[data-site-theme="repair"] .checkout-delivery-stat {
+    html[data-theme="light"] body .checkout-delivery-stat {
       background: #f8fafc;
       border-color: rgba(15,23,42,0.1);
     }
-    body[data-site-theme="repair"] .checkout-summary-total-row {
+    html[data-theme="light"] body .checkout-summary-total-row {
       border-top-color: rgba(15,23,42,0.1);
       color: #111827;
     }
-    body[data-site-theme="repair"] .checkout-summary-total-row.muted {
+    html[data-theme="light"] body .checkout-summary-total-row.muted {
       color: #526172;
     }
-    body[data-site-theme="repair"] .checkout-total,
-    body[data-site-theme="repair"] .checkout-summary-name {
+    html[data-theme="light"] body .checkout-total,
+    html[data-theme="light"] body .checkout-summary-name {
       color: #111827;
     }
-    body[data-site-theme="repair"] .checkout-status {
+    html[data-theme="light"] body .checkout-status {
       background: #f8fafc;
       border-color: rgba(15,23,42,0.12);
       color: #334155;
     }
-    body[data-site-theme="repair"] .checkout-status.success {
+    html[data-theme="light"] body .checkout-status.success {
       background: #ecfdf5;
       border-color: rgba(15,118,110,0.22);
       color: #047857;
     }
-    body[data-site-theme="repair"] .checkout-status.warning {
+    html[data-theme="light"] body .checkout-status.warning {
       background: #fffbeb;
       border-color: rgba(217,119,6,0.24);
       color: #92400e;
     }
-    body[data-site-theme="repair"] .checkout-status.error {
+    html[data-theme="light"] body .checkout-status.error {
       background: #fff1f2;
       border-color: rgba(225,29,72,0.24);
       color: #be123c;
     }
-    body[data-site-theme="repair"] .checkout-result {
+    html[data-theme="light"] body .checkout-result {
       background: #ffffff;
       border-color: rgba(15,23,42,0.12);
       color: #17202a;
     }
-    body[data-site-theme="repair"] .checkout-result-copy,
-    body[data-site-theme="repair"] .checkout-result-meta,
-    body[data-site-theme="repair"] .checkout-result-item-meta,
-    body[data-site-theme="repair"] .checkout-result-side p {
+    html[data-theme="light"] body .checkout-result-copy,
+    html[data-theme="light"] body .checkout-result-meta,
+    html[data-theme="light"] body .checkout-result-item-meta,
+    html[data-theme="light"] body .checkout-result-side p {
       color: #526172;
     }
-    body[data-site-theme="repair"] .checkout-reference-tag,
-    body[data-site-theme="repair"] .checkout-status-pill {
+    html[data-theme="light"] body .checkout-reference-tag,
+    html[data-theme="light"] body .checkout-status-pill {
       background: rgba(79,70,229,0.09);
       border-color: rgba(79,70,229,0.18);
       color: #3730a3;
     }
-    body[data-site-theme="repair"] .checkout-summary-item {
+    html[data-theme="light"] body .checkout-summary-item {
       border-bottom-color: rgba(15,23,42,0.1);
     }
     /* Product detail — variant pills */
-    body[data-site-theme="repair"] .detail-variant-label {
+    html[data-theme="light"] body .detail-variant-label {
       color: #6b7280;
     }
-    body[data-site-theme="repair"] .variant-pill {
+    html[data-theme="light"] body .variant-pill {
       color: #374151;
       background: rgba(15,23,42,0.04);
       border-color: rgba(15,23,42,0.14);
     }
-    body[data-site-theme="repair"] .variant-pill:hover {
+    html[data-theme="light"] body .variant-pill:hover {
       color: #111827;
       background: rgba(15,23,42,0.08);
       border-color: rgba(15,23,42,0.25);
     }
-    body[data-site-theme="repair"] .variant-pill-main strong {
+    html[data-theme="light"] body .variant-pill-main strong {
       color: #111827;
     }
-    body[data-site-theme="repair"] .variant-pill-main em,
-    body[data-site-theme="repair"] .variant-pill-meta small {
+    html[data-theme="light"] body .variant-pill-main em,
+    html[data-theme="light"] body .variant-pill-meta small {
       color: #6b7280;
     }
-    body[data-site-theme="repair"] .variant-pill-meta b {
+    html[data-theme="light"] body .variant-pill-meta b {
       color: #4f46e5;
     }
     /* Product detail — stat cards */
-    body[data-site-theme="repair"] .detail-stat {
+    html[data-theme="light"] body .detail-stat {
       background: rgba(15,23,42,0.03);
       border-color: rgba(15,23,42,0.10);
     }
-    body[data-site-theme="repair"] .detail-stat-label {
+    html[data-theme="light"] body .detail-stat-label {
       color: #6b7280;
     }
-    body[data-site-theme="repair"] .detail-stat-value {
+    html[data-theme="light"] body .detail-stat-value {
       color: #111827;
     }
     /* Product description */
-    body[data-site-theme="repair"] .detail-info .detail-desc {
+    html[data-theme="light"] body .detail-info .detail-desc {
       color: #4b5563;
     }
     /* Light-theme contrast fixes (WCAG AA) */
-    body[data-site-theme="repair"] .mobile-nav-close {
+    html[data-theme="light"] body .mobile-nav-close {
       background: rgba(15,23,42,0.05);
       border-color: rgba(15,23,42,0.12);
       color: #17202a;
     }
-    body[data-site-theme="repair"] .mobile-nav-close:active {
+    html[data-theme="light"] body .mobile-nav-close:active {
       background: rgba(15,23,42,0.10);
     }
-    body[data-site-theme="repair"] .btn-details {
+    html[data-theme="light"] body .btn-details {
       background: rgba(15,23,42,0.04);
       border-color: rgba(15,23,42,0.14);
       color: #3f4a5a;
     }
     @media (hover: hover) and (pointer: fine) {
-      body[data-site-theme="repair"] .btn-details:hover {
+      html[data-theme="light"] body .btn-details:hover {
         background: rgba(15,118,110,0.08);
         border-color: rgba(15,118,110,0.24);
         color: #0f513f;
         box-shadow: 0 4px 12px rgba(15,118,110,0.10);
       }
     }
-    body[data-site-theme="repair"] .search-quick-picks button {
+    html[data-theme="light"] body .search-quick-picks button {
       background: rgba(15,23,42,0.04);
       border-color: rgba(15,23,42,0.14);
       color: #3f4a5a;
     }
-    body[data-site-theme="repair"] .search-quick-picks button:hover {
+    html[data-theme="light"] body .search-quick-picks button:hover {
       background: rgba(15,118,110,0.10);
       border-color: rgba(15,118,110,0.28);
       color: #0f513f;
     }
-    body[data-site-theme="repair"] .product-visual-copy span {
+    html[data-theme="light"] body .product-visual-copy span {
       color: #5b6573;
     }
-    body[data-site-theme="repair"] .footer-col h4 {
+    html[data-theme="light"] body .footer-col h4 {
       color: #55606e;
     }
 
@@ -5934,41 +6048,41 @@
     #productDetailModal.is-gallery-fullscreen .gallery-fullscreen-btn .gallery-fullscreen-label {
       display: none;
     }
-    body[data-site-theme="repair"] #productDetailModal .detail-gallery {
+    html[data-theme="light"] body #productDetailModal .detail-gallery {
       background:
         radial-gradient(circle at 52% 38%, rgba(255,255,255,0.98), transparent 35%),
         linear-gradient(150deg, rgba(14,124,114,0.055), transparent 42%),
         linear-gradient(180deg, #f8fafc, #edf3f5) !important;
       border-color: rgba(15,23,42,0.12);
     }
-    body[data-site-theme="repair"] .gallery-main-shell {
+    html[data-theme="light"] body .gallery-main-shell {
       background:
         radial-gradient(circle at 50% 42%, rgba(14,124,114,0.12), transparent 40%),
         linear-gradient(180deg, rgba(255,255,255,0.92), rgba(248,250,252,0.72));
       border-color: rgba(15,23,42,0.12);
     }
-    body[data-site-theme="repair"] .gallery-toolbar {
+    html[data-theme="light"] body .gallery-toolbar {
       background: rgba(255,255,255,0.82);
       border-top-color: rgba(15,23,42,0.10);
     }
-    body[data-site-theme="repair"] #productDetailModal .gallery-zoom-controls,
-    body[data-site-theme="repair"] .gallery-fullscreen-btn,
-    body[data-site-theme="repair"] .gallery-thumb-btn {
+    html[data-theme="light"] body #productDetailModal .gallery-zoom-controls,
+    html[data-theme="light"] body .gallery-fullscreen-btn,
+    html[data-theme="light"] body .gallery-thumb-btn {
       background: rgba(255,255,255,0.86);
       border-color: rgba(15,23,42,0.14);
       color: #17202a;
     }
-    body[data-site-theme="repair"] .gallery-hint,
-    body[data-site-theme="repair"] #productDetailModal .detail-gallery .gallery-counter,
-    body[data-site-theme="repair"] #productDetailModal .detail-gallery .gallery-nav-btn,
-    body[data-site-theme="repair"] #productDetailModal .product-detail-close-btn {
+    html[data-theme="light"] body .gallery-hint,
+    html[data-theme="light"] body #productDetailModal .detail-gallery .gallery-counter,
+    html[data-theme="light"] body #productDetailModal .detail-gallery .gallery-nav-btn,
+    html[data-theme="light"] body #productDetailModal .product-detail-close-btn {
       background: rgba(255,255,255,0.84);
       border-color: rgba(15,23,42,0.14);
       color: #17202a;
       box-shadow: 0 14px 34px rgba(31,45,55,0.14);
     }
-    body[data-site-theme="repair"] .gallery-thumb-btn.active,
-    body[data-site-theme="repair"] .gallery-thumb-btn[aria-current="true"] {
+    html[data-theme="light"] body .gallery-thumb-btn.active,
+    html[data-theme="light"] body .gallery-thumb-btn[aria-current="true"] {
       border-color: rgba(14,124,114,0.58);
       background: rgba(14,124,114,0.09);
       box-shadow: 0 0 0 3px rgba(14,124,114,0.12), inset 0 1px 0 rgba(255,255,255,0.9);
@@ -6062,12 +6176,12 @@
         font-size: 0.92rem;
         white-space: nowrap;
       }
-      body[data-site-theme="repair"] #productDetailModal .detail-info .detail-actions {
+      html[data-theme="light"] body #productDetailModal .detail-info .detail-actions {
         border-top-color: rgba(15,23,42,0.12);
         background: rgba(255,255,255,0.97);
         box-shadow: 0 -14px 34px rgba(31,45,55,0.12);
       }
-      body[data-site-theme="repair"] #productDetailModal .detail-selected-variant {
+      html[data-theme="light"] body #productDetailModal .detail-selected-variant {
         color: #0f766e;
       }
       #productDetailModal .product-detail-close-btn {
@@ -6128,23 +6242,132 @@
         border-radius: 20px;
       }
     }
+
+    .cart-trigger-badge {
+      position: absolute;
+      top: -8px;
+      right: -6px;
+      width: 18px;
+      height: 18px;
+      display: none;
+      align-items: center;
+      justify-content: center;
+      border-radius: 50%;
+      background: #dc2626;
+      color: #fff;
+      font-size: 0.625rem;
+      font-weight: 700;
+    }
+    .mobile-nav-tracking {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      padding: 14px 16px;
+      border: 1px solid rgba(255,255,255,0.10);
+      border-radius: 14px;
+      background: rgba(99,102,241,0.10);
+      color: #e4e4e7;
+      font-size: 1rem;
+      font-weight: 500;
+      transition: background 160ms var(--ease-out), border-color 160ms var(--ease-out);
+    }
+    html[data-theme="light"] body .mobile-nav-tracking {
+      background: rgba(15,118,110,0.08);
+      border-color: rgba(15,23,42,0.14);
+      color: #24303b;
+    }
+    .theme-status-message {
+      grid-column: 1 / -1;
+      padding: 40px 0;
+      color: var(--muted);
+      text-align: center;
+    }
+    .theme-status-message.is-error { color: var(--danger); }
+    .form-feedback {
+      margin-top: 16px;
+      color: var(--green);
+      font-size: 0.875rem;
+    }
+    .form-feedback[data-state="error"] { color: var(--danger); }
+    .checkout-summary-caption {
+      margin-top: 6px;
+      color: var(--muted);
+      font-size: 0.875rem;
+    }
+    .checkout-summary-facts {
+      color: var(--muted);
+      font-size: 0.8125rem;
+      text-align: right;
+    }
+    .order-history-card {
+      margin-bottom: 12px;
+      padding: 16px;
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      background: var(--surface-muted);
+    }
+    .order-history-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      flex-wrap: wrap;
+      gap: 8px;
+    }
+    .order-history-reference { font-size: 0.875rem; }
+    .order-history-status {
+      margin-left: 8px;
+      color: var(--muted);
+      font-size: 0.75rem;
+    }
+    .order-history-price { text-align: right; }
+    .order-history-amount { font-weight: 600; }
+    .order-history-date {
+      color: var(--muted);
+      font-size: 0.7rem;
+    }
+    .order-history-meta,
+    .order-history-link {
+      margin-top: 8px;
+      color: var(--muted);
+      font-size: 0.75rem;
+    }
+    .order-history-link {
+      margin-top: 6px;
+      color: #c4b5fd;
+    }
+    html[data-theme="light"] body .order-history-link { color: #1d4ed8; }
+
+    @media (max-width: 360px) {
+      .navbar .container { padding-inline: 12px; }
+      .navbar .logo {
+        flex: 0 0 32px;
+        width: 32px;
+        gap: 0;
+        overflow: hidden;
+        font-size: 0;
+      }
+      .nav-actions { gap: 6px; }
+      .hamburger {
+        width: 42px;
+        height: 42px;
+      }
+    }
+
+    @media (forced-colors: active) {
+      :where(a, button, input, select, textarea, [tabindex]):focus-visible,
+      .theme-toggle:focus-within {
+        outline: 2px solid Highlight;
+      }
+      .theme-toggle,
+      .cart-trigger,
+      .btn,
+      .btn-details {
+        border: 1px solid ButtonText;
+      }
+    }
   </style>
 </head>
-<body data-site-theme="dark">
-  <script>
-    (function() {
-      try {
-        var legacyThemeKey = 'nex' + 'core_theme_mode';
-        var mode = localStorage.getItem('repuestoscel_theme_mode') || localStorage.getItem(legacyThemeKey) || 'system';
-        if (!/^(system|repair|dark)$/.test(mode)) mode = 'system';
-        var isDark = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
-        document.body.dataset.themeMode = mode;
-        document.body.dataset.siteTheme = mode === 'system' ? (isDark ? 'dark' : 'repair') : mode;
-      } catch (_) {
-        document.body.dataset.themeMode = 'system';
-      }
-    })();
-  </script>
+<body>
 
   <!-- ============================
        NAVBAR
@@ -6164,12 +6387,17 @@
         <a href="#contacto">Contacto</a>
       </div>
       <div class="nav-actions">
-        <button class="theme-toggle" id="themeToggle" onclick="cycleThemeMode()" title="Tema: sistema" aria-label="Tema: sistema">
-          <span class="theme-toggle-icon" id="themeToggleIcon">☀</span>
-          <span class="theme-toggle-text" id="themeToggleText">Sistema</span>
-        </button>
+        <div class="theme-toggle" id="themeToggle" title="Tema: sistema">
+          <span class="theme-toggle-icon" id="themeToggleIcon" aria-hidden="true">◐</span>
+          <span class="theme-toggle-text" id="themeToggleText" aria-hidden="true">Sistema</span>
+          <select class="theme-toggle-select" id="themeModeSelect" aria-label="Tema de color">
+            <option value="system">Sistema</option>
+            <option value="light">Claro</option>
+            <option value="dark">Oscuro</option>
+          </select>
+        </div>
         <button class="search-toggle" id="searchToggle" onclick="toggleSearch()" title="Buscar" aria-label="Buscar productos">🔍</button>
-        <a href="#carrito" id="cartNavBtn" class="cart-trigger" title="Carrito" aria-label="Abrir carrito">🛒<span id="cartCount" style="position:absolute;top:-8px;right:-6px;background:#ef4444;color:#fff;font-size:0.625rem;width:18px;height:18px;border-radius:50%;display:none;align-items:center;justify-content:center;font-weight:700;">0</span></a>
+        <a href="#carrito" id="cartNavBtn" class="cart-trigger" title="Carrito" aria-label="Abrir carrito">🛒<span id="cartCount" class="cart-trigger-badge">0</span></a>
         <div class="nav-cta">
           <a href="#rastrear-pedido" class="btn btn-secondary btn-sm">📦 Rastrear</a>
         </div>
@@ -6211,7 +6439,7 @@
       <a href="#contacto" onclick="closeMobileNav()"><span class="mobile-nav-link-icon">📞</span> Contacto</a>
     </div>
     <div class="mobile-nav-user">
-      <a href="#rastrear-pedido" onclick="closeMobileNav()" style="display:flex;align-items:center;gap:14px;padding:14px 16px;border-radius:14px;font-size:1rem;font-weight:500;color:#d1d1d6;transition:all 0.25s ease;background:linear-gradient(135deg,rgba(99,102,241,0.08),rgba(168,85,247,0.04));border:1px solid rgba(255,255,255,0.06);">📦 Rastrear pedido</a>
+      <a href="#rastrear-pedido" onclick="closeMobileNav()" class="mobile-nav-tracking">📦 Rastrear pedido</a>
     </div>
   </div>
 
@@ -6520,7 +6748,7 @@
           <textarea id="messageInput" placeholder="Ejemplo: mi iPhone necesita pantalla, o mi Samsung Galaxy no carga bien." style="min-height:120px;resize:vertical;"></textarea>
           <button type="submit" class="btn btn-gradient">Cotizar ahora</button>
         </form>
-        <p id="formFeedback" style="margin-top:16px;font-size:0.875rem;color:#22c55e;display:none;">✅ Recibimos tu solicitud. Te escribimos pronto.</p>
+        <p id="formFeedback" class="form-feedback" data-state="success" hidden>✅ Recibimos tu solicitud. Te escribimos pronto.</p>
       </div>
     </div>
   </section>
@@ -6810,9 +7038,9 @@
             <div>
               <div class="checkout-kicker">Resumen</div>
               <div class="checkout-total" id="checkoutGrandTotal">$0</div>
-              <p style="color:#9ca3af;font-size:0.875rem;margin-top:6px;">Incluye productos y envío calculado por backend.</p>
+              <p class="checkout-summary-caption">Incluye productos y envío calculado por backend.</p>
             </div>
-            <div style="text-align:right;color:#9ca3af;font-size:0.8125rem;">
+            <div class="checkout-summary-facts">
               <div id="checkoutItemCount">0 ítems</div>
               <div>Moneda: COP</div>
             </div>
@@ -6890,38 +7118,76 @@
     };
     let siteSettings = { ...DEFAULT_SITE_SETTINGS };
 
+    function safeStorageRead(storageName, key, fallback = null) {
+      try {
+        const storage = window[storageName];
+        const value = storage.getItem(key);
+        return value === null ? fallback : value;
+      } catch (_) {
+        return fallback;
+      }
+    }
+
+    function safeStorageWrite(storageName, key, value) {
+      try {
+        const storage = window[storageName];
+        storage.setItem(key, value);
+        return true;
+      } catch (_) {
+        return false;
+      }
+    }
+
+    function safeStorageRemove(storageName, key) {
+      try { window[storageName].removeItem(key); } catch (_) {}
+    }
+
     function readLocalStorageWithLegacy(key, legacyKey, fallback = '') {
-      const currentValue = localStorage.getItem(key);
+      const currentValue = safeStorageRead('localStorage', key);
       if (currentValue !== null) return currentValue;
-      const legacyValue = localStorage.getItem(legacyKey);
+      const legacyValue = safeStorageRead('localStorage', legacyKey);
       if (legacyValue !== null) {
-        localStorage.setItem(key, legacyValue);
+        if (safeStorageWrite('localStorage', key, legacyValue)) {
+          safeStorageRemove('localStorage', legacyKey);
+        }
         return legacyValue;
       }
       return fallback;
     }
 
     function saveCart() {
-      localStorage.setItem(CART_STORAGE_KEY, JSON.stringify(cart));
-      localStorage.removeItem(LEGACY_CART_STORAGE_KEY);
+      if (safeStorageWrite('localStorage', CART_STORAGE_KEY, JSON.stringify(cart))) {
+        safeStorageRemove('localStorage', LEGACY_CART_STORAGE_KEY);
+      }
     }
 
     function clearCartStorage() {
-      localStorage.removeItem(CART_STORAGE_KEY);
-      localStorage.removeItem(LEGACY_CART_STORAGE_KEY);
+      safeStorageRemove('localStorage', CART_STORAGE_KEY);
+      safeStorageRemove('localStorage', LEGACY_CART_STORAGE_KEY);
     }
 
     function saveCheckoutReference(reference) {
-      localStorage.setItem(CHECKOUT_REFERENCE_STORAGE_KEY, reference);
-      localStorage.removeItem(LEGACY_CHECKOUT_REFERENCE_STORAGE_KEY);
+      if (safeStorageWrite('localStorage', CHECKOUT_REFERENCE_STORAGE_KEY, reference)) {
+        safeStorageRemove('localStorage', LEGACY_CHECKOUT_REFERENCE_STORAGE_KEY);
+      }
     }
 
     function clearCheckoutReferenceStorage() {
-      localStorage.removeItem(CHECKOUT_REFERENCE_STORAGE_KEY);
-      localStorage.removeItem(LEGACY_CHECKOUT_REFERENCE_STORAGE_KEY);
+      safeStorageRemove('localStorage', CHECKOUT_REFERENCE_STORAGE_KEY);
+      safeStorageRemove('localStorage', LEGACY_CHECKOUT_REFERENCE_STORAGE_KEY);
     }
 
-    let cart = JSON.parse(readLocalStorageWithLegacy(CART_STORAGE_KEY, LEGACY_CART_STORAGE_KEY, '[]') || '[]');
+    function readStoredCart() {
+      try {
+        const parsed = JSON.parse(readLocalStorageWithLegacy(CART_STORAGE_KEY, LEGACY_CART_STORAGE_KEY, '[]') || '[]');
+        return Array.isArray(parsed) ? parsed : [];
+      } catch (_) {
+        clearCartStorage();
+        return [];
+      }
+    }
+
+    let cart = readStoredCart();
     // API Key for backend auth — injected by CDK during deploy
     // In dev, this can be empty (backend allows requests without key)
     const API_KEY = '__API_KEY__';
@@ -7080,7 +7346,7 @@
       bar.classList.toggle('visible', searchVisible);
       if (searchVisible && input) {
         input.focus(); input.select();
-        document.getElementById('productos')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        document.getElementById('productos')?.scrollIntoView({ behavior: preferredScrollBehavior(), block: 'start' });
       } else if (input) { filterProducts(''); }
     }
     function clearSearch() {
@@ -7113,7 +7379,7 @@
         btn.addEventListener('click', function() {
           var value = this.getAttribute('data-search-pick') || '';
           filterProducts(value, { resetCategory: true });
-          document.getElementById('productos')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+          document.getElementById('productos')?.scrollIntoView({ behavior: preferredScrollBehavior(), block: 'start' });
         });
       });
     }
@@ -7135,7 +7401,7 @@
         heroForm.addEventListener('submit', function(event) {
           event.preventDefault();
           filterProducts(heroInput ? heroInput.value : '', { resetCategory: true });
-          document.getElementById('productos')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+          document.getElementById('productos')?.scrollIntoView({ behavior: preferredScrollBehavior(), block: 'start' });
         });
       }
       wireSearchPickButtons(document);
@@ -7156,6 +7422,10 @@
     // ── Cart particle animation ──────────────────────
     var _cartParticleRAF = null;
     function startCartParticles() {
+      if (prefersReducedMotion()) {
+        stopCartParticles();
+        return;
+      }
       const canvas = document.getElementById('cartParticleCanvas');
       if (!canvas) return;
       const ctx = canvas.getContext('2d');
@@ -7683,7 +7953,7 @@
           const input = document.getElementById('trackingReferenceInput');
           if (input) input.value = order.reference;
           closeCheckout();
-          document.getElementById('rastrear-pedido')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+          document.getElementById('rastrear-pedido')?.scrollIntoView({ behavior: preferredScrollBehavior(), block: 'start' });
           lookupOrderByReference(order.reference);
         };
       }
@@ -8389,6 +8659,7 @@
     let cardRotationIntervals = {};
 
     function startCardRotation(cardId) {
+      if (prefersReducedMotion()) return;
       const el = document.querySelector(`.product-card[data-card-id="${CSS.escape(cardId)}"]`);
       if (!el || cardRotationIntervals[cardId]) return;
       const imgs = el.querySelectorAll('.product-img-rotatable');
@@ -9261,7 +9532,7 @@
     function goToPage(page) {
       currentPage = page;
       renderStorefrontProducts();
-      document.getElementById('productos')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      document.getElementById('productos')?.scrollIntoView({ behavior: preferredScrollBehavior(), block: 'start' });
     }
 
     function renderPagination(total, totalPages) {
@@ -9510,12 +9781,14 @@
       window.showHeroSlide = showSlide;
       showSlide(0);
 
-      if (items.length > 1) {
+      if (items.length > 1 && !prefersReducedMotion()) {
         clearInterval(heroCarouselTimer);
         heroCarouselTimer = setInterval(() => showSlide(heroCarouselIdx + 1), 3500);
         el.addEventListener('mouseenter', () => clearInterval(heroCarouselTimer));
         el.addEventListener('mouseleave', () => {
-          heroCarouselTimer = setInterval(() => showSlide(heroCarouselIdx + 1), 3500);
+          if (!prefersReducedMotion()) {
+            heroCarouselTimer = setInterval(() => showSlide(heroCarouselIdx + 1), 3500);
+          }
         });
       }
     }
@@ -9532,7 +9805,7 @@
             renderStorefrontProducts();
             return;
           }
-          document.getElementById('productsGrid').innerHTML = '<p style="grid-column:1/-1;text-align:center;color:#86868b;">Próximamente — nuevos componentes en camino.</p>';
+          document.getElementById('productsGrid').innerHTML = '<p class="theme-status-message">Próximamente — nuevos componentes en camino.</p>';
           return;
         }
         renderStorefrontProducts();
@@ -9545,78 +9818,145 @@
           initHeroCarousel(storefrontProducts);
           return;
         }
-        document.getElementById('productsGrid').innerHTML = '<p style="grid-column:1/-1;text-align:center;color:#86868b;">Próximamente — nuevos componentes en camino.</p>';
+        document.getElementById('productsGrid').innerHTML = '<p class="theme-status-message">Próximamente — nuevos componentes en camino.</p>';
       }
     }
 
     const THEME_MODE_KEY = 'repuestoscel_theme_mode';
     const LEGACY_THEME_KEYS = ['nex' + 'core_theme_mode', 'nex' + 'core_site_theme', 'repuestoscel_site_theme'];
-    const THEME_MODES = ['system', 'repair', 'dark'];
+    const THEME_MODES = ['system', 'light', 'dark'];
     const THEME_MODE_META = {
-      system: { icon: '☀', label: 'Sistema', title: 'Tema: sistema' },
-      repair: { icon: '☀', label: 'Día', title: 'Tema: día' },
-      dark: { icon: '☾', label: 'Noche', title: 'Tema: noche' }
+      system: { icon: '◐', label: 'Sistema' },
+      light: { icon: '☀', label: 'Claro' },
+      dark: { icon: '☾', label: 'Oscuro' }
     };
+    const themeBootstrap = window.__repuestosThemeBootstrap || null;
     const systemThemeQuery = window.matchMedia ? window.matchMedia('(prefers-color-scheme: dark)') : null;
-    let currentThemeMode = 'system';
+    const reducedMotionQuery = window.matchMedia ? window.matchMedia('(prefers-reduced-motion: reduce)') : null;
+    let currentThemeMode = themeBootstrap?.mode || 'system';
+    let currentThemeSource = themeBootstrap?.hasUserPreference ? 'user' : 'system';
+    let hasExplicitThemePreference = Boolean(themeBootstrap?.hasUserPreference);
+    let remoteSiteSettingsLoaded = false;
 
-    function normalizeThemeMode(mode) {
-      return THEME_MODES.includes(mode) ? mode : 'system';
+    function normalizeThemeMode(mode, fallback = 'system') {
+      const migratedMode = mode === 'repair' ? 'light' : mode;
+      return THEME_MODES.includes(migratedMode) ? migratedMode : fallback;
     }
 
     function resolveThemeMode(mode) {
       const normalized = normalizeThemeMode(mode);
       if (normalized === 'system') {
-        return systemThemeQuery && systemThemeQuery.matches ? 'dark' : 'repair';
+        return systemThemeQuery && systemThemeQuery.matches ? 'dark' : 'light';
       }
       return normalized;
     }
 
-    function updateThemeToggle(mode) {
+    function themeStorageRead(key) {
+      if (themeBootstrap?.read) return themeBootstrap.read(key);
+      try { return localStorage.getItem(key); } catch (_) { return null; }
+    }
+
+    function themeStorageWrite(key, value) {
+      if (themeBootstrap?.write) return themeBootstrap.write(key, value);
+      try { localStorage.setItem(key, value); return true; } catch (_) { return false; }
+    }
+
+    function themeStorageRemove(key) {
+      if (themeBootstrap?.remove) return themeBootstrap.remove(key);
+      try { localStorage.removeItem(key); } catch (_) {}
+    }
+
+    function prefersReducedMotion() {
+      return Boolean(reducedMotionQuery?.matches);
+    }
+
+    function preferredScrollBehavior() {
+      return prefersReducedMotion() ? 'auto' : 'smooth';
+    }
+
+    function updateThemeToggle(mode, source = currentThemeSource) {
       const meta = THEME_MODE_META[normalizeThemeMode(mode)];
       const toggle = document.getElementById('themeToggle');
       const icon = document.getElementById('themeToggleIcon');
       const text = document.getElementById('themeToggleText');
-      const visibleIcon = normalizeThemeMode(mode) === 'system'
-        ? (resolveThemeMode('system') === 'dark' ? '☾' : '☀')
-        : meta.icon;
+      const select = document.getElementById('themeModeSelect');
+      const resolved = resolveThemeMode(mode);
+      const visibleIcon = normalizeThemeMode(mode) === 'system' ? (resolved === 'dark' ? '☾' : '☀') : meta.icon;
+      const sourceLabel = source === 'site-default' ? 'predeterminado del sitio' : meta.label.toLowerCase();
+      const title = source === 'site-default'
+        ? `Tema ${sourceLabel}: ${resolved === 'dark' ? 'oscuro' : 'claro'}`
+        : `Tema: ${meta.label}${mode === 'system' ? ` (${resolved === 'dark' ? 'oscuro' : 'claro'})` : ''}`;
       if (icon) icon.textContent = visibleIcon;
       if (text) text.textContent = meta.label;
+      if (select) {
+        select.value = normalizeThemeMode(mode);
+        select.setAttribute('aria-label', `${title}. Elige Sistema, Claro u Oscuro`);
+        select.dataset.source = source;
+      }
       if (toggle) {
-        toggle.title = meta.title;
-        toggle.setAttribute('aria-label', meta.title);
+        toggle.title = title;
       }
     }
 
     function applyThemeMode(mode, options = {}) {
       currentThemeMode = normalizeThemeMode(mode);
-      document.body.dataset.themeMode = currentThemeMode;
-      document.body.dataset.siteTheme = resolveThemeMode(currentThemeMode);
-      updateThemeToggle(currentThemeMode);
+      currentThemeSource = options.source || (options.persist ? 'user' : currentThemeSource);
+      const resolvedTheme = resolveThemeMode(currentThemeMode);
+      const root = document.documentElement;
+      root.dataset.themeMode = currentThemeMode;
+      root.dataset.theme = resolvedTheme;
+      root.dataset.themeSource = currentThemeSource;
+      root.style.colorScheme = resolvedTheme;
+      const themeColor = document.getElementById('themeColorMeta');
+      if (themeColor) themeColor.content = resolvedTheme === 'dark' ? '#080810' : '#f6f9fa';
       if (options.persist) {
-        try {
-          localStorage.setItem(THEME_MODE_KEY, currentThemeMode);
-          LEGACY_THEME_KEYS.forEach((key) => localStorage.removeItem(key));
-        } catch {}
+        hasExplicitThemePreference = true;
+        if (themeStorageWrite(THEME_MODE_KEY, currentThemeMode)) {
+          LEGACY_THEME_KEYS.forEach(themeStorageRemove);
+        }
       }
+      updateThemeToggle(currentThemeMode, currentThemeSource);
     }
 
-    function cycleThemeMode() {
-      const nextMode = currentThemeMode === 'system' ? 'repair' : currentThemeMode === 'repair' ? 'dark' : 'system';
-      applyThemeMode(nextMode, { persist: true });
+    function setThemePreference(mode) {
+      applyThemeMode(normalizeThemeMode(mode), { persist: true, source: 'user' });
+    }
+
+    function applyConfiguredDefaultTheme() {
+      if (remoteSiteSettingsLoaded) {
+        document.documentElement.dataset.visualTheme = String(siteSettings.visualTheme || 'unset');
+      }
+      if (hasExplicitThemePreference) return;
+      if (remoteSiteSettingsLoaded) {
+        const configuredMode = normalizeThemeMode(siteSettings.visualTheme, null);
+        if (configuredMode) {
+          applyThemeMode(configuredMode, { source: 'site-default' });
+          return;
+        }
+      }
+      applyThemeMode('system', { source: 'system' });
     }
 
     function initThemePreference() {
-      let storedMode = 'system';
-      try {
-        const legacyMode = LEGACY_THEME_KEYS.map((key) => localStorage.getItem(key)).find(Boolean);
-        storedMode = normalizeThemeMode(localStorage.getItem(THEME_MODE_KEY) || legacyMode || 'system');
-        LEGACY_THEME_KEYS.forEach((key) => localStorage.removeItem(key));
-      } catch {}
-      applyThemeMode(storedMode);
+      let storedMode = themeBootstrap?.mode || null;
+      if (!themeBootstrap) {
+        const currentStoredMode = normalizeThemeMode(themeStorageRead(THEME_MODE_KEY), null);
+        const legacyMode = LEGACY_THEME_KEYS
+          .map((key) => normalizeThemeMode(themeStorageRead(key), null))
+          .find((value) => value !== null);
+        storedMode = currentStoredMode || legacyMode || null;
+        hasExplicitThemePreference = storedMode !== null;
+        if (hasExplicitThemePreference && themeStorageWrite(THEME_MODE_KEY, storedMode)) {
+          LEGACY_THEME_KEYS.forEach(themeStorageRemove);
+        }
+      }
+      applyThemeMode(storedMode || 'system', { source: hasExplicitThemePreference ? 'user' : 'system' });
+      document.getElementById('themeModeSelect')?.addEventListener('change', (event) => {
+        setThemePreference(event.target.value);
+      });
       if (systemThemeQuery) {
         const handleSystemThemeChange = () => {
-          if (currentThemeMode === 'system') applyThemeMode('system');
+          if (currentThemeMode === 'system') applyThemeMode('system', { source: currentThemeSource });
         };
         if (typeof systemThemeQuery.addEventListener === 'function') {
           systemThemeQuery.addEventListener('change', handleSystemThemeChange);
@@ -9624,6 +9964,45 @@
           systemThemeQuery.addListener(handleSystemThemeChange);
         }
       }
+      window.addEventListener('storage', (event) => {
+        if (event.key !== THEME_MODE_KEY && !LEGACY_THEME_KEYS.includes(event.key)) return;
+        const incomingMode = normalizeThemeMode(event.newValue, null);
+        if (incomingMode) {
+          hasExplicitThemePreference = true;
+          applyThemeMode(incomingMode, { source: 'user' });
+          if (event.key !== THEME_MODE_KEY && themeStorageWrite(THEME_MODE_KEY, incomingMode)) {
+            LEGACY_THEME_KEYS.forEach(themeStorageRemove);
+          }
+          return;
+        }
+        const storedCurrentMode = normalizeThemeMode(themeStorageRead(THEME_MODE_KEY), null);
+        if (storedCurrentMode) {
+          hasExplicitThemePreference = true;
+          applyThemeMode(storedCurrentMode, { source: 'user' });
+          return;
+        }
+        hasExplicitThemePreference = false;
+        applyConfiguredDefaultTheme();
+      });
+    }
+
+    function initMotionPreference() {
+      if (!reducedMotionQuery) return;
+      const stopMotionAnimations = () => {
+        if (!prefersReducedMotion()) return;
+        stopCartParticles();
+        Object.keys(cardRotationIntervals).forEach(stopCardRotation);
+        if (heroCarouselTimer) {
+          clearInterval(heroCarouselTimer);
+          heroCarouselTimer = null;
+        }
+      };
+      if (typeof reducedMotionQuery.addEventListener === 'function') {
+        reducedMotionQuery.addEventListener('change', stopMotionAnimations);
+      } else if (typeof reducedMotionQuery.addListener === 'function') {
+        reducedMotionQuery.addListener(stopMotionAnimations);
+      }
+      stopMotionAnimations();
     }
 
     async function loadSiteSettings() {
@@ -9632,6 +10011,8 @@
         if (!res.ok) throw new Error('settings_unavailable');
         const data = await res.json();
         siteSettings = normalizeSiteSettings(data.settings || {});
+        remoteSiteSettingsLoaded = true;
+        applyConfiguredDefaultTheme();
         updateDeliveryPreview();
         // si el mapa ya se pintó (fallback), re-renderiza con la key oficial recién cargada
         lastEmbedQuery = '';
@@ -9639,12 +10020,16 @@
         if (isDeliveryMapEnabled() && document.getElementById('checkoutMapEmbed')?.getAttribute('src')) updateCheckoutMapEmbed();
       } catch (_) {
         siteSettings = normalizeSiteSettings();
+        remoteSiteSettingsLoaded = false;
+        document.documentElement.dataset.visualTheme = 'unavailable';
+        applyConfiguredDefaultTheme();
         syncCheckoutMapVisibility();
       }
     }
 
     async function initStorefront() {
       initThemePreference();
+      initMotionPreference();
       await loadSiteSettings();
       await loadProducts();
     }
@@ -9656,7 +10041,7 @@
         activeProductCategory = card.dataset.category || '';
         currentPage = 1;
         renderStorefrontProducts();
-        document.getElementById('productos')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        document.getElementById('productos')?.scrollIntoView({ behavior: preferredScrollBehavior(), block: 'start' });
       });
     });
 
@@ -9706,8 +10091,8 @@
         });
         if (res.ok) {
           feedback.textContent = '✅ Recibimos tu solicitud. Te escribimos pronto.';
-          feedback.style.color = '#22c55e';
-          feedback.style.display = 'block';
+          feedback.dataset.state = 'success';
+          feedback.hidden = false;
           document.getElementById('emailInput').value = '';
           if (document.getElementById('messageInput')) {
             document.getElementById('messageInput').value = '';
@@ -9720,14 +10105,14 @@
           }
         } else {
           feedback.textContent = '❌ Error al enviar. Intenta de nuevo.';
-          feedback.style.color = '#ef4444';
-          feedback.style.display = 'block';
+          feedback.dataset.state = 'error';
+          feedback.hidden = false;
         }
       } catch {
         // Fallback: backend no disponible, guardamos local
         feedback.textContent = '✅ Mensaje registrado (modo offline). Te contactaremos.';
-        feedback.style.color = '#22c55e';
-        feedback.style.display = 'block';
+        feedback.dataset.state = 'success';
+        feedback.hidden = false;
       }
     });
 
@@ -9742,7 +10127,7 @@
         if (!target) return;
         e.preventDefault();
         if (target) {
-          target.scrollIntoView({ behavior: 'smooth', block: 'start' });
+          target.scrollIntoView({ behavior: preferredScrollBehavior(), block: 'start' });
         }
         // Close mobile menu
         document.getElementById('navLinks').classList.remove('open');
@@ -9760,18 +10145,29 @@
     const LEGACY_AUTH_USERID_KEY = 'nex' + 'core_auth_user_id';
 
     function readSessionStorageWithLegacy(key, legacyKey, fallback = '') {
-      const currentValue = sessionStorage.getItem(key);
+      const currentValue = safeStorageRead('sessionStorage', key);
       if (currentValue !== null) return currentValue;
-      const legacyValue = sessionStorage.getItem(legacyKey);
+      const legacyValue = safeStorageRead('sessionStorage', legacyKey);
       if (legacyValue !== null) {
-        sessionStorage.setItem(key, legacyValue);
-        sessionStorage.removeItem(legacyKey);
+        if (safeStorageWrite('sessionStorage', key, legacyValue)) {
+          safeStorageRemove('sessionStorage', legacyKey);
+        }
         return legacyValue;
       }
       return fallback;
     }
 
-    let currentUser = JSON.parse(readSessionStorageWithLegacy(AUTH_USER_KEY, LEGACY_AUTH_USER_KEY, 'null') || 'null');
+    function readStoredUser() {
+      try {
+        return JSON.parse(readSessionStorageWithLegacy(AUTH_USER_KEY, LEGACY_AUTH_USER_KEY, 'null') || 'null');
+      } catch (_) {
+        safeStorageRemove('sessionStorage', AUTH_USER_KEY);
+        safeStorageRemove('sessionStorage', LEGACY_AUTH_USER_KEY);
+        return null;
+      }
+    }
+
+    let currentUser = readStoredUser();
 
     function isLoggedIn() {
       return !!readSessionStorageWithLegacy(AUTH_TOKEN_KEY, LEGACY_AUTH_TOKEN_KEY);
@@ -9864,10 +10260,10 @@
           setAuthStatus(data.error === 'invalid_credentials' ? 'Correo o contraseña incorrectos.' : (data.message || 'Error al ingresar.'), 'error');
           return;
         }
-        sessionStorage.setItem(AUTH_TOKEN_KEY, data.token);
-        sessionStorage.setItem(AUTH_USER_KEY, JSON.stringify(data.user));
-        sessionStorage.removeItem(LEGACY_AUTH_TOKEN_KEY);
-        sessionStorage.removeItem(LEGACY_AUTH_USER_KEY);
+        safeStorageWrite('sessionStorage', AUTH_TOKEN_KEY, data.token);
+        safeStorageWrite('sessionStorage', AUTH_USER_KEY, JSON.stringify(data.user));
+        safeStorageRemove('sessionStorage', LEGACY_AUTH_TOKEN_KEY);
+        safeStorageRemove('sessionStorage', LEGACY_AUTH_USER_KEY);
         currentUser = data.user;
         closeAuthModal();
         updateAuthUI();
@@ -9910,12 +10306,12 @@
           setAuthStatus(msg, 'error');
           return;
         }
-        sessionStorage.setItem(AUTH_TOKEN_KEY, data.token);
-        sessionStorage.setItem(AUTH_USER_KEY, JSON.stringify(data.user));
-        sessionStorage.setItem(AUTH_USERID_KEY, data.userId || '');
-        sessionStorage.removeItem(LEGACY_AUTH_TOKEN_KEY);
-        sessionStorage.removeItem(LEGACY_AUTH_USER_KEY);
-        sessionStorage.removeItem(LEGACY_AUTH_USERID_KEY);
+        safeStorageWrite('sessionStorage', AUTH_TOKEN_KEY, data.token);
+        safeStorageWrite('sessionStorage', AUTH_USER_KEY, JSON.stringify(data.user));
+        safeStorageWrite('sessionStorage', AUTH_USERID_KEY, data.userId || '');
+        safeStorageRemove('sessionStorage', LEGACY_AUTH_TOKEN_KEY);
+        safeStorageRemove('sessionStorage', LEGACY_AUTH_USER_KEY);
+        safeStorageRemove('sessionStorage', LEGACY_AUTH_USERID_KEY);
         currentUser = data.user;
         closeAuthModal();
         updateAuthUI();
@@ -9937,7 +10333,7 @@
 
       section.style.display = '';
       document.getElementById('ordersGreeting').textContent = currentUser ? `Tus compras, ${currentUser.name?.split(' ')[0] || ''}.` : 'Tus compras registradas.';
-      list.innerHTML = '<p style="text-align:center;color:#86868b;padding:40px 0;">Cargando tus pedidos...</p>';
+      list.innerHTML = '<p class="theme-status-message">Cargando tus pedidos...</p>';
 
       try {
         const res = await fetch('/api/orders', {
@@ -9948,35 +10344,35 @@
         });
         const data = await res.json();
         if (!res.ok) {
-          list.innerHTML = '<p style="text-align:center;color:#ef4444;padding:40px 0;">No pudimos cargar tus pedidos.</p>';
+          list.innerHTML = '<p class="theme-status-message is-error">No pudimos cargar tus pedidos.</p>';
           return;
         }
         const orders = data.orders || [];
         if (orders.length === 0) {
-          list.innerHTML = '<p style="text-align:center;color:#86868b;padding:40px 0;">No tienes pedidos registrados todavía.</p>';
+          list.innerHTML = '<p class="theme-status-message">No tienes pedidos registrados todavía.</p>';
           return;
         }
         list.innerHTML = orders.map(o => `
-          <div style="background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.06);border-radius:16px;padding:16px;margin-bottom:12px;">
-            <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px;">
+          <div class="order-history-card">
+            <div class="order-history-header">
               <div>
-                <strong style="font-size:0.875rem;">${htmlSafe(o.reference || '—')}</strong>
-                <span style="color:#86868b;font-size:0.75rem;margin-left:8px;">${humanizeStatus(o.status)}</span>
+                <strong class="order-history-reference">${htmlSafe(o.reference || '—')}</strong>
+                <span class="order-history-status">${humanizeStatus(o.status)}</span>
               </div>
-              <div style="text-align:right;">
-                <div style="font-weight:600;">${formatCents(o.amountInCents || 0)}</div>
-                <span style="color:#86868b;font-size:0.7rem;">${o.createdAt ? new Date(o.createdAt).toLocaleDateString('es-CO') : '—'}</span>
+              <div class="order-history-price">
+                <div class="order-history-amount">${formatCents(o.amountInCents || 0)}</div>
+                <span class="order-history-date">${o.createdAt ? new Date(o.createdAt).toLocaleDateString('es-CO') : '—'}</span>
               </div>
             </div>
-            <div style="margin-top:8px;font-size:0.75rem;color:#86868b;">
+            <div class="order-history-meta">
               ${o.items?.length || 0} ítems · Despacho: ${humanizeStatus(o.fulfillmentStatus)}
             </div>
-            ${o.trackingNumber ? `<div style="margin-top:6px;font-size:0.75rem;color:#a5b4fc;">🔗 Guía: ${htmlSafe(o.trackingNumber)}${o.courier ? ' (' + htmlSafe(o.courier) + ')' : ''}</div>` : ''}
+            ${o.trackingNumber ? `<div class="order-history-link">🔗 Guía: ${htmlSafe(o.trackingNumber)}${o.courier ? ' (' + htmlSafe(o.courier) + ')' : ''}</div>` : ''}
           </div>
         `).join('');
-        section.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        section.scrollIntoView({ behavior: preferredScrollBehavior(), block: 'start' });
       } catch (err) {
-        list.innerHTML = '<p style="text-align:center;color:#ef4444;padding:40px 0;">Error de conexión.</p>';
+        list.innerHTML = '<p class="theme-status-message is-error">Error de conexión.</p>';
       }
     }
 
@@ -9986,12 +10382,12 @@
     }
 
     function logoutUser() {
-      sessionStorage.removeItem(AUTH_TOKEN_KEY);
-      sessionStorage.removeItem(AUTH_USER_KEY);
-      sessionStorage.removeItem(AUTH_USERID_KEY);
-      sessionStorage.removeItem(LEGACY_AUTH_TOKEN_KEY);
-      sessionStorage.removeItem(LEGACY_AUTH_USER_KEY);
-      sessionStorage.removeItem(LEGACY_AUTH_USERID_KEY);
+      safeStorageRemove('sessionStorage', AUTH_TOKEN_KEY);
+      safeStorageRemove('sessionStorage', AUTH_USER_KEY);
+      safeStorageRemove('sessionStorage', AUTH_USERID_KEY);
+      safeStorageRemove('sessionStorage', LEGACY_AUTH_TOKEN_KEY);
+      safeStorageRemove('sessionStorage', LEGACY_AUTH_USER_KEY);
+      safeStorageRemove('sessionStorage', LEGACY_AUTH_USERID_KEY);
       currentUser = null;
       updateAuthUI();
       closeOrders();

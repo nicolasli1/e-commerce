@@ -2,10 +2,15 @@
 Fixtures y configuración global de pytest para tests E2E con Playwright.
 """
 import json
+import http.server
+import mimetypes
 import os
+from pathlib import Path
+import threading
 import sys
 from datetime import datetime
 from typing import Dict, Generator, Optional
+from urllib.parse import unquote, urlsplit
 
 import pytest
 import requests
@@ -16,6 +21,68 @@ if _e2e_dir not in sys.path:
     sys.path.insert(0, _e2e_dir)
 
 from config import config as e2e_cfg  # noqa: E402
+
+
+_PROJECT_ROOT = Path(__file__).resolve().parents[2]
+_FRONTEND_DIR = _PROJECT_ROOT / "frontend"
+_BACKOFFICE_DIR = _PROJECT_ROOT / "backoffice"
+
+
+class _LocalAppHandler(http.server.BaseHTTPRequestHandler):
+    """Serve both SPAs and deterministic API fixtures from one local origin."""
+
+    def log_message(self, format, *args):  # noqa: A003
+        return
+
+    def _send_json(self, payload: str, status: int = 200):
+        body = payload.encode("utf-8")
+        self.send_response(status)
+        self.send_header("Content-Type", "application/json; charset=utf-8")
+        self.send_header("Content-Length", str(len(body)))
+        self.end_headers()
+        self.wfile.write(body)
+
+    def _send_file(self, path: Path):
+        if not path.is_file():
+            self.send_error(404)
+            return
+        body = path.read_bytes()
+        content_type = mimetypes.guess_type(path.name)[0] or "application/octet-stream"
+        self.send_response(200)
+        self.send_header("Content-Type", content_type)
+        self.send_header("Content-Length", str(len(body)))
+        self.end_headers()
+        self.wfile.write(body)
+
+    def do_GET(self):  # noqa: N802
+        request_path = unquote(urlsplit(self.path).path)
+
+        if request_path == "/api/site-settings":
+            self._send_json('{"settings":{"visualTheme":"dark"}}')
+            return
+        if request_path == "/api/products":
+            self._send_json('{"products":[]}')
+            return
+        if request_path.startswith("/api/"):
+            self._send_json('{"ok":false,"error":"local_fixture_not_implemented"}', 404)
+            return
+
+        if request_path in {"/admin", "/admin/", "/admin/login"}:
+            self._send_file(_BACKOFFICE_DIR / "index.html")
+            return
+        if request_path.startswith("/admin/"):
+            relative = request_path.removeprefix("/admin/")
+            target = (_BACKOFFICE_DIR / relative).resolve()
+            if target.is_relative_to(_BACKOFFICE_DIR.resolve()):
+                self._send_file(target)
+                return
+
+        relative = "index.html" if request_path in {"", "/"} else request_path.lstrip("/")
+        target = (_FRONTEND_DIR / relative).resolve()
+        if target.is_relative_to(_FRONTEND_DIR.resolve()):
+            self._send_file(target)
+            return
+        self.send_error(404)
 
 # Lazy import: playwright solo se carga cuando se usan fixtures que lo necesitan
 def _playwright():
@@ -100,6 +167,21 @@ def browser(playwright_instance):
     )
     yield browser
     browser.close()
+
+
+@pytest.fixture(scope="session")
+def local_site_url():
+    """Local, same-origin storefront/backoffice server with stable API responses."""
+    server = http.server.ThreadingHTTPServer(("127.0.0.1", 0), _LocalAppHandler)
+    server.daemon_threads = True
+    thread = threading.Thread(target=server.serve_forever, daemon=True)
+    thread.start()
+    try:
+        yield f"http://127.0.0.1:{server.server_address[1]}"
+    finally:
+        server.shutdown()
+        server.server_close()
+        thread.join(timeout=5)
 
 
 @pytest.fixture

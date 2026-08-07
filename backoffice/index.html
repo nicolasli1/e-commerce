@@ -1,28 +1,29 @@
 <!DOCTYPE html>
-<html lang="es">
+<html lang="es" data-admin-theme-mode="system" data-theme="dark" data-admin-shell="auth">
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>RepuestosCel — Backoffice</title>
   <link rel="icon" type="image/svg+xml" href="favicon.svg" />
   <link rel="apple-touch-icon" href="favicon.svg" />
+  <script src="js/theme-init.js?v=20260806-admin-theme"></script>
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet" />
-  <link rel="stylesheet" href="css/style.css?v=20260606-design-settings" />
+  <link rel="stylesheet" href="css/style.css?v=20260806-admin-theme" />
 </head>
 <body>
 
   <!-- ============================================================
        SIDEBAR TOGGLE (mobile)
        ============================================================ -->
-  <button class="sidebar-toggle" id="sidebarToggle" aria-label="Toggle sidebar">
+  <button class="sidebar-toggle" id="sidebarToggle" aria-label="Abrir menú de navegación" aria-controls="sidebar" aria-expanded="false">
     ☰
   </button>
 
   <!-- ============================================================
        SIDEBAR OVERLAY (mobile)
        ============================================================ -->
-  <div class="sidebar-overlay" id="sidebarOverlay"></div>
+  <div class="sidebar-overlay" id="sidebarOverlay" aria-hidden="true"></div>
 
   <!-- ============================================================
        SIDEBAR
@@ -68,6 +69,17 @@
     </nav>
 
     <div class="sidebar-footer">
+      <div class="theme-control">
+        <label class="theme-control-label" for="adminThemeMode">
+          <span class="theme-control-icon" aria-hidden="true">◐</span>
+          Tema del panel
+        </label>
+        <select id="adminThemeMode" class="theme-control-select" data-admin-theme-select aria-label="Tema del panel">
+          <option value="system">Sistema</option>
+          <option value="light">Claro</option>
+          <option value="dark">Oscuro</option>
+        </select>
+      </div>
       <button class="sidebar-link" id="logoutBtn">
         <span class="sidebar-link-icon">🚪</span>
         Cerrar sesión
@@ -89,7 +101,7 @@
   <!-- ============================================================
        TOAST CONTAINER
        ============================================================ -->
-  <div class="toast-container" id="toastContainer"></div>
+  <div class="toast-container" id="toastContainer" aria-live="polite" aria-atomic="true"></div>
 
   <!-- ============================================================
        SCRIPTS
@@ -97,6 +109,6 @@
   <script src="js/config.js?v=20260606-design-settings"></script>
   <script src="js/api.js?v=20260606-design-settings"></script>
   <script src="js/auth.js?v=20260606-design-settings"></script>
-  <script src="js/app.js?v=20260606-design-settings"></script>
+  <script src="js/app.js?v=20260806-admin-theme"></script>
 </body>
 </html>

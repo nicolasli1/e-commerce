@@ -8,48 +8,8 @@ responsive/cart regressions before a deploy reaches CloudFront.
 from __future__ import annotations
 
 import contextlib
-import http.server
-import socketserver
-import threading
-from pathlib import Path
 
 import pytest
-from playwright.sync_api import sync_playwright
-
-
-FRONTEND_DIR = Path(__file__).resolve().parents[2] / "frontend"
-
-
-class QuietHandler(http.server.SimpleHTTPRequestHandler):
-    def log_message(self, format, *args):  # noqa: A003
-        return
-
-
-@pytest.fixture(scope="module")
-def local_frontend_url():
-    handler = lambda *args, **kwargs: QuietHandler(  # noqa: E731
-        *args, directory=str(FRONTEND_DIR), **kwargs
-    )
-
-    with socketserver.TCPServer(("127.0.0.1", 0), handler) as server:
-        port = server.server_address[1]
-        thread = threading.Thread(target=server.serve_forever, daemon=True)
-        thread.start()
-        try:
-            yield f"http://127.0.0.1:{port}/index.html"
-        finally:
-            server.shutdown()
-            thread.join(timeout=5)
-
-
-@pytest.fixture(scope="module")
-def playwright_browser():
-    with sync_playwright() as playwright:
-        browser = playwright.chromium.launch()
-        try:
-            yield browser
-        finally:
-            browser.close()
 
 
 def _open_page(browser, url: str, *, mobile: bool):
@@ -70,9 +30,9 @@ def _open_page(browser, url: str, *, mobile: bool):
 
 @pytest.mark.parametrize("mobile", [False, True], ids=["desktop", "mobile"])
 def test_cart_button_is_visible_and_opens_modal(
-    playwright_browser, local_frontend_url, mobile
+    browser, local_site_url, mobile
 ):
-    context, page = _open_page(playwright_browser, local_frontend_url, mobile=mobile)
+    context, page = _open_page(browser, local_site_url, mobile=mobile)
     try:
         cart_button = page.locator("#cartNavBtn")
         expect_modal = page.locator("#cartModal")
@@ -99,7 +59,7 @@ def test_cart_button_is_visible_and_opens_modal(
 
 @pytest.mark.parametrize("mobile", [False, True], ids=["desktop", "mobile"])
 def test_checkout_button_opens_checkout_modal(
-    playwright_browser, local_frontend_url, mobile
+    browser, local_site_url, mobile
 ):
     options = {}
     if mobile:
@@ -107,7 +67,7 @@ def test_checkout_button_opens_checkout_modal(
     else:
         options.update(viewport={"width": 1440, "height": 1200})
 
-    context = playwright_browser.new_context(**options)
+    context = browser.new_context(**options)
     context.add_init_script(
         """
         localStorage.setItem('repuestoscel_cart', JSON.stringify([
@@ -116,7 +76,7 @@ def test_checkout_button_opens_checkout_modal(
         """
     )
     page = context.new_page()
-    page.goto(local_frontend_url, wait_until="load")
+    page.goto(local_site_url, wait_until="load")
 
     try:
         page.locator("#cartNavBtn").click()
@@ -144,9 +104,9 @@ def test_checkout_button_opens_checkout_modal(
 
 
 def test_mobile_product_detail_keeps_purchase_action_readable(
-    playwright_browser, local_frontend_url
+    browser, local_site_url
 ):
-    context = playwright_browser.new_context(
+    context = browser.new_context(
         viewport={"width": 390, "height": 844},
         is_mobile=True,
     )
@@ -154,7 +114,7 @@ def test_mobile_product_detail_keeps_purchase_action_readable(
         "localStorage.setItem('repuestoscel_theme_mode', 'repair');"
     )
     page = context.new_page()
-    page.goto(local_frontend_url, wait_until="load")
+    page.goto(local_site_url, wait_until="load")
 
     try:
         page.evaluate(

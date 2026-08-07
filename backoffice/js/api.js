@@ -10,17 +10,30 @@ const Api = (() => {
 
   const BASE_URL = CONFIG.API_BASE_URL;
 
+  function storageGet(key) {
+    try { return localStorage.getItem(key); } catch (_) { return null; }
+  }
+
+  function storageSet(key, value) {
+    try { localStorage.setItem(key, value); return true; } catch (_) { return false; }
+  }
+
+  function storageRemove(key) {
+    try { localStorage.removeItem(key); } catch (_) {}
+  }
+
   /**
    * Retrieve the stored auth token.
    * @returns {string|null}
    */
   function getToken() {
-    const token = localStorage.getItem('repuestoscel_admin_token');
+    const token = storageGet('repuestoscel_admin_token');
     if (token) return token;
-    const legacyToken = localStorage.getItem('nex' + 'core_admin_token');
+    const legacyToken = storageGet('nex' + 'core_admin_token');
     if (legacyToken) {
-      localStorage.setItem('repuestoscel_admin_token', legacyToken);
-      localStorage.removeItem('nex' + 'core_admin_token');
+      if (storageSet('repuestoscel_admin_token', legacyToken)) {
+        storageRemove('nex' + 'core_admin_token');
+      }
     }
     return legacyToken;
   }
@@ -57,8 +70,8 @@ const Api = (() => {
 
     // Handle 401 — token expired or invalid
     if (res.status === 401) {
-      localStorage.removeItem('repuestoscel_admin_token');
-      localStorage.removeItem('nex' + 'core_admin_token');
+      storageRemove('repuestoscel_admin_token');
+      storageRemove('nex' + 'core_admin_token');
       window.location.hash = '#/login';
       throw new Error('Sesión expirada. Redirigiendo al login…');
     }
@@ -124,8 +137,8 @@ const Api = (() => {
       body: JSON.stringify({ productId, image: base64Image }),
     });
     if (res.status === 401) {
-      localStorage.removeItem('repuestoscel_admin_token');
-      localStorage.removeItem('nex' + 'core_admin_token');
+      storageRemove('repuestoscel_admin_token');
+      storageRemove('nex' + 'core_admin_token');
       window.location.hash = '#/login';
       throw new Error('Sesión expirada. Redirigiendo al login…');
     }

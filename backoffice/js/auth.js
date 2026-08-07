@@ -8,13 +8,24 @@ const Auth = (() => {
   const TOKEN_KEY = 'repuestoscel_admin_token';
   const LEGACY_TOKEN_KEY = 'nex' + 'core_admin_token';
 
+  function storageGet(key) {
+    try { return localStorage.getItem(key); } catch (_) { return null; }
+  }
+
+  function storageSet(key, value) {
+    try { localStorage.setItem(key, value); return true; } catch (_) { return false; }
+  }
+
+  function storageRemove(key) {
+    try { localStorage.removeItem(key); } catch (_) {}
+  }
+
   function getStoredToken() {
-    const token = localStorage.getItem(TOKEN_KEY);
+    const token = storageGet(TOKEN_KEY);
     if (token) return token;
-    const legacyToken = localStorage.getItem(LEGACY_TOKEN_KEY);
+    const legacyToken = storageGet(LEGACY_TOKEN_KEY);
     if (legacyToken) {
-      localStorage.setItem(TOKEN_KEY, legacyToken);
-      localStorage.removeItem(LEGACY_TOKEN_KEY);
+      if (storageSet(TOKEN_KEY, legacyToken)) storageRemove(LEGACY_TOKEN_KEY);
     }
     return legacyToken;
   }
@@ -29,8 +40,7 @@ const Auth = (() => {
   async function login(username, password) {
     const data = await Api.post('/api/admin/login', { username, password });
     if (data.token) {
-      localStorage.setItem(TOKEN_KEY, data.token);
-      localStorage.removeItem(LEGACY_TOKEN_KEY);
+      if (storageSet(TOKEN_KEY, data.token)) storageRemove(LEGACY_TOKEN_KEY);
     }
     return data;
   }
@@ -39,8 +49,8 @@ const Auth = (() => {
    * Log out: clear token and redirect to login.
    */
   function logout() {
-    localStorage.removeItem(TOKEN_KEY);
-    localStorage.removeItem(LEGACY_TOKEN_KEY);
+    storageRemove(TOKEN_KEY);
+    storageRemove(LEGACY_TOKEN_KEY);
     window.location.hash = '#/login';
   }
 
