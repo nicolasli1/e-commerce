@@ -3143,12 +3143,19 @@
     .footer-col a {
       display: block;
       font-size: 0.875rem;
-      color: #636366;
-      padding: 4px 0;
-      transition: color 160ms cubic-bezier(0.16, 1, 0.3, 1);
+      color: #a3a3ad;
+      padding: 5px 0;
+      width: fit-content;
+      transition: color 160ms cubic-bezier(0.16, 1, 0.3, 1), transform 160ms cubic-bezier(0.16, 1, 0.3, 1);
     }
     @media (hover: hover) and (pointer: fine) {
-      .footer-col a:hover { color: #f5f5f7; }
+      .footer-col a:hover { color: #f5f5f7; transform: translateX(2px); }
+    }
+    .footer-col a:focus-visible {
+      color: #fff;
+      outline: 2px solid #a5b4fc;
+      outline-offset: 4px;
+      border-radius: 4px;
     }
     .footer-bottom {
       display: flex;
@@ -3160,6 +3167,235 @@
       border-top: 1px solid rgba(255, 255, 255, 0.06);
       font-size: 0.8125rem;
       color: #636366;
+    }
+
+    /* ==============================
+       INFORMATION CENTER
+    ============================== */
+    #infoModal {
+      padding: clamp(10px, 2.2vw, 28px);
+    }
+    .info-modal {
+      position: relative;
+      width: min(100%, 1040px);
+      max-height: min(92dvh, 920px);
+      padding: 0;
+      overflow: hidden auto;
+      border-radius: 30px;
+      background: #0d0e16;
+      border-color: rgba(255,255,255,0.1);
+    }
+    .info-modal-toolbar {
+      position: sticky;
+      top: 0;
+      z-index: 5;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 16px;
+      min-height: 68px;
+      padding: 12px clamp(18px, 3vw, 34px);
+      background: rgba(13,14,22,0.9);
+      border-bottom: 1px solid rgba(255,255,255,0.08);
+      backdrop-filter: blur(18px);
+      -webkit-backdrop-filter: blur(18px);
+    }
+    .info-modal-brand {
+      display: inline-flex;
+      align-items: center;
+      gap: 10px;
+      color: #f5f5f7;
+      font-weight: 800;
+      letter-spacing: -0.02em;
+    }
+    .info-modal-brand-mark {
+      width: 30px;
+      height: 30px;
+      display: inline-grid;
+      place-items: center;
+      border-radius: 10px;
+      color: #07110f;
+      background: #78e7cf;
+      font-size: 0.8rem;
+      font-weight: 900;
+    }
+    .info-view {
+      padding: clamp(24px, 4.5vw, 56px);
+    }
+    .info-eyebrow {
+      margin-bottom: 12px;
+      color: #86efdc;
+      font-size: 0.75rem;
+      font-weight: 800;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+    }
+    .info-heading {
+      max-width: 760px;
+      margin: 0 0 14px;
+      color: #f8fafc;
+      font-size: clamp(2rem, 5vw, 4.5rem);
+      line-height: 0.98;
+      letter-spacing: -0.06em;
+    }
+    .info-lede {
+      max-width: 760px;
+      margin: 0 0 clamp(24px, 4vw, 40px);
+      color: #b7bbc6;
+      font-size: clamp(1rem, 1.7vw, 1.2rem);
+      line-height: 1.7;
+    }
+    .info-banner {
+      width: 100%;
+      height: auto;
+      aspect-ratio: 16 / 8.98;
+      display: block;
+      margin: 0 0 clamp(26px, 4vw, 44px);
+      object-fit: cover;
+      border-radius: 24px;
+      border: 1px solid rgba(255,255,255,0.12);
+      background: #f5f5f3;
+    }
+    .info-content {
+      display: grid;
+      gap: 16px;
+    }
+    .info-card-grid {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 12px;
+    }
+    .info-card,
+    .info-callout,
+    .info-faq details {
+      border: 1px solid rgba(255,255,255,0.09);
+      background: rgba(255,255,255,0.035);
+      border-radius: 18px;
+    }
+    .info-card {
+      padding: 20px;
+    }
+    .info-card strong,
+    .info-content h3 {
+      display: block;
+      margin: 0 0 8px;
+      color: #f5f5f7;
+      font-size: 1rem;
+    }
+    .info-card p,
+    .info-content > p,
+    .info-content li,
+    .info-callout p,
+    .info-faq details p {
+      margin: 0;
+      color: #b7bbc6;
+      line-height: 1.72;
+    }
+    .info-steps {
+      display: grid;
+      gap: 10px;
+      margin: 0;
+      padding: 0;
+      list-style: none;
+      counter-reset: repair-step;
+    }
+    .info-steps li {
+      position: relative;
+      min-height: 54px;
+      padding: 14px 16px 14px 62px;
+      border: 1px solid rgba(255,255,255,0.08);
+      border-radius: 16px;
+      background: rgba(255,255,255,0.025);
+      counter-increment: repair-step;
+    }
+    .info-steps li::before {
+      content: counter(repair-step, decimal-leading-zero);
+      position: absolute;
+      left: 16px;
+      top: 14px;
+      color: #86efdc;
+      font-size: 0.75rem;
+      font-weight: 900;
+      letter-spacing: 0.06em;
+    }
+    .info-callout {
+      padding: 20px;
+      border-color: rgba(251,191,36,0.24);
+      background: rgba(251,191,36,0.07);
+    }
+    .info-callout strong { color: #fde68a; }
+    .info-faq { display: grid; gap: 10px; }
+    .info-faq details { padding: 0 18px; }
+    .info-faq summary {
+      padding: 18px 28px 18px 0;
+      color: #f5f5f7;
+      font-weight: 700;
+      line-height: 1.4;
+      cursor: pointer;
+    }
+    .info-faq details p { padding: 0 0 18px; }
+    .info-actions {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      margin-top: 28px;
+      padding-top: 24px;
+      border-top: 1px solid rgba(255,255,255,0.08);
+    }
+    .info-meta-note {
+      color: #8d929f;
+      font-size: 0.82rem;
+      line-height: 1.6;
+    }
+    html[data-theme="light"] body .footer-col a { color: #4b5563; }
+    html[data-theme="light"] body .footer-col a:hover { color: #0f172a; }
+    html[data-theme="light"] body .info-modal {
+      background: #fbfcfd;
+      border-color: rgba(15,23,42,0.14);
+    }
+    html[data-theme="light"] body .info-modal-toolbar {
+      background: rgba(251,252,253,0.92);
+      border-bottom-color: rgba(15,23,42,0.1);
+    }
+    html[data-theme="light"] body .info-modal-brand,
+    html[data-theme="light"] body .info-heading,
+    html[data-theme="light"] body .info-card strong,
+    html[data-theme="light"] body .info-content h3,
+    html[data-theme="light"] body .info-faq summary { color: #17202a; }
+    html[data-theme="light"] body .info-lede,
+    html[data-theme="light"] body .info-card p,
+    html[data-theme="light"] body .info-content > p,
+    html[data-theme="light"] body .info-content li,
+    html[data-theme="light"] body .info-callout p,
+    html[data-theme="light"] body .info-faq details p { color: #4b5563; }
+    html[data-theme="light"] body .info-card,
+    html[data-theme="light"] body .info-faq details,
+    html[data-theme="light"] body .info-steps li {
+      background: #fff;
+      border-color: rgba(15,23,42,0.12);
+    }
+    html[data-theme="light"] body .info-actions { border-top-color: rgba(15,23,42,0.1); }
+    html[data-theme="light"] body .info-callout {
+      background: #fffbeb;
+      border-color: #fde68a;
+    }
+    html[data-theme="light"] body .info-callout strong { color: #92400e; }
+    html[data-theme="light"] body .info-eyebrow,
+    html[data-theme="light"] body .info-steps li::before { color: #0f766e; }
+    @media (max-width: 680px) {
+      #infoModal { padding: 0; align-items: stretch; }
+      .info-modal {
+        width: 100%;
+        max-height: 100dvh;
+        min-height: 100dvh;
+        border: 0;
+        border-radius: 0;
+      }
+      .info-modal-toolbar { min-height: 62px; padding: 10px 16px; }
+      .info-view { padding: 24px 18px 40px; }
+      .info-card-grid { grid-template-columns: 1fr; }
+      .info-banner { border-radius: 16px; }
+      .info-actions .btn { width: 100%; justify-content: center; }
     }
 
         /* ==============================
@@ -6374,7 +6610,7 @@
   ============================ -->
   <nav class="navbar" id="navbar">
     <div class="container">
-      <a href="#" class="logo">
+      <a href="#inicio" class="logo">
         <span class="logo-icon"><img src="favicon.svg" alt="" aria-hidden="true" /></span>
         RepuestosCel
       </a>
@@ -6805,33 +7041,35 @@
     <div class="container">
       <div class="footer-grid">
         <div class="footer-col">
-          <h4>Productos</h4>
-          <a href="#">Pantallas</a>
-          <a href="#">Baterías</a>
-          <a href="#">Flex de Carga</a>
-          <a href="#">Herramientas</a>
-          <a href="#">Módulos</a>
-          <a href="#">Accesorios</a>
+          <h4>Catálogo</h4>
+          <a href="#productos" data-footer-category="pantallas">Pantallas</a>
+          <a href="#productos" data-footer-category="baterias">Baterías</a>
+          <a href="#productos" data-footer-category="flex-y-conectores">Flex y conectores</a>
+          <a href="#productos" data-footer-category="camaras-y-modulos">Cámaras y módulos</a>
+          <a href="#productos" data-footer-category="tapas-y-carcasa">Tapas y carcasa</a>
+          <a href="#productos" data-footer-category="accesorios">Accesorios</a>
+          <a href="#productos" data-footer-category="herramientas-diy">Herramientas DIY</a>
         </div>
         <div class="footer-col">
-          <h4>Empresa</h4>
-          <a href="#">Sobre RepuestosCel</a>
-          <a href="#">Guía para reparar</a>
-          <a href="#">Reposición por volumen</a>
-          <a href="#">Atención técnica</a>
+          <h4>Ayuda</h4>
+          <a href="#guia-para-reparar" data-info-page="guia">Guía para reparar</a>
+          <a href="#compatibilidad" data-info-page="compatibilidad">Compatibilidad y atención</a>
+          <a href="#compras-por-volumen" data-info-page="volumen">Compras por volumen</a>
+          <a href="#preguntas-frecuentes" data-info-page="faq">Preguntas frecuentes</a>
+          <a href="#rastrear-pedido">Rastrear pedido</a>
         </div>
         <div class="footer-col">
-          <h4>Soporte</h4>
-          <a href="#">FAQ</a>
-          <a href="#">Garantías</a>
-          <a href="#">Envíos</a>
-          <a href="#">Devoluciones</a>
+          <h4>Información</h4>
+          <a href="#sobre-repuestoscel" data-info-page="sobre">Sobre RepuestosCel</a>
+          <a href="#garantias" data-info-page="garantias">Garantías</a>
+          <a href="#envios-y-devoluciones" data-info-page="envios">Envíos y devoluciones</a>
+          <a href="#contacto">Contacto</a>
         </div>
         <div class="footer-col">
           <h4>Legal</h4>
-          <a href="#">Términos</a>
-          <a href="#">Privacidad</a>
-          <a href="#">Cookies</a>
+          <a href="#terminos" data-info-page="terminos">Términos y condiciones</a>
+          <a href="#privacidad" data-info-page="privacidad">Privacidad</a>
+          <a href="#cookies" data-info-page="cookies">Cookies</a>
         </div>
       </div>
       <div class="footer-bottom">
@@ -6840,6 +7078,19 @@
       </div>
     </div>
   </footer>
+
+  <!-- ============================
+       INFORMATION CENTER
+  ============================ -->
+  <div class="modal-overlay" id="infoModal" role="dialog" aria-modal="true" aria-hidden="true" aria-labelledby="infoModalTitle">
+    <article class="modal info-modal" tabindex="-1">
+      <div class="info-modal-toolbar">
+        <div class="info-modal-brand"><span class="info-modal-brand-mark" aria-hidden="true">RC</span> Centro de información</div>
+        <button class="modal-close" id="infoModalCloseBtn" type="button" aria-label="Cerrar información">✕</button>
+      </div>
+      <div class="info-view" id="infoModalContent"></div>
+    </article>
+  </div>
 
   <!-- ============================
        CART MODAL
@@ -8439,6 +8690,7 @@
       'flex-y-conectores': ['flex-y-conectores', 'flex', 'charging-ports'],
       'tapas-y-carcasa': ['tapas-y-carcasa', 'tapas', 'back-glass'],
       'herramientas-diy': ['herramientas-diy', 'herramientas'],
+      accesorios: ['accesorios'],
       adhesivos: ['adhesivos'],
     };
     const SEARCH_BRAND_RULES = [
@@ -9517,7 +9769,8 @@
 
       categories.sort().forEach((category) => {
         const chip = document.createElement('button');
-        chip.className = `filter-chip ${activeProductCategory === category ? 'active' : ''}`;
+        const activeCategorySet = CATEGORY_EQUIVALENTS[activeProductCategory] || [activeProductCategory];
+        chip.className = `filter-chip ${activeCategorySet.includes(category) ? 'active' : ''}`;
         chip.type = 'button';
         chip.textContent = `${getCategoryLabel(category)} (${counts[category] || 0})`;
         chip.addEventListener('click', () => {
@@ -9563,7 +9816,10 @@
       if (!grid) return;
 
       const products = activeProductCategory
-        ? storefrontProducts.filter((product) => product.category === activeProductCategory)
+        ? storefrontProducts.filter((product) => {
+            const acceptedCategories = CATEGORY_EQUIVALENTS[activeProductCategory] || [activeProductCategory];
+            return acceptedCategories.includes(product.category);
+          })
         : storefrontProducts.slice();
       const searchBase = activeSearchQuery ? products.slice() : products;
       const rankedSearch = rankedProductsForSearch(searchBase, activeSearchQuery);
@@ -10110,12 +10366,271 @@
     });
 
     // ==============================
+    // FOOTER + INFORMATION CENTER
+    // ==============================
+    const INFORMATION_PAGES = {
+      sobre: {
+        eyebrow: 'Nuestra razón de ser',
+        title: 'Reparar antes que reemplazar.',
+        lede: 'RepuestosCel organiza repuestos y herramientas para que personas, técnicos y talleres puedan comparar mejor antes de comprar.',
+        content: `
+          <div class="info-card-grid">
+            <article class="info-card"><strong>Compatibilidad primero</strong><p>La marca no basta: revisa el modelo exacto, la variante y el tipo de pieza antes de elegir.</p></article>
+            <article class="info-card"><strong>Información clara</strong><p>Mostramos condición, calidad y disponibilidad cuando esos datos están confirmados para el producto.</p></article>
+            <article class="info-card"><strong>Herramientas adecuadas</strong><p>Una buena reparación también depende de preparar el equipo y trabajar sin forzar conectores ni flex.</p></article>
+            <article class="info-card"><strong>Más vida útil</strong><p>Una falla reparable no siempre tiene que terminar en un celular descartado.</p></article>
+          </div>
+          <p>Si no sabes qué pieza necesitas, envíanos la marca, el modelo exacto y el síntoma. Podemos orientarte para comparar opciones; esta ayuda remota no reemplaza el diagnóstico presencial de un técnico.</p>`,
+        action: { label: 'Consultar compatibilidad', target: '#contacto', message: 'Hola, necesito ayuda para confirmar la compatibilidad de un repuesto. Mi celular es: ' },
+        secondary: { label: 'Explorar catálogo', target: '#productos' }
+      },
+      guia: {
+        eyebrow: 'Guía de reparación',
+        title: 'Diagnostica. Verifica. Repara.',
+        lede: 'Una secuencia práctica para escoger la pieza correcta, preparar el equipo y reducir errores durante la instalación.',
+        banner: 'assets/info/repuestoscel-tu-puedes-repararlo-banner.webp',
+        bannerAlt: 'Pantalla, batería, flex de carga y destornillador sobre una retícula de trabajo con el mensaje Tú puedes repararlo.',
+        content: `
+          <ol class="info-steps">
+            <li><strong>Identifica el modelo exacto.</strong> Revisa Ajustes, la caja o el código impreso del equipo.</li>
+            <li><strong>Describe la falla.</strong> Imagen, touch, carga, batería, audio y encendido pueden necesitar piezas distintas.</li>
+            <li><strong>Compara compatibilidad y calidad.</strong> Revisa variante, condición, herramientas y garantía indicadas en la ficha.</li>
+            <li><strong>Prepara el equipo.</strong> Haz una copia de seguridad, apágalo, retira la SIM y despeja la superficie.</li>
+            <li><strong>No fuerces conectores.</strong> Ordena tornillos y evita doblar flex o perforar baterías.</li>
+            <li><strong>Prueba antes de sellar.</strong> Verifica imagen, touch, carga, cámaras y audio antes del cierre final.</li>
+          </ol>
+          <aside class="info-callout"><strong>Detente si hay riesgo.</strong><p>Una batería inflada, calor anormal, humedad o una reparación con microsoldadura requieren la atención de un técnico calificado.</p></aside>`,
+        action: { label: 'Buscar el repuesto', target: '#productos' },
+        secondary: { label: 'Pedir orientación', target: '#contacto', message: 'Hola, quiero orientación antes de empezar una reparación. El equipo y la falla son: ' }
+      },
+      compatibilidad: {
+        eyebrow: 'Antes de comprar',
+        title: 'Confirma la pieza con más contexto.',
+        lede: 'Podemos ayudarte a revisar modelo, variante y tipo de repuesto antes de que completes la compra.',
+        content: `
+          <div class="info-card-grid">
+            <article class="info-card"><strong>1. Equipo</strong><p>Marca, nombre del modelo y código de variante si está disponible.</p></article>
+            <article class="info-card"><strong>2. Síntoma</strong><p>Explica qué dejó de funcionar y cuándo empezó la falla.</p></article>
+            <article class="info-card"><strong>3. Evidencia</strong><p>Incluye fotos del equipo, conector o pieza cuando sea posible.</p></article>
+            <article class="info-card"><strong>4. Objetivo</strong><p>Cuéntanos si vas a instalarlo tú o si trabajará un técnico.</p></article>
+          </div>
+          <p>La orientación remota ayuda a reducir errores de compatibilidad, pero no constituye un diagnóstico definitivo ni garantiza el resultado de una instalación.</p>`,
+        action: { label: 'Consultar compatibilidad', target: '#contacto', message: 'Hola, necesito confirmar una pieza. Marca, modelo exacto y síntoma: ' },
+        secondary: { label: 'Ver categorías', target: '#productos' }
+      },
+      volumen: {
+        eyebrow: 'Talleres y negocios',
+        title: 'Cotiza varias reparaciones en una sola conversación.',
+        lede: 'Comparte una lista clara y te respondemos con disponibilidad, compatibilidad y condiciones confirmadas para esa cotización.',
+        content: `
+          <div class="info-card-grid">
+            <article class="info-card"><strong>Modelos y piezas</strong><p>Especifica la variante de cada equipo y el repuesto que necesitas.</p></article>
+            <article class="info-card"><strong>Cantidades</strong><p>Indica unidades por referencia para revisar inventario y alternativas.</p></article>
+            <article class="info-card"><strong>Destino</strong><p>Incluye ciudad o municipio para estimar la operación de entrega.</p></article>
+            <article class="info-card"><strong>Fecha estimada</strong><p>Cuéntanos cuándo planeas comprar para organizar la propuesta.</p></article>
+          </div>
+          <aside class="info-callout"><strong>Cotización verificable</strong><p>Precios, inventario, tiempos y condiciones se confirman individualmente en cada propuesta.</p></aside>`,
+        action: { label: 'Solicitar cotización por volumen', target: '#contacto', message: 'Hola, necesito una cotización por volumen. Mi lista de modelos, piezas y cantidades es: ' }
+      },
+      faq: {
+        eyebrow: 'Preguntas frecuentes',
+        title: 'Respuestas antes de comprar.',
+        lede: 'Lo esencial sobre compatibilidad, inventario, entrega, instalación y seguimiento.',
+        content: `
+          <div class="info-faq">
+            <details><summary>¿Cómo confirmo que una pieza es compatible?</summary><p>Compara el modelo exacto y la variante con la ficha. Si tienes dudas, contáctanos antes de comprar.</p></details>
+            <details><summary>¿Qué significan las calidades publicadas?</summary><p>Cada ficha indica calidad o condición cuando está disponible. Las etiquetas pueden variar según el fabricante; consulta antes de elegir.</p></details>
+            <details><summary>¿El inventario mostrado está disponible?</summary><p>El sitio muestra la disponibilidad conocida. El inventario se confirma al procesar el pedido o la cotización.</p></details>
+            <details><summary>¿Cuánto tarda el envío?</summary><p>El checkout calcula una estimación según departamento y ciudad. El tiempo final puede variar por cobertura y operación del transportador.</p></details>
+            <details><summary>¿Cómo rastreo mi pedido?</summary><p>Usa la referencia recibida después de comprar en la sección Rastrear pedido.</p></details>
+            <details><summary>¿Puedo instalar el repuesto en casa?</summary><p>Depende de la reparación y tu experiencia. Baterías dañadas, humedad y microsoldadura deben ser atendidas por un técnico.</p></details>
+            <details><summary>¿Qué métodos de pago existen?</summary><p>El checkout muestra los métodos habilitados al momento de comprar y sus condiciones cuando apliquen.</p></details>
+          </div>`,
+        action: { label: 'Hacer otra pregunta', target: '#contacto', message: 'Hola, tengo una pregunta antes de comprar: ' },
+        secondary: { label: 'Rastrear pedido', target: '#rastrear-pedido' }
+      },
+      garantias: {
+        eyebrow: 'Soporte posventa',
+        title: 'Revisamos cada caso con la evidencia correcta.',
+        lede: 'La duración y las condiciones de garantía pueden variar según el producto; consúltalas en su ficha o cotización.',
+        content: `
+          <div class="info-card-grid">
+            <article class="info-card"><strong>Conserva la referencia</strong><p>La referencia del pedido nos permite ubicar la compra y el producto exacto.</p></article>
+            <article class="info-card"><strong>Documenta la falla</strong><p>Envía una descripción clara y, cuando sea posible, fotografías o video.</p></article>
+            <article class="info-card"><strong>Evita continuar</strong><p>Si sospechas que la pieza llegó defectuosa, detén la instalación y solicita orientación.</p></article>
+            <article class="info-card"><strong>Evaluación técnica</strong><p>La cobertura puede requerir revisión del estado de la pieza y de su instalación.</p></article>
+          </div>
+          <p>Golpes, humedad, conectores o flex rotos, instalación incorrecta o modificaciones posteriores pueden afectar la cobertura según el caso, sin limitar los derechos reconocidos por la legislación colombiana.</p>`,
+        action: { label: 'Solicitar revisión', target: '#contacto', message: 'Hola, quiero solicitar una revisión de garantía. Referencia del pedido y descripción de la falla: ' },
+        secondary: { label: 'Rastrear pedido', target: '#rastrear-pedido' }
+      },
+      envios: {
+        eyebrow: 'Entrega y posventa',
+        title: 'Envíos y devoluciones, sin letra pequeña improvisada.',
+        lede: 'El checkout muestra costo y entrega estimada según el destino. Los tiempos pueden cambiar por cobertura o novedades del transportador.',
+        content: `
+          <div class="info-card-grid">
+            <article class="info-card"><strong>Antes de confirmar</strong><p>Verifica dirección, municipio, teléfono y producto. La dirección escrita es la referencia principal; el mapa solo ayuda a ubicarla.</p></article>
+            <article class="info-card"><strong>Durante la entrega</strong><p>Guarda la referencia del pedido para consultar el avance y la información disponible del despacho.</p></article>
+            <article class="info-card"><strong>Antes de devolver</strong><p>Contacta a soporte con la referencia y el motivo. No envíes una pieza sin recibir instrucciones.</p></article>
+            <article class="info-card"><strong>Revisión del producto</strong><p>El estado, empaque, accesorios e instalación pueden requerir evaluación según el caso.</p></article>
+          </div>
+          <p>Los cambios, retractos y devoluciones se atienden en los casos y plazos establecidos por la ley colombiana y por la condición particular del producto.</p>`,
+        action: { label: 'Rastrear pedido', target: '#rastrear-pedido' },
+        secondary: { label: 'Hablar con soporte', target: '#contacto', message: 'Hola, necesito ayuda con un envío o devolución. Mi referencia y el caso son: ' }
+      },
+      terminos: {
+        eyebrow: 'Legal',
+        title: 'Términos y condiciones.',
+        lede: 'Al comprar confirmas que revisaste producto, variante, compatibilidad, cantidades, precio y datos de entrega.',
+        content: `
+          <div class="info-prose">
+            <h3>Uso de la tienda</h3><p>La información suministrada debe ser veraz y suficiente para procesar el pedido. Precios se muestran en COP y la disponibilidad se confirma durante el proceso de compra.</p>
+            <h3>Confirmación y pago</h3><p>El pedido se considera confirmado cuando el pago sea aprobado o, en pago contra entrega, cuando cobertura y datos hayan sido validados. Los pagos electrónicos pueden ser procesados por proveedores externos.</p>
+            <h3>Compatibilidad y entrega</h3><p>Revisa las variantes antes de comprar. Las fechas de entrega son estimadas y pueden cambiar por cobertura o novedades operativas.</p>
+            <h3>Garantías y devoluciones</h3><p>Cada caso se atiende según el producto, su condición y la legislación colombiana aplicable. Nada en estos términos limita los derechos del consumidor.</p>
+            <p class="info-meta-note">Este resumen facilita la lectura de las condiciones operativas de la tienda y debe complementarse con la identificación legal y datos de vigencia del comercio.</p>
+          </div>`,
+        action: { label: 'Resolver una duda', target: '#contacto', message: 'Hola, tengo una consulta sobre los términos de compra: ' }
+      },
+      privacidad: {
+        eyebrow: 'Legal',
+        title: 'Privacidad y tratamiento de datos.',
+        lede: 'Usamos los datos necesarios para gestionar compras, entregas, soporte, prevención de fraude y obligaciones legales.',
+        content: `
+          <div class="info-prose">
+            <h3>Datos que intervienen</h3><p>Esto puede incluir nombre, datos de contacto, dirección, pedidos, estado del pago e interacciones con soporte.</p>
+            <h3>Proveedores necesarios</h3><p>Los datos pueden compartirse con pasarelas de pago, transportadores y proveedores tecnológicos cuando sea necesario para prestar el servicio.</p>
+            <h3>Tus solicitudes</h3><p>Puedes solicitar consulta, actualización, corrección, supresión o revocación de autorización cuando corresponda escribiendo a soporte@repuestoscel.com.</p>
+            <p class="info-meta-note">La versión legal definitiva debe incluir responsable del tratamiento, identificación, domicilio, vigencia y tiempos de conservación.</p>
+          </div>`,
+        action: { label: 'Contactar sobre mis datos', target: '#contacto', message: 'Hola, tengo una solicitud relacionada con mis datos personales: ' }
+      },
+      cookies: {
+        eyebrow: 'Preferencias del sitio',
+        title: 'Cookies y almacenamiento local.',
+        lede: 'La tienda recuerda algunas preferencias para que el carrito y la experiencia funcionen entre visitas.',
+        content: `
+          <div class="info-card-grid">
+            <article class="info-card"><strong>Tema visual</strong><p>El navegador guarda si elegiste sistema, modo claro o modo oscuro.</p></article>
+            <article class="info-card"><strong>Carrito</strong><p>Los productos seleccionados pueden conservarse localmente para facilitar la compra.</p></article>
+            <article class="info-card"><strong>Compra reciente</strong><p>La referencia puede guardarse para facilitar una consulta posterior.</p></article>
+            <article class="info-card"><strong>Servicios externos</strong><p>Mapas, pagos o transportadores pueden usar sus propias tecnologías cuando interactúas con ellos.</p></article>
+          </div>
+          <p>Puedes borrar estos datos desde la configuración del navegador. Si se incorporan tecnologías no esenciales, deberán solicitar consentimiento cuando corresponda.</p>`,
+        action: { label: 'Consultar privacidad', target: '#contacto', message: 'Hola, tengo una pregunta sobre cookies o privacidad: ' }
+      }
+    };
+
+    let lastInfoTrigger = null;
+
+    function infoActionMarkup(action, secondary = false) {
+      if (!action) return '';
+      const className = secondary ? 'btn btn-secondary' : 'btn btn-gradient';
+      return `<button type="button" class="${className}" data-info-target="${action.target}" data-info-message="${action.message || ''}">${action.label}</button>`;
+    }
+
+    function openInfoPage(slug, trigger) {
+      const page = INFORMATION_PAGES[slug];
+      const modal = document.getElementById('infoModal');
+      const content = document.getElementById('infoModalContent');
+      if (!page || !modal || !content) return;
+      lastInfoTrigger = trigger || document.activeElement;
+      content.innerHTML = `
+        <div class="info-eyebrow">${page.eyebrow}</div>
+        <h2 class="info-heading" id="infoModalTitle">${page.title}</h2>
+        <p class="info-lede">${page.lede}</p>
+        ${page.banner ? `<img class="info-banner" src="${page.banner}" alt="${page.bannerAlt}" width="1920" height="1077">` : ''}
+        <div class="info-content">${page.content}</div>
+        <div class="info-actions">${infoActionMarkup(page.action)}${infoActionMarkup(page.secondary, true)}</div>`;
+      modal.classList.add('open');
+      modal.setAttribute('aria-hidden', 'false');
+      document.body.classList.add('modal-open');
+      modal.querySelector('.info-modal')?.scrollTo({ top: 0 });
+      requestAnimationFrame(() => document.getElementById('infoModalCloseBtn')?.focus());
+    }
+
+    function closeInfoModal(options = {}) {
+      const modal = document.getElementById('infoModal');
+      if (!modal?.classList.contains('open')) return;
+      modal.classList.remove('open');
+      modal.setAttribute('aria-hidden', 'true');
+      if (!document.querySelector('.modal-overlay.open')) document.body.classList.remove('modal-open');
+      if (options.restoreFocus !== false && lastInfoTrigger instanceof HTMLElement) lastInfoTrigger.focus();
+    }
+
+    function goToInfoTarget(target, message = '') {
+      closeInfoModal({ restoreFocus: false });
+      if (message) {
+        const messageInput = document.getElementById('messageInput');
+        if (messageInput) messageInput.value = message;
+      }
+      requestAnimationFrame(() => {
+        const destination = document.querySelector(target);
+        destination?.scrollIntoView({ behavior: preferredScrollBehavior(), block: 'start' });
+        if (message && target === '#contacto') document.getElementById('messageInput')?.focus({ preventScroll: true });
+      });
+    }
+
+    document.querySelectorAll('[data-footer-category]').forEach((link) => {
+      link.addEventListener('click', (event) => {
+        event.preventDefault();
+        activeProductCategory = link.dataset.footerCategory || '';
+        activeSearchQuery = '';
+        currentPage = 1;
+        const searchInput = document.getElementById('searchInput');
+        if (searchInput) searchInput.value = '';
+        renderStorefrontProducts();
+        document.getElementById('productos')?.scrollIntoView({ behavior: preferredScrollBehavior(), block: 'start' });
+      });
+    });
+
+    document.querySelectorAll('[data-info-page]').forEach((link) => {
+      link.addEventListener('click', (event) => {
+        event.preventDefault();
+        openInfoPage(link.dataset.infoPage, link);
+      });
+    });
+
+    document.getElementById('infoModalCloseBtn')?.addEventListener('click', () => closeInfoModal());
+    document.getElementById('infoModal')?.addEventListener('click', (event) => {
+      if (event.target === event.currentTarget) closeInfoModal();
+    });
+    document.getElementById('infoModalContent')?.addEventListener('click', (event) => {
+      const action = event.target.closest('[data-info-target]');
+      if (!action) return;
+      goToInfoTarget(action.dataset.infoTarget, action.dataset.infoMessage || '');
+    });
+    document.addEventListener('keydown', (event) => {
+      const modal = document.getElementById('infoModal');
+      if (!modal?.classList.contains('open')) return;
+      if (event.key === 'Escape') {
+        event.preventDefault();
+        closeInfoModal();
+        return;
+      }
+      if (event.key !== 'Tab') return;
+      const focusable = [...modal.querySelectorAll('button, a[href], summary, [tabindex]:not([tabindex="-1"])')]
+        .filter((element) => !element.hasAttribute('disabled') && element.offsetParent !== null);
+      if (!focusable.length) return;
+      const first = focusable[0];
+      const last = focusable[focusable.length - 1];
+      if (event.shiftKey && document.activeElement === first) {
+        event.preventDefault();
+        last.focus();
+      } else if (!event.shiftKey && document.activeElement === last) {
+        event.preventDefault();
+        first.focus();
+      }
+    });
+
+    // ==============================
     // SMOOTH SCROLL FOR NAV LINKS
     // ==============================
     document.querySelectorAll('a[href^="#"]').forEach(anchor => {
       anchor.addEventListener('click', function (e) {
         const href = this.getAttribute('href');
-        if (!href || href === '#carrito') return;
+        if (!href || href === '#' || href === '#carrito') return;
         const target = document.querySelector(href);
         if (!target) return;
         e.preventDefault();

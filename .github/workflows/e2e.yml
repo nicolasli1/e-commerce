@@ -43,6 +43,7 @@ jobs:
       - name: Run blocking local UI regressions
         run: |
           python -m pytest \
+            tests/e2e/test_footer_ui.py \
             tests/e2e/test_theme_ui.py \
             tests/e2e/test_cart_ui.py \
             -v --tb=short --durations=10 \
