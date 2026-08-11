@@ -4,6 +4,13 @@ from __future__ import annotations
 
 import pytest
 
+BANNER_ASSETS = {
+    "guia": "repuestoscel-guia-banner-v2.webp",
+    "compatibilidad": "repuestoscel-compatibilidad-banner-v2.webp",
+    "volumen": "repuestoscel-volumen-banner-v2.webp",
+    "faq": "repuestoscel-preguntas-banner-v2.webp",
+}
+
 
 def _open(page, local_site_url: str):
     errors: list[str] = []
@@ -43,7 +50,11 @@ def test_every_information_link_opens_real_content(page, local_site_url, slug):
     assert modal.get_attribute("aria-hidden") == "false"
     assert modal.locator("#infoModalTitle").inner_text().strip()
     assert len(modal.locator(".info-content").inner_text().strip()) > 60
-    assert modal.locator(".info-banner").count() == (1 if slug == "guia" else 0)
+    banner = modal.locator(".info-banner")
+    assert banner.count() == (1 if slug in BANNER_ASSETS else 0)
+    if slug in BANNER_ASSETS:
+        assert banner.get_attribute("src").endswith(BANNER_ASSETS[slug])
+        assert banner.evaluate("image => image.complete && image.naturalWidth > 0")
 
     page.locator("#infoModalCloseBtn").click()
     assert modal.get_attribute("aria-hidden") == "true"

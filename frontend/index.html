@@ -10388,8 +10388,10 @@
         eyebrow: 'Guía de reparación',
         title: 'Diagnostica. Verifica. Repara.',
         lede: 'Una secuencia práctica para escoger la pieza correcta, preparar el equipo y reducir errores durante la instalación.',
-        banner: 'assets/info/repuestoscel-tu-puedes-repararlo-banner.webp',
-        bannerAlt: 'Pantalla, batería, flex de carga y destornillador sobre una retícula de trabajo con el mensaje Tú puedes repararlo.',
+        banner: 'assets/info/repuestoscel-guia-banner-v2.webp',
+        bannerWidth: 1672,
+        bannerHeight: 941,
+        bannerAlt: 'Pantalla, batería, flex de carga y destornillador dispuestos como una secuencia de reparación.',
         content: `
           <ol class="info-steps">
             <li><strong>Identifica el modelo exacto.</strong> Revisa Ajustes, la caja o el código impreso del equipo.</li>
@@ -10407,6 +10409,10 @@
         eyebrow: 'Antes de comprar',
         title: 'Confirma la pieza con más contexto.',
         lede: 'Podemos ayudarte a revisar modelo, variante y tipo de repuesto antes de que completes la compra.',
+        banner: 'assets/info/repuestoscel-compatibilidad-banner-v2.webp',
+        bannerWidth: 1672,
+        bannerHeight: 941,
+        bannerAlt: 'Dos pantallas de celular y sus conectores comparados lado a lado sobre una retícula técnica.',
         content: `
           <div class="info-card-grid">
             <article class="info-card"><strong>1. Equipo</strong><p>Marca, nombre del modelo y código de variante si está disponible.</p></article>
@@ -10422,6 +10428,10 @@
         eyebrow: 'Talleres y negocios',
         title: 'Cotiza varias reparaciones en una sola conversación.',
         lede: 'Comparte una lista clara y te respondemos con disponibilidad, compatibilidad y condiciones confirmadas para esa cotización.',
+        banner: 'assets/info/repuestoscel-volumen-banner-v2.webp',
+        bannerWidth: 1672,
+        bannerHeight: 941,
+        bannerAlt: 'Tres grupos ordenados de pantallas, baterías y flex de carga para compras por volumen.',
         content: `
           <div class="info-card-grid">
             <article class="info-card"><strong>Modelos y piezas</strong><p>Especifica la variante de cada equipo y el repuesto que necesitas.</p></article>
@@ -10436,6 +10446,10 @@
         eyebrow: 'Preguntas frecuentes',
         title: 'Respuestas antes de comprar.',
         lede: 'Lo esencial sobre compatibilidad, inventario, entrega, instalación y seguimiento.',
+        banner: 'assets/info/repuestoscel-preguntas-banner-v2.webp',
+        bannerWidth: 1672,
+        bannerHeight: 941,
+        bannerAlt: 'Despiece técnico de un celular con pantalla, marco, batería, flex de carga y destornillador.',
         content: `
           <div class="info-faq">
             <details><summary>¿Cómo confirmo que una pieza es compatible?</summary><p>Compara el modelo exacto y la variante con la ficha. Si tienes dudas, contáctanos antes de comprar.</p></details>
@@ -10540,7 +10554,7 @@
         <div class="info-eyebrow">${page.eyebrow}</div>
         <h2 class="info-heading" id="infoModalTitle">${page.title}</h2>
         <p class="info-lede">${page.lede}</p>
-        ${page.banner ? `<img class="info-banner" src="${page.banner}" alt="${page.bannerAlt}" width="1920" height="1077">` : ''}
+        ${page.banner ? `<img class="info-banner" src="${page.banner}" alt="${page.bannerAlt}" width="${page.bannerWidth || 1920}" height="${page.bannerHeight || 1077}">` : ''}
         <div class="info-content">${page.content}</div>
         <div class="info-actions">${infoActionMarkup(page.action)}${infoActionMarkup(page.secondary, true)}</div>`;
       modal.classList.add('open');
