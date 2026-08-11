@@ -1,116 +1,124 @@
-# Architecture Proposal
+# Arquitectura de RepuestosCel
 
-## Goal
+Este documento resume la arquitectura funcional actual. Los detalles de recursos y parámetros CDK están en [cdk-architecture.md](cdk-architecture.md).
 
-Build a sales website that starts simple but can evolve into a product platform without redoing the whole foundation.
+## Objetivos
 
-## Recommended v1
+- Entregar el catálogo con baja latencia en Colombia.
+- Mantener el frontend y el backoffice como superficies estáticas fáciles de desplegar.
+- Aislar la lógica de negocio en servicios serverless con costo proporcional al uso.
+- Proteger datos y secretos fuera del repositorio.
+- Permitir checkout, pagos, seguimiento, administración e imágenes sin servidores permanentes.
 
-- `S3` for static website assets
-- `CloudFront` as the public entry point
-- `API Gateway HTTP API` for backend endpoints
-- `Lambda` for lightweight business logic
-- `DynamoDB` for lead capture or simple business data
-- `CloudWatch Logs` for observability
-
-## Architecture Diagram
+## Vista general
 
 ```mermaid
 flowchart LR
-  U["User Browser"] --> CF["CloudFront"]
-  CF --> S3["Private S3 Bucket"]
-  CF --> API["API Gateway HTTP API"]
-  API --> L["Lambda"]
-  L --> DDB["DynamoDB"]
-  L --> CW["CloudWatch Logs"]
+  U["Cliente o administrador"] --> CF["CloudFront"]
+  CF --> SITE["S3 privado: frontend"]
+  CF --> ADMIN["S3 privado: /admin/"]
+  CF --> IMAGES["S3 privado: /images/*"]
+  CF --> APIGW["API Gateway HTTP API"]
+  APIGW --> API["Lambda API Python 3.12"]
+  APIGW --> IMAGE["Lambda imágenes + Pillow"]
+  API --> DDB["DynamoDB"]
+  API --> SSM["SSM Parameter Store"]
+  API --> EMAIL["SES / SMTP"]
+  API --> WOMPI["Wompi"]
+  API --> MP["Mercado Pago"]
+  API --> NEQUI["Nequi"]
+  IMAGE --> IMAGES
 ```
 
-## Why this is a good fit for a sales website
+## Superficies
 
-### Frontend
+### Sitio público
 
-- very fast globally because of CloudFront edge caching
-- cheap compared to always-on servers
-- secure because the S3 bucket stays private behind CloudFront
+`frontend/` contiene una aplicación estática de una sola página: catálogo, carrito, checkout, seguimiento de pedidos, contenido informativo y contacto. CloudFront sirve los archivos desde un bucket S3 privado mediante Origin Access Control.
 
-### Backend
+### Backoffice
 
-- only needed for dynamic parts such as:
-  - lead forms
-  - contact requests
-  - newsletter signup
-  - quote request flows
-  - lightweight auth or campaign tracking
-- Lambda keeps costs low until traffic grows
+`backoffice/` se sincroniza al prefijo `/admin/` del mismo bucket del sitio. Una CloudFront Function resuelve las rutas SPA hacia `/admin/index.html`. La autorización real se realiza en la API mediante credenciales administrativas y tokens Bearer.
 
-## Recommended request flow
+### API
 
-### Static pages
+CloudFront enruta `/api/*` a API Gateway sin caché. La Lambda principal implementa:
 
-1. user requests the website
-2. CloudFront serves cached assets
-3. if not cached, CloudFront pulls from private S3
+- catálogo y configuración pública;
+- leads y cotizaciones;
+- creación y consulta de pedidos;
+- checkout y webhooks de pago;
+- registro, login y consulta de pedidos autenticados;
+- CRUD y analítica operativa del backoffice;
+- campañas y notificaciones de email.
 
-### Dynamic actions
+Una segunda Lambda gestiona carga, procesamiento y publicación de imágenes de producto.
 
-1. frontend sends request to `/api/...`
-2. CloudFront forwards that path to API Gateway
-3. API Gateway invokes Lambda
-4. Lambda validates input and writes to DynamoDB or calls other services
+## Persistencia
 
-## Suggested pages for the sales website
+| Recurso | Propósito | Clave principal |
+|---|---|---|
+| LeadsTable | Contactos y oportunidades | `id` |
+| ProductsTable | Catálogo administrable | `productId` |
+| QuotesTable | Cotizaciones | `quoteId` |
+| OrdersTable | Checkout, pago y fulfillment | `reference` |
+| ImagesBucket | Originales y derivados de producto | Clave S3 |
 
-- home
-- pricing
-- features
-- testimonials
-- FAQ
-- contact / lead form
-- thank-you page
+Las tablas son on-demand y conservan datos al eliminar un stack. Productos, cotizaciones y pedidos tienen point-in-time recovery.
 
-## Suggested backend endpoints
+## Flujo de una compra
 
-- `GET /api/health`
-- `POST /api/leads`
-- `POST /api/contact`
+1. El cliente consulta catálogo y disponibilidad mediante `/api/products`.
+2. El frontend crea una sesión en `/api/checkout/session`.
+3. El proveedor procesa el pago.
+4. Wompi, Mercado Pago o Nequi notifica el resultado por webhook.
+5. La Lambda valida la firma, actualiza el pedido e inventario y envía notificaciones.
+6. El cliente consulta el estado mediante la referencia del pedido.
 
-## Security recommendations
+## Imágenes de producto
 
-- keep S3 private and use CloudFront Origin Access Control
-- redirect HTTP to HTTPS
-- add security headers at CloudFront
-- validate all input in Lambda
-- store secrets in AWS Systems Manager Parameter Store or Secrets Manager
-- if traffic grows, add AWS WAF in front of CloudFront
+1. El backoffice solicita una URL de carga autenticada.
+2. El original se sube al bucket privado de imágenes.
+3. La Lambda de imágenes procesa el archivo con Pillow y, si está configurado, servicios auxiliares de eliminación de fondo.
+4. CloudFront entrega los derivados bajo `/images/*` con caché larga.
 
-## Scaling path
+## Seguridad
 
-### v1
+- S3 privado detrás de CloudFront OAC.
+- HTTPS y TLS 1.2 mínimo para dominios personalizados.
+- Cabeceras CSP, HSTS, frame, MIME y referrer desde CloudFront.
+- Secretos y credenciales en SSM Parameter Store.
+- CORS limitado a orígenes configurados.
+- API key y tokens firmados para operaciones protegidas.
+- CloudFront Function con límites best-effort por ubicación edge.
 
-- static frontend
-- one Lambda for forms and lead capture
-- one DynamoDB table
+El WebACL de WAF está definido como código comentado y no está asociado a la distribución actual. Para límites globales deben habilitarse WAF rate rules o throttling de API Gateway.
 
-### v2
+## Regiones y entornos
 
-- split Lambdas by domain
-- add SES for email notifications
-- add EventBridge or SQS for async workflows
-- add CI/CD with GitHub Actions
+- Frontend, CloudFront, ACM y recursos globales: `us-east-1`.
+- Backend: región configurable mediante `backend_region`/`AWS_BACKEND_REGION`.
+- Entornos soportados: `dev`, `stage` y `prod`.
 
-### v3
+El workflow automático usa actualmente `dev` en eventos `push`, aunque configura los dominios públicos. Conviene separar aliases, stacks y credenciales por entorno antes de ampliar el equipo o el tráfico.
 
-- add authentication if needed
-- add admin panel
-- add analytics and attribution pipeline
+## Despliegue
 
-## CloudFormation vs CDK
+El camino principal es AWS CDK:
 
-For your case, `CloudFormation` is a very good starting point because:
+1. `cdk synth --all` valida ambos stacks.
+2. CDK bootstrap prepara las regiones necesarias.
+3. Se despliega primero backend y luego frontend.
+4. `frontend/` se sincroniza a la raíz del bucket.
+5. `backoffice/` se sincroniza bajo `/admin/`.
+6. CloudFront invalida `/*`.
 
-- it is explicit
-- easy to review
-- no compile step
-- good for learning and for smaller infra footprints
+`.github/workflows/deploy-cfn.yml` y `infra/cloudformation/` se conservan como alternativa manual y referencia; no representan toda la funcionalidad actual del stack CDK.
 
-If the stack becomes much larger later, we can migrate or extend into `CDK` without changing the target AWS services.
+## Evolución recomendada
+
+1. Separación estricta de `dev`, `stage` y `prod`.
+2. WAF activo o throttling persistente en API Gateway.
+3. Logs de acceso y métricas operativas centralizadas.
+4. SQS/EventBridge para email y webhooks asíncronos.
+5. Pruebas contractuales de pagos y migraciones versionadas de datos.
