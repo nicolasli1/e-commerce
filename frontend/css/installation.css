@@ -1,0 +1,49 @@
+.installation-panel, .installation-detail {
+  --installation-surface: #151d24;
+  --installation-ink: #edf6f3;
+  --installation-muted: #b5c8c4;
+  color: var(--installation-ink);
+  background: var(--installation-surface);
+  border: 1px solid #49635b;
+  border-radius: 16px;
+  padding: 18px;
+  margin: 14px 0;
+  text-align: left;
+}
+html[data-theme="light"] .installation-panel, html[data-theme="light"] .installation-detail {
+  --installation-surface: #edf5f1;
+  --installation-ink: #18392e;
+  --installation-muted: #456257;
+  border-color: #bed4c9;
+}
+.installation-panel[hidden], .installation-panel [hidden] { display: none !important; }
+.installation-heading { display: flex; justify-content: space-between; gap: 10px; align-items: center; }
+.installation-eyebrow { font-size: 10px; letter-spacing: .08em; font-weight: 750; color: var(--installation-muted); }
+.installation-location { font-size: 11px; white-space: nowrap; color: var(--installation-muted); }
+.installation-choice { display: flex; align-items: center; gap: 10px; cursor: pointer; margin: 16px 0 10px; min-height: 44px; }
+.installation-choice input { width: 21px; height: 21px; flex-shrink: 0; accent-color: #438c70; }
+.installation-choice span { flex: 1; min-width: 0; }
+.installation-choice strong, .installation-detail strong { display: block; font-size: 15px; line-height: 1.4; }
+.installation-choice b { font-size: 15px; font-variant-numeric: tabular-nums; white-space: nowrap; }
+.installation-choice small, .installation-help, .installation-panel p, .installation-detail small { color: var(--installation-muted); font-size: 12px; line-height: 1.6; }
+.installation-help { margin: 10px 0 0; }
+.installation-panel select { width: 100%; min-height: 44px; color: var(--installation-ink); background: var(--installation-surface); border: 1px solid #728d80; border-radius: 8px; padding: 8px; font: inherit; font-size: 13px; margin-top: 6px; }
+.installation-panel label[for] { font-size: 12px; }
+.installation-line { display: flex; justify-content: space-between; gap: 12px; font-size: 13px; padding-top: 12px; margin-top: 12px; border-top: 1px solid #728d80; }
+.installation-remove { color: inherit; font: inherit; font-size: 13px; background: transparent; text-decoration: underline; border: 0; cursor: pointer; min-height: 44px; }
+.installation-panel .installation-error { color: #ffb5ad; }
+html[data-theme="light"] .installation-panel .installation-error { color: #a52218; }
+.installation-panel :focus-visible { outline: 3px solid #5aa386; outline-offset: 3px; }
+.installation-detail strong { margin-top: 8px; }
+.installation-detail p { font-size: 14px; line-height: 1.6; margin: 7px 0; }
+.installation-order-row p { font-size: 12px; margin-top: 5px; }
+.checkout-provider-grid { grid-template-columns: 1fr !important; }
+#cartModal .cart-modal-inner { grid-template-rows: minmax(0, 1fr); }
+.cart-layout { display: grid; grid-template-rows: auto minmax(0, 1fr); min-height: 0; }
+#cartScroll { min-height: 0; overflow-y: auto; overscroll-behavior: contain; padding-right: 2px; }
+#cartItems { overflow: visible; }
+@media (max-width: 420px) {
+  .installation-panel, .installation-detail { padding: 14px; }
+  .installation-choice { flex-wrap: wrap; }
+  .installation-choice b { margin-left: 31px; }
+}

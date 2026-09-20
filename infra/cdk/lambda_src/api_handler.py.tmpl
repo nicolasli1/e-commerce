@@ -6,6 +6,7 @@ import hashlib
 import hmac
 import json
 import os
+import re
 import smtplib
 import ssl
 import time
@@ -1486,6 +1487,27 @@ def delivery_fee_cents(settings, zone):
     return max(0, safe_int(settings.get(key), DEFAULT_SITE_SETTINGS[key]))
 
 
+def build_installation(body, items, shipping):
+    """One explicitly selected installation; all price/eligibility checks are server-side."""
+    selection = body.get("installation")
+    if selection is None or selection is False:
+        return None
+    if not isinstance(selection, dict):
+        raise ValueError("invalid_installation")
+    city = re.sub(r"[^a-z]", "", (shipping or {}).get("city", "").lower().replace("á", "a"))
+    if (shipping or {}).get("country") != "CO" or (shipping or {}).get("zone") != "bogota" or city not in ("bogota", "bogotadc", "bogotadistritocapital"):
+        raise ValueError("La instalación solo está disponible en Bogotá.")
+    match = next((item for item in items if item["productId"] == selection.get("productId") and item.get("variantId", "") == selection.get("variantId", "")), None)
+    if not match or match.get("category") not in {"pantallas", "baterias", "flex-y-conectores", "camaras-y-modulos"}:
+        raise ValueError("Selecciona un repuesto compatible del carrito para la instalación.")
+    return {
+        "code": "installation-bogota-v1", "name": "Instalación opcional en Bogotá",
+        "productId": match["productId"], "variantId": match.get("variantId", ""),
+        "productName": match["name"], "quantity": 1, "amountInCents": 10000000,
+        "status": "PENDING_SCHEDULING",
+    }
+
+
 def build_order_summary_lines(order):
     lines = []
     for item in order.get("items", []):
@@ -1493,6 +1515,8 @@ def build_order_summary_lines(order):
         lines.append(
             f"- {item.get('name', 'Producto')}{label} x{item.get('quantity', 1)} · {cents_to_cop_text(item.get('subtotalCents', 0))}"
         )
+    if order.get("installation"):
+        lines.append(f"- Instalación en Bogotá (1 servicio) · {cents_to_cop_text(order.get('installationFeeInCents', 0))} · Agenda por coordinar")
     delivery = order.get("delivery") or {}
     if delivery:
         lines.append(f"- Envío {delivery.get('label', 'Entrega')} · {cents_to_cop_text(delivery.get('feeInCents', 0))}")
@@ -1658,6 +1682,9 @@ def email_items_table(order):
             f"{cents_to_cop_text(item.get('subtotalCents', 0))}</td>"
             "</tr>"
         )
+    if order.get("installation"):
+        rows.append("<tr><td style='padding:16px 0;'>Instalación en Bogotá · 1 servicio<br>Agenda por coordinar</td>"
+                    f"<td align='right'>{cents_to_cop_text(order.get('installationFeeInCents', 0))}</td></tr>")
     return "".join(rows) or (
         "<tr><td style='padding:16px 0;color:#667085;'>Sin productos registrados</td></tr>"
     )
@@ -2501,7 +2528,7 @@ def create_checkout_session(event):
     provider = (body.get("provider") or "wompi").strip().lower()
     if provider in ("cod", "contraentrega", "contra_entrega", "interrapidisimo"):
         provider = "interrapidisimo_cod"
-    if provider not in ("wompi", "mercadopago", "nequi", "interrapidisimo_cod"):
+    if provider != "wompi":
         return response(400, {"error": "unsupported_provider"})
     if provider == "wompi" and not wompi_enabled():
         return response(503, {"error": "checkout_unavailable", "message": "Wompi no está configurado."})
@@ -2513,6 +2540,7 @@ def create_checkout_session(event):
         customer = normalize_customer(body)
         shipping = normalize_shipping(body)
         items, subtotal_cents = build_order_items(body.get("cart") or [])
+        installation = build_installation(body, items, shipping)
     except ValueError as exc:
         return response(400, {"error": str(exc)})
 
@@ -2532,7 +2560,8 @@ def create_checkout_session(event):
         "eta": delivery_eta(delivery_zone),
         "feeInCents": delivery_cents,
     }
-    total_cents = subtotal_cents + delivery_cents
+    installation_cents = installation["amountInCents"] if installation else 0
+    total_cents = subtotal_cents + delivery_cents + installation_cents
     reference = generate_order_reference()
     origin = get_origin(event)
     redirect_url = f"{origin}/?checkout=return&provider={urllib.parse.quote(provider)}&reference={urllib.parse.quote(reference)}" if origin else ""
@@ -2589,6 +2618,8 @@ def create_checkout_session(event):
         "currency": "COP",
         "subtotalInCents": subtotal_cents,
         "deliveryFeeInCents": delivery_cents,
+        "installationFeeInCents": installation_cents,
+        "installation": installation,
         "amountInCents": total_cents,
         "items": items,
         "customer": customer,
@@ -2883,6 +2914,8 @@ def get_checkout_order(reference, transaction_id=None):
         "updatedAt": order.get("updatedAt"),
         "subtotalInCents": order.get("subtotalInCents", 0),
         "deliveryFeeInCents": order.get("deliveryFeeInCents", 0),
+        "installationFeeInCents": order.get("installationFeeInCents", 0),
+        "installation": order.get("installation"),
         "amountInCents": order.get("amountInCents", 0),
         "delivery": order.get("delivery") or {},
         "items": [

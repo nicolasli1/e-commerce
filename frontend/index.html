@@ -6603,6 +6603,7 @@
       }
     }
   </style>
+  <link rel="stylesheet" href="/css/installation.css?v=20260919" />
 </head>
 <body>
 
@@ -7099,7 +7100,7 @@
   <div class="modal-overlay" id="cartModal">
     <div class="modal cart-modal-inner" style="max-width:480px;position:relative;overflow:hidden;">
       <canvas id="cartParticleCanvas" aria-hidden="true" style="position:absolute;inset:0;width:100%;height:100%;pointer-events:none;z-index:0;border-radius:inherit;"></canvas>
-      <div style="position:relative;z-index:1;">
+      <div class="cart-layout" style="position:relative;z-index:1;">
       <div class="modal-header cart-header">
         <div class="cart-header-left">
           <h2 class="modal-title">Tu Carrito</h2>
@@ -7108,11 +7109,14 @@
         <button class="modal-close" id="cartCloseBtn" type="button" aria-label="Cerrar carrito">✕</button>
       </div>
       <div id="cartContent">
+        <div id="cartScroll">
         <div id="cartItems"></div>
         <div id="cartEmpty" class="cart-empty-state" style="display:none;">
           <div class="cart-empty-icon">🛒</div>
           <p class="cart-empty-text">Tu carrito está vacío</p>
           <p class="cart-empty-sub">Agrega productos desde el catálogo</p>
+        </div>
+          <section id="cartInstallation" class="installation-panel" aria-label="Instalación opcional" hidden></section>
         </div>
         <div id="cartSummary" class="cart-footer" style="display:none;">
           <div class="cart-total-card">
@@ -7124,7 +7128,7 @@
               Continuar al pago →
             </button>
           </div>
-          <p class="cart-secure-note">🔒 Pago online con Wompi · Pago contra entrega disponible con Inter Rapidísimo</p>
+          <p class="cart-secure-note">Pago seguro con Wompi · Envío calculado al continuar</p>
         </div>
       </div>
       </div><!-- /z-index wrapper -->
@@ -7145,7 +7149,7 @@
         <div class="checkout-panel">
           <div id="checkoutStatus" class="checkout-status"></div>
           <div class="checkout-trust">🔒 Pago seguro, entrega rastreable y confirmación por correo</div>
-          <p class="checkout-lead">Confirma tus datos, revisa la entrega y elige si pagas online con Wompi o contra entrega con Inter Rapidísimo.</p>
+          <p class="checkout-lead">Confirma tus datos, revisa el resumen y completa tu pago seguro con Wompi.</p>
 
           <div class="checkout-meta-strip">
             <div class="checkout-meta-card">
@@ -7168,19 +7172,8 @@
                     <span>Wompi</span>
                     <span class="checkout-provider-tag">Pago online</span>
                   </div>
-                  <div class="checkout-provider-copy">Paga con tarjeta, PSE, Nequi y métodos locales desde la pasarela de Bancolombia.</div>
+                  <div class="checkout-provider-copy">Paga con los métodos disponibles dentro de Wompi.</div>
                   <div class="checkout-provider-foot"><strong>Recomendado.</strong> Alistamos tu pedido apenas se aprueba el pago.</div>
-                </div>
-              </label>
-              <label class="checkout-provider">
-                <input type="radio" name="checkoutProvider" value="interrapidisimo_cod" />
-                <div class="checkout-provider-card">
-                  <div class="checkout-provider-title">
-                    <span>Pago contra entrega</span>
-                    <span class="checkout-provider-tag checkout-provider-tag-nequi">Inter Rapidísimo</span>
-                  </div>
-                  <div class="checkout-provider-copy">Pagas en efectivo al recibir. Inter Rapidísimo recauda en la entrega.</div>
-                  <div class="checkout-provider-foot"><span class="cod">Sujeto a cobertura.</span> Confirmamos disponibilidad y despacho antes de enviar.</div>
                 </div>
               </label>
             </div>
@@ -7250,7 +7243,7 @@
               </label>
               <label class="checkout-checkbox">
                 <input type="checkbox" id="checkoutAcceptPayment" required />
-                <span>Entiendo que el pago online se confirma por Wompi; si elijo contra entrega, pagaré al recibir el pedido.</span>
+                <span>Entiendo que el pago se confirma cuando Wompi lo aprueba.</span>
               </label>
             </div>
 
@@ -7299,6 +7292,7 @@
           </div>
 
           <div id="checkoutSummaryList" class="checkout-summary-list"></div>
+          <section id="checkoutInstallation" class="installation-panel" aria-label="Instalación seleccionada" hidden></section>
           <p class="checkout-summary-note">Verifica cantidades, correo y total antes de continuar. Cuando el pago quede aprobado, te mostraremos la referencia para rastrear el pedido.</p>
         </div>
       </div>
@@ -7520,6 +7514,7 @@
     }
     
     function renderCart() {
+      renderInstallationOption();
       const container = document.getElementById('cartItems');
       const empty = document.getElementById('cartEmpty');
       const summary = document.getElementById('cartSummary');
@@ -7563,7 +7558,7 @@
         </div>`;
       }).join('');
       
-      document.getElementById('cartTotal').textContent = '$' + total.toLocaleString('es-CO', {minimumFractionDigits:0}) + ' COP';
+      document.getElementById('cartTotal').textContent = formatCOP(total + installationCost()) + ' COP';
 
       const pill = document.getElementById('cartCountPill');
       if (pill) {
@@ -7987,7 +7982,7 @@
           <div style="font-weight:700;">${formatCents(deliveryFee)}</div>
         </div>
       ` : '';
-      return (productRows + deliveryRow) || '<div class="tracking-empty">No encontramos ítems para este pedido.</div>';
+      return (productRows + installationOrderRow(order) + deliveryRow) || '<div class="tracking-empty">No encontramos ítems para este pedido.</div>';
     }
 
     function copyReference(reference) {
@@ -8006,7 +8001,7 @@
       const subtotal = cartTotal();
       const deliveryCents = shippingFeeCents();
       const deliveryCop = deliveryCents / 100;
-      const total = subtotal + deliveryCop;
+      const total = subtotal + deliveryCop + installationCost();
       const itemCount = cart.reduce((sum, item) => sum + item.quantity, 0);
       if (!list) return;
 
@@ -8019,7 +8014,7 @@
           <div style="font-weight:700;">${formatCOP((Number(item.price) || 0) * item.quantity)}</div>
         </div>
       `).join('');
-      list.innerHTML = productRows + `
+      list.innerHTML = productRows + (selectedInstallation() ? `<div class="checkout-summary-total-row muted"><span>Instalación · 1 servicio</span><strong>${formatCOP(installationCost())}</strong></div>` : '') + `
         <div class="checkout-summary-total-row muted">
           <span>Subtotal</span>
           <strong>${formatCOP(subtotal)}</strong>
@@ -8032,7 +8027,9 @@
 
       document.getElementById('checkoutGrandTotal').textContent = formatCOP(total);
       document.getElementById('checkoutItemCount').textContent = itemCount + ' ítems';
-      document.getElementById('cartTotal').textContent = formatCOP(subtotal) + ' COP';
+      document.getElementById('cartTotal').textContent = formatCOP(subtotal + installationCost()) + ' COP';
+      document.getElementById('checkoutCity').setCustomValidity('');
+      renderInstallationCheckout();
       const notesField = document.getElementById('checkoutNotes');
       const autoNote = `Pedido web con ${itemCount} ${itemCount === 1 ? 'ítem' : 'ítems'}.`;
       if (notesField && (!notesField.value || /^Pedido web con \d+ ítems?\.$/.test(notesField.value.trim()))) {
@@ -8274,7 +8271,8 @@
       const customerShippingAddress = [shippingAddress, addressDetail, city, region.label].filter(Boolean).join(', ');
 
       return {
-        provider: selectedCheckoutProvider(),
+        provider: 'wompi',
+        installation: selectedInstallation() ? { productId: selectedInstallation().productId, variantId: selectedInstallation().variantId || '' } : null,
         shippingZone,
         shippingAddress: {
           addressLine1: shippingAddress,
@@ -8369,6 +8367,10 @@
 
     async function submitCheckout(event) {
       event.preventDefault();
+      if (selectedInstallation() && !installationInBogota()) {
+        setCheckoutStatus('La instalación solo está disponible en Bogotá. Retírala o corrige tu ciudad.', 'error');
+        return;
+      }
       if (cart.length === 0) {
         setCheckoutStatus('Tu carrito está vacío.', 'error');
         return;
@@ -9527,6 +9529,7 @@
           ${variantPickerHtml}
           <div class="detail-price" id="detailPriceDisplay">${priceStr} <span>COP</span></div>
           <div class="detail-desc">${htmlSafe(description)}</div>
+          ${installationDetailHtml(product)}
           ${renderProductInfo(product)}
           <div class="detail-actions">
             ${variants.length > 0 ? `<div class="detail-selected-variant" id="detailSelectedVariantNote"></div>` : ''}
@@ -10964,5 +10967,6 @@
       </div>
     </div>
   </div>
+  <script src="/js/installation.js?v=20260919"></script>
 </body>
 </html>

@@ -28,6 +28,20 @@ env:
   PROJECT_NAME: sales-website
 
 jobs:
+  release-checks:
+    name: Checkout and installation regressions
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - run: pip install -r tests/requirements-test.txt -r tests/requirements-e2e.txt
+      - run: python -m playwright install --with-deps chromium
+      - run: python -m pytest tests/unit -q
+      - run: python -m pytest tests/e2e/test_cart_ui.py tests/e2e/test_theme_ui.py tests/e2e/test_footer_ui.py tests/e2e/test_installation_ui.py -q
+
   # ================================================================
   # VALIDACIÓN
   # ================================================================
@@ -66,7 +80,7 @@ jobs:
   deploy:
     name: Deploy (${{ inputs.environment || 'dev' }})
     runs-on: ubuntu-latest
-    needs: [validate]
+    needs: [validate, release-checks]
     if: github.ref == 'refs/heads/main' || github.ref == 'refs/heads/master' || github.event_name == 'workflow_dispatch'
 
     environment: ${{ inputs.environment || 'dev' }}
@@ -245,6 +259,7 @@ jobs:
         run: |
           aws s3 sync ./frontend \
             s3://${{ steps.stack-outputs.outputs.S3_BUCKET }} \
+            --exclude "admin/*" \
             --delete
 
       # --- Sync backoffice a S3 (/admin/) ---

@@ -2169,7 +2169,7 @@ Si tienes dudas de compatibilidad, responde este correo y te ayudamos a elegir e
         <div class="table-container" style="margin:16px 0;">
           <table>
             <thead><tr><th>Producto</th><th>Cant.</th><th>Subtotal</th></tr></thead>
-            <tbody>${itemsHtml}</tbody>
+            <tbody>${itemsHtml}${order.installation ? `<tr><td>Instalación en Bogotá · ${esc(order.installation.productName || '')}<br>Agenda por coordinar</td><td>1 servicio</td><td>${formatCurrencyCopFromCents(order.installationFeeInCents || 0)}</td></tr>` : ''}</tbody>
           </table>
         </div>
         <form id="orderUpdateForm">
