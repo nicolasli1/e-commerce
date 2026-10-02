@@ -570,7 +570,7 @@
   <div class="modal-overlay" id="cartModal" role="dialog" aria-modal="true" aria-hidden="true" aria-labelledby="cartModalTitle">
     <div class="modal cart-modal-inner" tabindex="-1" style="max-width:480px;position:relative;overflow:hidden;">
       <canvas id="cartParticleCanvas" aria-hidden="true" style="position:absolute;inset:0;width:100%;height:100%;pointer-events:none;z-index:0;border-radius:inherit;"></canvas>
-      <div style="position:relative;z-index:1;">
+      <div class="cart-layout" style="position:relative;z-index:1;">
       <div class="modal-header cart-header">
         <div class="cart-header-left">
           <h2 class="modal-title" id="cartModalTitle">Tu carrito</h2>
@@ -579,6 +579,7 @@
         <button class="modal-close" id="cartCloseBtn" type="button" aria-label="Cerrar carrito">✕</button>
       </div>
       <div id="cartContent">
+        <div id="cartScroll">
         <div id="cartItems"></div>
         <div id="cartEmpty" class="cart-empty-state" style="display:none;">
           <div class="cart-empty-icon">🛒</div>
@@ -586,6 +587,7 @@
           <p class="cart-empty-sub">Agrega productos desde el catálogo</p>
         </div>
         <section id="cartInstallation" class="installation-panel" aria-label="Instalación opcional" hidden></section>
+        </div>
         <div id="cartSummary" class="cart-footer" style="display:none;">
           <div class="cart-total-card">
             <div class="cart-total-row">
@@ -596,7 +598,7 @@
               Continuar al pago →
             </button>
           </div>
-          <p class="cart-secure-note">🔒 Pago online con Wompi · Pago contra entrega disponible con Inter Rapidísimo</p>
+          <p class="cart-secure-note">🔒 Pago seguro con Wompi · Envío calculado al continuar</p>
         </div>
       </div>
       </div><!-- /z-index wrapper -->
@@ -617,7 +619,7 @@
         <div class="checkout-panel">
           <div id="checkoutStatus" class="checkout-status"></div>
           <div class="checkout-trust">🔒 Pago seguro, entrega rastreable y confirmación por correo</div>
-          <p class="checkout-lead">Confirma tus datos, revisa la entrega y elige si pagas online con Wompi o contra entrega con Inter Rapidísimo.</p>
+          <p class="checkout-lead">Confirma tus datos, revisa el resumen y completa tu pago seguro con Wompi.</p>
 
           <div class="checkout-meta-strip">
             <div class="checkout-meta-card">
@@ -642,17 +644,6 @@
                   </div>
                   <div class="checkout-provider-copy">Paga con tarjeta, PSE, Nequi y métodos locales desde la pasarela de Bancolombia.</div>
                   <div class="checkout-provider-foot"><strong>Recomendado.</strong> Alistamos tu pedido apenas se aprueba el pago.</div>
-                </div>
-              </label>
-              <label class="checkout-provider">
-                <input type="radio" name="checkoutProvider" value="interrapidisimo_cod" />
-                <div class="checkout-provider-card">
-                  <div class="checkout-provider-title">
-                    <span>Pago contra entrega</span>
-                    <span class="checkout-provider-tag checkout-provider-tag-nequi">Inter Rapidísimo</span>
-                  </div>
-                  <div class="checkout-provider-copy">Pagas en efectivo al recibir. Inter Rapidísimo recauda en la entrega.</div>
-                  <div class="checkout-provider-foot"><span class="cod">Sujeto a cobertura.</span> Confirmamos disponibilidad y despacho antes de enviar.</div>
                 </div>
               </label>
             </div>
