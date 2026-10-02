@@ -8,7 +8,7 @@ Requiere: URL del sitio accesible
 import os
 import requests
 
-BASE_URL = os.environ.get("REPUESTOSCEL_BASE_URL", "https://d1ag0uf6e1dp20.cloudfront.net")
+BASE_URL = os.environ.get("REPUESTOSCEL_BASE_URL", "https://repuestoscel.com")
 ADMIN_USER = os.environ.get("REPUESTOSCEL_ADMIN_USER", "admin")
 ADMIN_PASS = os.environ.get("REPUESTOSCEL_ADMIN_PASS", "admin123")
 

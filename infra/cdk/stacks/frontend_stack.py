@@ -36,6 +36,7 @@ class FrontendStack(Stack):
         images_bucket_name: Optional[str] = None,
         certificate_arn: Optional[str] = None,
         domain_names: Optional[list] = None,
+        enable_waf: bool = False,
         **kwargs,
     ) -> None:
         super().__init__(scope, id, **kwargs)
@@ -47,6 +48,16 @@ class FrontendStack(Stack):
             pathlib.Path(__file__).parent.parent
             / "cloudfront-functions"
             / "admin-auth.js"
+        )
+        canonical_function_path = (
+            pathlib.Path(__file__).parent.parent
+            / "cloudfront-functions"
+            / "canonical-host.js"
+        )
+        configured_domains = [str(domain).strip().lower() for domain in (domain_names or []) if str(domain).strip()]
+        canonical_domain = next(
+            (domain for domain in configured_domains if not domain.startswith("www.")),
+            configured_domains[0] if configured_domains else None,
         )
 
         # ------------------------------------------------------------------
@@ -89,12 +100,21 @@ class FrontendStack(Stack):
                     content_security_policy=cloudfront.CfnResponseHeadersPolicy.ContentSecurityPolicyProperty(
                         content_security_policy=(
                             "default-src 'self'; "
+                            "base-uri 'self'; "
+                            "object-src 'none'; "
                             "img-src 'self' data: https:; "
-                            "script-src 'self' 'unsafe-inline' https://checkout.wompi.co https://*.wompi.co; "
-                            "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; "
+                            "script-src 'self' https://checkout.wompi.co https://*.wompi.co https://www.googletagmanager.com; "
+                            "script-src-elem 'self' https://checkout.wompi.co https://*.wompi.co https://www.googletagmanager.com; "
+                            "script-src-attr 'unsafe-inline'; "
+                            "style-src 'self' https://fonts.googleapis.com; "
+                            "style-src-elem 'self' https://fonts.googleapis.com; "
+                            "style-src-attr 'unsafe-inline'; "
                             "font-src 'self' https://fonts.gstatic.com; "
-                            "connect-src 'self' https:; "
-                            "frame-src https://checkout.wompi.co https://*.wompi.co https://www.google.com https://maps.google.com;"
+                            "connect-src 'self' https://checkout.wompi.co https://*.wompi.co https://www.google-analytics.com; "
+                            "frame-src https://checkout.wompi.co https://*.wompi.co https://www.google.com https://maps.google.com; "
+                            "frame-ancestors 'none'; "
+                            "form-action 'self' https://checkout.wompi.co https://*.wompi.co; "
+                            "upgrade-insecure-requests;"
                         ),
                         override=True,
                     ),
@@ -162,90 +182,104 @@ class FrontendStack(Stack):
             ),
         )
 
+        canonical_host_func = None
+        if canonical_domain:
+            canonical_host_func = cloudfront.CfnFunction(
+                self,
+                "CanonicalHostFunction",
+                name=f"{project_name}-{environment}-canonical-host",
+                auto_publish=True,
+                function_code=canonical_function_path.read_text().replace(
+                    "__CANONICAL_HOST__", canonical_domain
+                ),
+                function_config=cloudfront.CfnFunction.FunctionConfigProperty(
+                    comment=f"Redirect alternate hosts to {canonical_domain}",
+                    runtime="cloudfront-js-2.0",
+                ),
+            )
+
         # ------------------------------------------------------------------
         # 5. WAF WebACL – managed rules + rate limiting
         # ------------------------------------------------------------------
-        # waf_acl = wafv2.CfnWebACL(
-        #     self,
-        #     "WebACL",
-        #     default_action=wafv2.CfnWebACL.DefaultActionProperty(allow={}),
-        #     scope="CLOUDFRONT",
-        #     visibility_config=wafv2.CfnWebACL.VisibilityConfigProperty(
-        #         cloud_watch_metrics_enabled=True,
-        #         metric_name=f"{project_name}-{environment}-waf",
-        #         sampled_requests_enabled=True,
-        #     ),
-        #     rules=[
-        #         # AWS managed – common threats (SQLi, XSS, LFI, etc.)
-        #         wafv2.CfnWebACL.RuleProperty(
-        #             name="AWS-AWSManagedRulesCommonRuleSet",
-        #             priority=1,
-        #             statement=wafv2.CfnWebACL.StatementProperty(
-        #                 managed_rule_group_statement=wafv2.CfnWebACL.ManagedRuleGroupStatementProperty(
-        #                     vendor_name="AWS",
-        #                     name="AWSManagedRulesCommonRuleSet",
-        #                 )
-        #             ),
-        #             override_action=wafv2.CfnWebACL.OverrideActionProperty(none={}),
-        #             visibility_config=wafv2.CfnWebACL.VisibilityConfigProperty(
-        #                 cloud_watch_metrics_enabled=True,
-        #                 metric_name="AWS-AWSManagedRulesCommonRuleSet",
-        #                 sampled_requests_enabled=True,
-        #             ),
-        #         ),
-        #         # AWS managed – SQL injection
-        #         wafv2.CfnWebACL.RuleProperty(
-        #             name="AWS-AWSManagedRulesSQLiRuleSet",
-        #             priority=2,
-        #             statement=wafv2.CfnWebACL.StatementProperty(
-        #                 managed_rule_group_statement=wafv2.CfnWebACL.ManagedRuleGroupStatementProperty(
-        #                     vendor_name="AWS",
-        #                     name="AWSManagedRulesSQLiRuleSet",
-        #                 )
-        #             ),
-        #             override_action=wafv2.CfnWebACL.OverrideActionProperty(none={}),
-        #             visibility_config=wafv2.CfnWebACL.VisibilityConfigProperty(
-        #                 cloud_watch_metrics_enabled=True,
-        #                 metric_name="AWS-AWSManagedRulesSQLiRuleSet",
-        #                 sampled_requests_enabled=True,
-        #             ),
-        #         ),
-        #         # AWS managed – known bad inputs
-        #         wafv2.CfnWebACL.RuleProperty(
-        #             name="AWS-AWSManagedRulesKnownBadInputsRuleSet",
-        #             priority=3,
-        #             statement=wafv2.CfnWebACL.StatementProperty(
-        #                 managed_rule_group_statement=wafv2.CfnWebACL.ManagedRuleGroupStatementProperty(
-        #                     vendor_name="AWS",
-        #                     name="AWSManagedRulesKnownBadInputsRuleSet",
-        #                 )
-        #             ),
-        #             override_action=wafv2.CfnWebACL.OverrideActionProperty(none={}),
-        #             visibility_config=wafv2.CfnWebACL.VisibilityConfigProperty(
-        #                 cloud_watch_metrics_enabled=True,
-        #                 metric_name="AWS-AWSManagedRulesKnownBadInputsRuleSet",
-        #                 sampled_requests_enabled=True,
-        #             ),
-        #         ),
-        #         # Rate-based rule – 2000 requests per 5 min per IP
-        #         wafv2.CfnWebACL.RuleProperty(
-        #             name="RateLimit",
-        #             priority=4,
-        #             statement=wafv2.CfnWebACL.StatementProperty(
-        #                 rate_based_statement=wafv2.CfnWebACL.RateBasedStatementProperty(
-        #                     limit=2000,
-        #                     aggregate_key_type="IP",
-        #                 )
-        #             ),
-        #             action=wafv2.CfnWebACL.RuleActionProperty(block={}),
-        #             visibility_config=wafv2.CfnWebACL.VisibilityConfigProperty(
-        #                 cloud_watch_metrics_enabled=True,
-        #                 metric_name="RateLimit",
-        #                 sampled_requests_enabled=True,
-        #             ),
-        #         ),
-        #     ],
-        # )
+        waf_acl = None
+        if enable_waf:
+            waf_acl = wafv2.CfnWebACL(
+                self,
+                "WebACL",
+                default_action=wafv2.CfnWebACL.DefaultActionProperty(allow={}),
+                scope="CLOUDFRONT",
+                visibility_config=wafv2.CfnWebACL.VisibilityConfigProperty(
+                    cloud_watch_metrics_enabled=True,
+                    metric_name=f"{project_name}-{environment}-waf",
+                    sampled_requests_enabled=True,
+                ),
+                rules=[
+                wafv2.CfnWebACL.RuleProperty(
+                    name="AWS-AWSManagedRulesCommonRuleSet",
+                    priority=1,
+                    statement=wafv2.CfnWebACL.StatementProperty(
+                        managed_rule_group_statement=wafv2.CfnWebACL.ManagedRuleGroupStatementProperty(
+                            vendor_name="AWS",
+                            name="AWSManagedRulesCommonRuleSet",
+                        )
+                    ),
+                    override_action=wafv2.CfnWebACL.OverrideActionProperty(none={}),
+                    visibility_config=wafv2.CfnWebACL.VisibilityConfigProperty(
+                        cloud_watch_metrics_enabled=True,
+                        metric_name="AWS-AWSManagedRulesCommonRuleSet",
+                        sampled_requests_enabled=True,
+                    ),
+                ),
+                wafv2.CfnWebACL.RuleProperty(
+                    name="AWS-AWSManagedRulesSQLiRuleSet",
+                    priority=2,
+                    statement=wafv2.CfnWebACL.StatementProperty(
+                        managed_rule_group_statement=wafv2.CfnWebACL.ManagedRuleGroupStatementProperty(
+                            vendor_name="AWS",
+                            name="AWSManagedRulesSQLiRuleSet",
+                        )
+                    ),
+                    override_action=wafv2.CfnWebACL.OverrideActionProperty(none={}),
+                    visibility_config=wafv2.CfnWebACL.VisibilityConfigProperty(
+                        cloud_watch_metrics_enabled=True,
+                        metric_name="AWS-AWSManagedRulesSQLiRuleSet",
+                        sampled_requests_enabled=True,
+                    ),
+                ),
+                wafv2.CfnWebACL.RuleProperty(
+                    name="AWS-AWSManagedRulesKnownBadInputsRuleSet",
+                    priority=3,
+                    statement=wafv2.CfnWebACL.StatementProperty(
+                        managed_rule_group_statement=wafv2.CfnWebACL.ManagedRuleGroupStatementProperty(
+                            vendor_name="AWS",
+                            name="AWSManagedRulesKnownBadInputsRuleSet",
+                        )
+                    ),
+                    override_action=wafv2.CfnWebACL.OverrideActionProperty(none={}),
+                    visibility_config=wafv2.CfnWebACL.VisibilityConfigProperty(
+                        cloud_watch_metrics_enabled=True,
+                        metric_name="AWS-AWSManagedRulesKnownBadInputsRuleSet",
+                        sampled_requests_enabled=True,
+                    ),
+                ),
+                wafv2.CfnWebACL.RuleProperty(
+                    name="RateLimit",
+                    priority=4,
+                    statement=wafv2.CfnWebACL.StatementProperty(
+                        rate_based_statement=wafv2.CfnWebACL.RateBasedStatementProperty(
+                            limit=2000,
+                            aggregate_key_type="IP",
+                        )
+                    ),
+                    action=wafv2.CfnWebACL.RuleActionProperty(block={}),
+                    visibility_config=wafv2.CfnWebACL.VisibilityConfigProperty(
+                        cloud_watch_metrics_enabled=True,
+                        metric_name="RateLimit",
+                        sampled_requests_enabled=True,
+                    ),
+                ),
+                ],
+            )
 
         # ------------------------------------------------------------------
         # 4b. CloudFront Function — Rate limiting for /api/*
@@ -301,6 +335,16 @@ class FrontendStack(Stack):
                 allowed_methods=["GET", "HEAD", "OPTIONS"],
                 cached_methods=["GET", "HEAD"],
                 response_headers_policy_id=security_headers.ref,
+                function_associations=(
+                    [
+                        cloudfront.CfnDistribution.FunctionAssociationProperty(
+                            event_type="viewer-request",
+                            function_arn=canonical_host_func.attr_function_arn,
+                        )
+                    ]
+                    if canonical_host_func
+                    else None
+                ),
                 forwarded_values=cloudfront.CfnDistribution.ForwardedValuesProperty(
                     query_string=False,
                     cookies=cloudfront.CfnDistribution.CookiesProperty(forward="none"),
@@ -368,6 +412,42 @@ class FrontendStack(Stack):
                     ),
                 )
             )
+
+            # Canonical product pages and sitemap are server-rendered from the
+            # live catalog. Keep a short cache so price and availability remain
+            # current for crawlers and direct visitors.
+            seo_function_associations = (
+                [
+                    cloudfront.CfnDistribution.FunctionAssociationProperty(
+                        event_type="viewer-request",
+                        function_arn=canonical_host_func.attr_function_arn,
+                    )
+                ]
+                if canonical_host_func
+                else None
+            )
+            for seo_path in ("productos/*", "sitemap.xml"):
+                cache_behaviors.append(
+                    cloudfront.CfnDistribution.CacheBehaviorProperty(
+                        path_pattern=seo_path,
+                        target_origin_id="APIOrigin",
+                        viewer_protocol_policy="redirect-to-https",
+                        compress=True,
+                        default_ttl=300,
+                        max_ttl=3600,
+                        min_ttl=0,
+                        allowed_methods=["GET", "HEAD", "OPTIONS"],
+                        cached_methods=["GET", "HEAD"],
+                        response_headers_policy_id=security_headers.ref,
+                        function_associations=seo_function_associations,
+                        forwarded_values=cloudfront.CfnDistribution.ForwardedValuesProperty(
+                            query_string=False,
+                            cookies=cloudfront.CfnDistribution.CookiesProperty(
+                                forward="none"
+                            ),
+                        ),
+                    )
+                )
 
             # Admin/backoffice route — S3 origin with CloudFront Function auth
             cache_behaviors.append(
@@ -454,7 +534,7 @@ class FrontendStack(Stack):
                         cloud_front_default_certificate=True,
                     )
                 ),
-                # web_acl_id=waf_acl.attr_arn,
+                web_acl_id=waf_acl.attr_arn if waf_acl else None,
             ),
         )
 

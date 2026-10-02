@@ -3,4 +3,4 @@ Allow: /
 Disallow: /admin/
 Disallow: /api/
 
-Sitemap: https://d1ag0uf6e1dp20.cloudfront.net/sitemap.xml
+Sitemap: https://repuestoscel.com/sitemap.xml

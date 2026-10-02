@@ -405,7 +405,7 @@ def test_theme_bootstraps_are_ordered_before_stylesheets():
     admin = (PROJECT_ROOT / "backoffice" / "index.html").read_text()
 
     assert storefront.index("Resolve the color scheme before CSS paints") < storefront.index(
-        "<style>"
+        'rel="stylesheet" href="css/styles.css"'
     )
     assert admin.index('src="js/theme-init.js') < admin.index(
         'rel="stylesheet" href="css/style.css'

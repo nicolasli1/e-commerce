@@ -195,9 +195,10 @@ Los secretos de aplicación no se guardan en Git. Se resuelven desde `/{project}
 - CORS restringido a los orígenes configurados.
 - Tokens Bearer y API key para rutas protegidas.
 - Limitación de solicitudes best-effort mediante CloudFront Function: 100 solicitudes/minuto para `/api/*` y 10/minuto para `/api/auth/login` por ubicación edge.
+- AWS WAF disponible como opción de despliegue, desactivada por defecto. Al habilitar `enable_waf=true`, asocia reglas administradas y un límite global de 2.000 solicitudes por 5 minutos e IP.
 - Tablas y buckets de negocio con política `RETAIN`; productos, cotizaciones y pedidos usan point-in-time recovery.
 
-El código de un WebACL con reglas administradas existe en `frontend_stack.py`, pero está deshabilitado actualmente. No debe asumirse protección WAF activa hasta volver a habilitarlo y desplegarlo.
+El frontend publica HTML, CSS y JavaScript como recursos separados para reducir el documento inicial y permitir caché independiente. CloudFront también redirige aliases alternativos al dominio canónico configurado.
 
 ## Estado y pendientes
 
@@ -206,7 +207,7 @@ La plataforma ya incluye dominio personalizado, ACM, CI/CD, SES/SMTP, pagos, aut
 Pendientes recomendados:
 
 1. Separar claramente los aliases y credenciales de `dev`, `stage` y `prod`.
-2. Habilitar WAF o throttling persistente en API Gateway para límites globales.
+2. Habilitar WAF cuando se apruebe su costo operativo y añadir throttling persistente en API Gateway como segunda capa por ruta.
 3. Añadir logs de acceso de CloudFront y S3.
 4. Mover tareas lentas de email/webhooks a SQS o EventBridge cuando el volumen lo justifique.
 5. Mantener README y documentos de arquitectura sincronizados con cada cambio de infraestructura.

@@ -135,6 +135,17 @@ def response(status_code, body, extra_headers=None):
     }
 
 
+def text_response(status_code, body, content_type, extra_headers=None):
+    headers = {"Content-Type": content_type}
+    if extra_headers:
+        headers.update(extra_headers)
+    return {
+        "statusCode": status_code,
+        "headers": headers,
+        "body": body,
+    }
+
+
 def now_iso():
     return datetime.now(timezone.utc).isoformat()
 
@@ -1014,6 +1025,140 @@ def list_public_products():
             "deviceFamilies": p.get("deviceFamilies", []) or _extract_device_families(variants),
         })
     return response(200, {"ok": True, "products": safe})
+
+
+def seo_product_slug(product):
+    """Stable, human-readable product URL with a collision-safe ID suffix."""
+    base = slugify(product.get("name", "")) or "repuesto-para-celular"
+    identifier = str(product.get("productId", ""))[:8]
+    return f"{base}-{identifier}" if identifier else base
+
+
+def canonical_site_url():
+    return FRONTEND_URL or "https://repuestoscel.com"
+
+
+def absolute_site_url(path):
+    value = (path or "").strip()
+    if value.startswith("https://") or value.startswith("http://"):
+        return value
+    return canonical_site_url() + (value if value.startswith("/") else "/" + value)
+
+
+def public_catalog_products():
+    items = products_table.scan().get("Items", [])
+    return [
+        item for item in items
+        if not is_site_settings_item(item) and item.get("status", "active") != "deleted"
+    ]
+
+
+def product_price_and_stock(product):
+    variants = product.get("variants", [])
+    defaults = _derive_product_fields_from_variants(variants)
+    has_variants = isinstance(variants, list) and len(variants) > 0
+    price = product.get("price") or defaults["price"] or 0
+    stock = defaults["stock"] if has_variants else safe_int(product.get("stock", 0))
+    return price, stock
+
+
+def format_cop(value):
+    try:
+        return f"${int(Decimal(str(value))):,}".replace(",", ".") + " COP"
+    except Exception:
+        return "Precio disponible en el catálogo"
+
+
+def render_seo_product_page(slug):
+    decoded_slug = urllib.parse.unquote(slug or "").strip().lower()
+    product = next(
+        (item for item in public_catalog_products() if seo_product_slug(item).lower() == decoded_slug),
+        None,
+    )
+    if not product:
+        return text_response(
+            404,
+            "<!doctype html><html lang=\"es\"><head><meta name=\"robots\" content=\"noindex\"><title>Producto no encontrado | RepuestosCel</title></head><body><p>Producto no encontrado.</p><a href=\"/\">Ver catálogo</a></body></html>",
+            "text/html; charset=utf-8",
+            {"Cache-Control": "public, max-age=300"},
+        )
+
+    name = " ".join(str(product.get("name", "")).split()) or "Repuesto para celular"
+    description = " ".join(str(product.get("description", "")).split())
+    if not description:
+        description = f"Consulta compatibilidad y disponibilidad de {name} en RepuestosCel."
+    compatibility = [str(value).strip() for value in (product.get("compatibility") or []) if str(value).strip()]
+    price, stock = product_price_and_stock(product)
+    product_url = f"{canonical_site_url()}/productos/{seo_product_slug(product)}"
+    images = product_images_with_variant_fallback(product, product.get("variants", []))
+    image_path = ""
+    if images and isinstance(images[0], dict):
+        image_path = images[0].get("xl") or images[0].get("lg") or images[0].get("md") or ""
+    if not image_path:
+        image_path = product.get("imageUrl", "")
+        if isinstance(image_path, dict):
+            image_path = image_path.get("xl") or image_path.get("lg") or ""
+    image_url = absolute_site_url(image_path) if image_path else ""
+    in_stock = int(stock or 0) > 0
+    availability = "https://schema.org/InStock" if in_stock else "https://schema.org/OutOfStock"
+    search_url = f"{canonical_site_url()}/?buscar={urllib.parse.quote(name)}#productos"
+    schema = {
+        "@context": "https://schema.org",
+        "@type": "Product",
+        "name": name,
+        "description": description,
+        "sku": str(product.get("productId", "")),
+        "url": product_url,
+        "offers": {
+            "@type": "Offer",
+            "url": product_url,
+            "priceCurrency": "COP",
+            "price": str(price),
+            "availability": availability,
+        },
+    }
+    if image_url:
+        schema["image"] = [image_url]
+    schema_json = json.dumps(schema, cls=DecimalEncoder, ensure_ascii=False).replace("</", "<\\/")
+    compatibility_html = "".join(f"<li>{html_escape(model)}</li>" for model in compatibility)
+    image_html = (
+        f'<img src="{html_escape(image_url)}" alt="{html_escape(name)}" width="800" height="800" loading="eager">'
+        if image_url else ""
+    )
+    stock_copy = "Disponible en el catálogo" if in_stock else "Sin disponibilidad actualmente"
+    return text_response(
+        200,
+        f'''<!doctype html>
+<html lang="es-CO"><head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>{html_escape(name)} | Repuestos para celulares en Colombia | RepuestosCel</title>
+<meta name="description" content="{html_escape(description)}">
+<link rel="canonical" href="{html_escape(product_url)}">
+<meta name="robots" content="index,follow">
+<meta property="og:type" content="product"><meta property="og:title" content="{html_escape(name)} | RepuestosCel"><meta property="og:description" content="{html_escape(description)}"><meta property="og:url" content="{html_escape(product_url)}">
+{f'<meta property="og:image" content="{html_escape(image_url)}">' if image_url else ''}
+<script type="application/ld+json">{schema_json}</script>
+<style>body{{margin:0;background:#f6f8fb;color:#101828;font:16px/1.55 Arial,sans-serif}}main{{max-width:1080px;margin:auto;padding:42px 24px 68px}}a{{color:#0758be}}.crumb{{font-size:14px;margin-bottom:28px}}.grid{{display:grid;grid-template-columns:minmax(0,1fr) minmax(320px,1fr);gap:44px;background:#fff;border-radius:24px;padding:28px;box-shadow:0 12px 40px #10182812}}img{{max-width:100%;height:auto;display:block;border-radius:16px}}h1{{line-height:1.1;font-size:clamp(32px,5vw,52px);margin:12px 0}}.eyebrow{{color:#1267bb;font-weight:700;text-transform:uppercase;font-size:13px;letter-spacing:.08em}}.price{{font-size:30px;font-weight:800;margin:24px 0 8px}}.stock{{font-weight:700;color:{'#087443' if in_stock else '#b42318'}}}.cta{{display:inline-block;background:#106fd0;color:#fff;text-decoration:none;font-weight:700;border-radius:999px;padding:14px 20px;margin-top:24px}}ul{{padding-left:20px}}@media(max-width:720px){{main{{padding:24px 16px}}.grid{{grid-template-columns:1fr;padding:18px;gap:24px}}}}</style>
+</head><body><main>
+<nav class="crumb"><a href="{canonical_site_url()}">RepuestosCel</a> / <a href="{canonical_site_url()}/#productos">Catálogo</a> / {html_escape(name)}</nav>
+<article class="grid"><section>{image_html}</section><section><p class="eyebrow">Repuesto para celular</p><h1>{html_escape(name)}</h1><p>{html_escape(description)}</p><p class="price">{format_cop(price)}</p><p class="stock">{stock_copy}</p>{f'<h2>Compatibilidad publicada</h2><ul>{compatibility_html}</ul>' if compatibility_html else ''}<a class="cta" href="{html_escape(search_url)}">Ver y comprar en el catálogo</a></section></article>
+</main></body></html>''',
+        "text/html; charset=utf-8",
+        {"Cache-Control": "public, max-age=300"},
+    )
+
+
+def render_sitemap():
+    site_url = canonical_site_url()
+    entries = [f"<url><loc>{html_escape(site_url + '/')}</loc></url>"]
+    for product in sorted(public_catalog_products(), key=lambda item: seo_product_slug(item)):
+        updated = str(product.get("updatedAt") or product.get("createdAt") or "")[:10]
+        lastmod = f"<lastmod>{html_escape(updated)}</lastmod>" if updated else ""
+        entries.append(
+            f"<url><loc>{html_escape(site_url + '/productos/' + seo_product_slug(product))}</loc>{lastmod}</url>"
+        )
+    body = '<?xml version="1.0" encoding="UTF-8"?>' + '<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">' + "".join(entries) + "</urlset>"
+    return text_response(200, body, "application/xml; charset=utf-8", {"Cache-Control": "public, max-age=300"})
 
 
 def create_product(body):
@@ -3095,6 +3240,12 @@ def handler(event, context):
 
     if method == "GET" and path == "/api/products":
         return list_public_products()
+
+    if method == "GET" and path == "/sitemap.xml":
+        return render_sitemap()
+
+    if method == "GET" and path.startswith("/productos/"):
+        return render_seo_product_page(path.replace("/productos/", "", 1))
 
     if method == "GET" and path == "/api/site-settings":
         return get_site_settings()

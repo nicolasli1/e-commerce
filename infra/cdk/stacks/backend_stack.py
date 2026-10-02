@@ -49,6 +49,7 @@ class BackendStack(Stack):
         environment: str = "dev",
         enable_backend: bool = True,
         allowed_origins: Optional[list] = None,
+        frontend_url: Optional[str] = None,
         ses_domain: Optional[str] = None,
         manage_ses_identity: bool = False,
         order_notifications_from_email: Optional[str] = None,
@@ -146,6 +147,7 @@ class BackendStack(Stack):
                 "QUOTES_TABLE": quotes_table.table_name,
                 "ORDERS_TABLE": orders_table.table_name,
                 "ENVIRONMENT": environment,
+                "FRONTEND_URL": (frontend_url or "").rstrip("/"),
                 "ADMIN_USER_PARAM": f"/{project_name}/{environment}/admin-user",
                 "ADMIN_PASSWORD_PARAM": f"/{project_name}/{environment}/admin-password",
                 "ADMIN_SESSION_SECRET_PARAM": f"/{project_name}/{environment}/admin-session-secret",
@@ -342,6 +344,18 @@ class BackendStack(Stack):
         )
         http_api.add_routes(
             path="/api/products",
+            methods=[apigwv2.HttpMethod.GET],
+            integration=lambda_integration,
+        )
+        # Server-rendered catalog pages are used by search engines and direct
+        # product links; transactions remain in the storefront SPA.
+        http_api.add_routes(
+            path="/productos/{slug}",
+            methods=[apigwv2.HttpMethod.GET],
+            integration=lambda_integration,
+        )
+        http_api.add_routes(
+            path="/sitemap.xml",
             methods=[apigwv2.HttpMethod.GET],
             integration=lambda_integration,
         )

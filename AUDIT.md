@@ -1,7 +1,7 @@
 # Auditoría UX/UI y Conversión - RepuestosCel Ecommerce
 
 Fecha: 2026-06-08
-Sitio auditado: https://d1ag0uf6e1dp20.cloudfront.net/
+Sitio auditado: https://repuestoscel.com/
 
 ## Resumen Ejecutivo
 
@@ -11,7 +11,7 @@ La mejora crítica es tratar la home como una experiencia de descubrimiento tipo
 
 ## Framework y Arquitectura
 
-- Frontend público: SPA estática en `frontend/index.html` con HTML, CSS y JavaScript vanilla.
+- Frontend público: SPA estática vanilla con `frontend/index.html`, `frontend/css/styles.css` y módulos JavaScript en `frontend/js/`.
 - Backoffice: aplicación estática separada en `backoffice/index.html`, `backoffice/js/app.js`, `backoffice/js/api.js`, `backoffice/js/auth.js` y `backoffice/css/style.css`.
 - Backend: API en AWS Lambda generada desde `infra/cdk/lambda_src/api_handler.py.tmpl`.
 - Datos: productos provenientes de API conectada a DynamoDB en el despliegue.
@@ -108,8 +108,8 @@ No hay resultado exacto. La experiencia necesita mapear "puerto de carga" hacia 
 
 ## Riesgos Para Producción
 
-- Falta WAF en CloudFront/API.
+- WAF está implementado como opción, pero permanece desactivado por defecto hasta aprobar su costo operativo.
 - Falta un set amplio de productos reales para probar relevancia por marca y modelo.
 - Falta medición de analítica para búsquedas sin resultado.
 - Falta prueba de carga ligera sobre API de catálogo y checkout.
-- El proyecto sigue siendo un frontend monolítico en `index.html`; funciona, pero a futuro conviene modularizar.
+- El HTML, CSS y JavaScript ya se sirven por separado; el siguiente paso de modularización puede dividir `app.js` por dominio funcional.

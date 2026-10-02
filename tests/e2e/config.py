@@ -10,7 +10,7 @@ from typing import Optional
 @dataclass
 class E2EConfig:
     # URL base del sitio
-    base_url: str = os.getenv("E2E_BASE_URL", "https://d1ag0uf6e1dp20.cloudfront.net")
+    base_url: str = os.getenv("E2E_BASE_URL", "https://repuestoscel.com")
 
     # Timeouts (segundos)
     timeout: int = int(os.getenv("E2E_TIMEOUT", "30"))

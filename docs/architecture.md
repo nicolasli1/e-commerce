@@ -91,8 +91,9 @@ Las tablas son on-demand y conservan datos al eliminar un stack. Productos, coti
 - CORS limitado a orígenes configurados.
 - API key y tokens firmados para operaciones protegidas.
 - CloudFront Function con límites best-effort por ubicación edge.
+- AWS WAF opcional con reglas administradas y límite global por IP; permanece desactivado por defecto.
 
-El WebACL de WAF está definido como código comentado y no está asociado a la distribución actual. Para límites globales deben habilitarse WAF rate rules o throttling de API Gateway.
+El WebACL solo se crea y asocia a CloudFront con `enable_waf=true`. API Gateway puede añadir throttling por ruta como segunda capa independiente.
 
 ## Regiones y entornos
 

@@ -31,6 +31,7 @@ import secrets as py_secrets
 import subprocess
 import sys
 from pathlib import Path
+from typing import Optional
 
 REPO_ROOT = Path(__file__).resolve().parent.parent
 CDK_DIR = REPO_ROOT / "infra" / "cdk"
@@ -42,7 +43,7 @@ DEFAULT_PRICE_CLASS = "PriceClass_100"
 
 # ─── UTILS ──────────────────────────────────────────────
 
-def run_cmd(cmd: list[str], cwd: str | None = None) -> int:
+def run_cmd(cmd: list[str], cwd: Optional[str] = None) -> int:
     print(f"⚡ {' '.join(cmd)}")
     return subprocess.call(cmd, cwd=cwd or str(CDK_DIR))
 
@@ -51,7 +52,7 @@ def run_cdk(args: list[str]) -> int:
     return run_cmd(["npx", "--yes", "aws-cdk@latest"] + args)
 
 
-def run_aws(args: list[str]) -> str | None:
+def run_aws(args: list[str]) -> Optional[str]:
     try:
         result = subprocess.run(
             ["aws"] + args,
@@ -74,7 +75,7 @@ def build_context_flags(context: dict) -> list[str]:
     return flags
 
 
-def _get_account_id() -> str | None:
+def _get_account_id() -> Optional[str]:
     return run_aws(["sts", "get-caller-identity", "--query", "Account", "--output", "text"])
 
 

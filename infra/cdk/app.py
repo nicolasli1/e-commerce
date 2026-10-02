@@ -32,10 +32,16 @@ app = cdk.App()
 project_name = app.node.try_get_context("project_name") or "sales-website"
 environment = app.node.try_get_context("environment") or "dev"
 enable_backend = app.node.try_get_context("enable_backend") or "true"
+enable_waf = app.node.try_get_context("enable_waf") or "false"
 price_class = app.node.try_get_context("price_class") or "PriceClass_100"
 certificate_arn = app.node.try_get_context("certificate_arn") or None
 raw_domains = app.node.try_get_context("domain_names") or None
 domain_names = raw_domains.split(",") if raw_domains else None
+canonical_domain = next(
+    (domain.strip() for domain in (domain_names or []) if domain.strip() and not domain.strip().startswith("www.")),
+    None,
+)
+frontend_url = f"https://{canonical_domain}" if canonical_domain else None
 raw_origins = app.node.try_get_context("allowed_origins") or None
 allowed_origins = raw_origins.split(",") if raw_origins else None
 ses_domain = app.node.try_get_context("ses_domain") or None
@@ -47,6 +53,7 @@ order_notifications_from_email = app.node.try_get_context("order_notifications_f
 order_alerts_to_email = app.node.try_get_context("order_alerts_to_email") or order_notifications_from_email
 
 enable_backend_bool = enable_backend.lower() in ("true", "1", "yes")
+enable_waf_bool = str(enable_waf).lower() in ("true", "1", "yes")
 manage_ses_identity = str(manage_ses_identity_raw).lower() in ("true", "1", "yes")
 
 # ------------------------------------------------------------------
@@ -59,6 +66,7 @@ backend = BackendStack(
     environment=environment,
     enable_backend=enable_backend_bool,
     allowed_origins=allowed_origins,
+    frontend_url=frontend_url,
     ses_domain=ses_domain,
     manage_ses_identity=manage_ses_identity,
     order_notifications_from_email=order_notifications_from_email,
@@ -90,6 +98,7 @@ frontend = FrontendStack(
     images_bucket_name=images_bucket_name,
     certificate_arn=certificate_arn,
     domain_names=domain_names,
+    enable_waf=enable_waf_bool,
     cross_region_references=True,
     description=f"Sales website frontend – {project_name} {environment}",
     env=cdk.Environment(

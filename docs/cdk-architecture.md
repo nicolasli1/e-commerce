@@ -45,10 +45,12 @@ flowchart TB
 | SecurityHeadersPolicy | `cloudfront.CfnResponseHeadersPolicy` | CSP, HSTS, frame, MIME, referrer y XSS |
 | AdminAuthFunction | `cloudfront.CfnFunction` | Fallback SPA para `/admin/*`; auth real en API |
 | RateLimitFunction | `cloudfront.CfnFunction` | Límite best-effort por edge para `/api/*` |
+| CanonicalHostFunction | `cloudfront.CfnFunction` | Redirige aliases alternativos al dominio público principal |
+| WebACL | `wafv2.CfnWebACL` | Opcional; reglas administradas, SQLi, entradas maliciosas y rate limit global |
 | WebsiteDistribution | `cloudfront.CfnDistribution` | Frontend, API, admin e imágenes |
 | Bucket policy | `iam.PolicyStatement` | Solo la distribución puede leer el bucket |
 
-El WebACL con reglas administradas y rate limiting está presente en el archivo como código comentado. `web_acl_id` también está deshabilitado; por tanto, WAF no forma parte del stack desplegado actualmente.
+El WebACL está desactivado por defecto. Solo se crea y asocia a la distribución cuando el contexto CDK incluye `enable_waf=true`; así no genera costo ni cambia tráfico hasta recibir aprobación explícita.
 
 ### Orígenes y comportamientos
 
@@ -219,6 +221,6 @@ En un push, el entorno resuelve a `dev`; con `workflow_dispatch` se puede elegir
 
 1. Alinear el default de región entre script local y CI.
 2. Separar dominio/certificado por entorno.
-3. Habilitar WAF o throttling persistente.
+3. Habilitar WAF cuando se apruebe su costo y añadir throttling persistente por ruta en API Gateway como defensa adicional.
 4. Añadir logs de acceso CloudFront/S3.
 5. Introducir SQS o EventBridge para tareas asíncronas cuando sea necesario.

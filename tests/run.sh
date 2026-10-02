@@ -27,7 +27,7 @@ if [ "${RUN_E2E:-}" = "true" ]; then
     echo "═══════════════════════════════════════════════"
     echo "  🌐 E2E TESTS (live site)"
     echo "═══════════════════════════════════════════════"
-    echo "  URL: ${REPUESTOSCEL_BASE_URL:-https://d1ag0uf6e1dp20.cloudfront.net}"
+    echo "  URL: ${REPUESTOSCEL_BASE_URL:-https://repuestoscel.com}"
     echo ""
     cd "$ROOT_DIR" && python -m pytest tests/e2e/ -v --tb=long "$@"
     E2E_EXIT=$?
